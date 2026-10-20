@@ -120,6 +120,7 @@ Clash 的规则通常散落在订阅、策略组、`rule-providers` 和多份 YA
 - 校验失败时自动打开导出详情并高亮错误
 - YAML 占满工作区，代码区域独立滚动
 - 导出前弹窗确认文件名，确认后才写入；完成后可直接导入 Clash Verge 或复制临时订阅地址
+- 设置内显示导出文件数量与占用，可清理 30 天前且未被历史引用的 YAML
 
 ### 效率
 
@@ -307,7 +308,7 @@ fixtures/              # TypeScript ↔ Rust 的 parity 契约
 
 - **v0.2**：本地 Web 工作台、完整规则/出口/链路/导出闭环、自动刷新与备份。
 - **v0.3（当前）**：Tauri 2 + Rust 桌面版；订阅/YAML 导入、内核 TCP/命名管道、实时连接、测速、规则集、mihomo 校验与 NSIS 安装包全部落地。
-- **Rust 地基**：`rulevis-core` 与 `rulevis-app` 共 26 项测试，包含 fixture 语义对齐、订阅抓取、桌面 API 与真实控制器冒烟。
+- **Rust 地基**：`rulevis-core` 与 `rulevis-app` 共 27 项测试，包含 fixture 语义对齐、订阅抓取、桌面 API 与真实控制器冒烟。
 - **下一步**：代码签名、自动更新、桌面托盘、多跳链路与 Proxy Provider。
 - **边界**：安装包目前只提供 Windows x64；不会用 Electron 或 Node sidecar 冒充桌面版。
 - **再评估**：只有在 WebView 被证明是瓶颈时，才考虑用 Rust 重写 UI；纯 Rust UI 不是当前目标。

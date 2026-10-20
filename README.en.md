@@ -47,7 +47,9 @@ Clash RuleVis is a local workbench (web and Windows desktop) that connects to a 
 - **Node health**: single/all latency tests, persisted results, failed/disabled/duplicate filters, duplicate merge.
 - **Visual chain proxy**: left relay + right landing generates a new independent node using `dialer-proxy`; original nodes are untouched.
 - **Safe export**: full YAML, diff against previous export, real `verge-mihomo -t` validation, history dropdown with diff-aware restore.
-- **Local data tools**: workspace JSON backup/restore, export confirmation with a custom file name, open export directory, one-click Clash Verge import.
+- **Local data tools**: workspace JSON backup/restore, export confirmation with a custom file name, open export directory, export storage stats with 30-day cleanup, one-click Clash Verge import.
+- **Large directories**: live connections and rules are virtualized, so 1000+ entries stay responsive without hiding data behind pagination.
+- **Offline editing**: start the workbench before Verge; kernel status refreshes in the background and the app offers re-detect plus subscription import.
 - **Desktop-first layout**: dense lists, internally scrolling tables and no page-level scroll on long lists.
 
 ## Screenshots
@@ -105,7 +107,7 @@ npm run rust:test
 npm run desktop:check
 ```
 
-40 web unit tests plus 26 Rust tests, a Playwright smoke flow and a hardware-gated real-controller test. The E2E flow imports nodes, merges duplicates, creates an exit and a chain node, cleans invalid rules, exports, restores history, clears history and round-trips a workspace backup.
+40 web unit tests plus 27 Rust tests, a Playwright smoke flow and a hardware-gated real-controller test. The E2E flow verifies offline entry and subscription import, imports nodes, merges duplicates, creates an exit and a chain node, cleans invalid rules, exports, restores and clears history, checks a 300-rule virtualized list, cleans orphan export files and round-trips a workspace backup.
 
 ## Windows download
 

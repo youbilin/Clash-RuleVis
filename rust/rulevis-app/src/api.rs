@@ -752,6 +752,30 @@ pub fn handle_request(
             open_directory(&exports_dir)?;
             Ok(json!({ "ok": true }))
         }
+        ("GET", "/api/exports/stats") => with_store(state, |store| {
+            let (count, bytes) = store.export_stats();
+            Ok(json!({ "count": count, "bytes": bytes, "keepDays": 30 }))
+        }),
+        ("POST", "/api/exports/cleanup") => {
+            let body = body_object(body.as_ref());
+            let keep_days = body
+                .get("keepDays")
+                .and_then(Value::as_u64)
+                .unwrap_or(30)
+                .min(3650);
+            with_store(state, move |store| {
+                let (removed, freed, count, bytes) = store
+                    .cleanup_exports(keep_days)
+                    .map_err(ApiFailure::internal)?;
+                Ok(json!({
+                    "removed": removed,
+                    "freedBytes": freed,
+                    "count": count,
+                    "bytes": bytes,
+                    "keepDays": keep_days
+                }))
+            })
+        }
         ("POST", "/api/exports/import-to-verge") => import_to_verge(state, body),
         ("POST", "/api/open-url") => {
             let body = body_object(body.as_ref());

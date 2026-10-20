@@ -36,7 +36,7 @@ import {
   type ParsedConfig,
 } from './importer';
 import { expandRuleset, inspectRuleSetBuffer, sanitizeFileName, storeRuleSetFile } from './rulesets';
-import { buildPreview, exportConfig, ExportValidationError, readExportForHistory } from './exporter';
+import { buildPreview, cleanupExports, exportConfig, exportStorageStats, ExportValidationError, readExportForHistory } from './exporter';
 import { validateConfig } from './mihomo-validator';
 import { probeThroughProxy } from './probe';
 import { RULE_SETS_DIR } from './paths';
@@ -351,6 +351,17 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
     } catch (error) {
       throw new HttpError(500, `无法打开导出目录：${(error as Error).message}`);
     }
+  });
+
+  app.get('/api/exports/stats', async () => exportStorageStats());
+
+  app.post('/api/exports/cleanup', async (request) => {
+    const body = (request.body ?? {}) as { keepDays?: unknown };
+    const keepDays =
+      typeof body.keepDays === 'number' && Number.isFinite(body.keepDays)
+        ? Math.min(3650, Math.max(0, Math.floor(body.keepDays)))
+        : 30;
+    return cleanupExports(keepDays);
   });
 
   app.post('/api/exports/import-to-verge', async (request) => {

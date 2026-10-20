@@ -1,4 +1,5 @@
-import { lazy, memo, Suspense, useEffect, useMemo, useState, useTransition } from 'react';
+import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   DndContext,
@@ -384,9 +385,6 @@ export function RulesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [groupBySource, setGroupBySource] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  // 大目录分批挂载可排序行，避免一次渲染上千条。
-  const [visibleLimit, setVisibleLimit] = useState(250);
-  const [isPending, startTransition] = useTransition();
   const [catalogDisplay, setCatalogDisplay] = useState<((route: RuleSetRoute) => RouteDisplayInfo) | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -396,10 +394,6 @@ export function RulesPage() {
     const route = useWorkspace.getState().workspace?.routes.find((item) => item.id === editId);
     if (route && route.kind === 'rule' && route.type !== 'MATCH') setEditing({ mode: 'edit', id: editId });
   }, [params]);
-
-  useEffect(() => {
-    setVisibleLimit(250);
-  }, [filter, query, onlyInvalid, onlyZeroHit]);
 
   useEffect(() => {
     const q = params.get('q');
@@ -507,8 +501,24 @@ export function RulesPage() {
       route.source.value.toLowerCase().includes(q)
     );
   });
-  const visibleRoutes = groupBySource ? filtered : filtered.slice(0, visibleLimit);
   const issuesCount = issues.size;
+  const ruleScrollRef = useRef<HTMLDivElement | null>(null);
+  const ruleVirtualizer = useVirtualizer({
+    count: groupBySource ? 0 : filtered.length,
+    getScrollElement: () => ruleScrollRef.current,
+    getItemKey: (index) => filtered[index]?.id ?? index,
+    estimateSize: () => 58,
+    overscan: 10,
+  });
+  const virtualRules = ruleVirtualizer.getVirtualItems();
+
+  useEffect(() => {
+    ruleScrollRef.current?.scrollTo({ top: 0 });
+  }, [filter, query, onlyInvalid, onlyZeroHit, groupBySource]);
+
+  useEffect(() => {
+    ruleVirtualizer.measure();
+  }, [groupBySource, ruleVirtualizer]);
   const zeroHitCount = snapshot
     ? sortableRoutes.filter((route) => route.enabled && ruleHitCount(route) === 0).length
     : 0;
@@ -885,6 +895,7 @@ export function RulesPage() {
           <span />
         </div>
 
+        <div className="rule-list-body" ref={ruleScrollRef}>
         {sortableRoutes.length === 0 ? (
           <EmptyState
             icon={<ArrowUpDown size={20} />}
@@ -905,7 +916,7 @@ export function RulesPage() {
           <EmptyState icon={<Search size={20} />} title="没有匹配的规则" description="试试其他关键词或筛选条件。" />
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={visibleRoutes.map((route) => route.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext items={filtered.map((route) => route.id)} strategy={verticalListSortingStrategy}>
               {groupBySource ? (
                 <div className="rule-groups">
                   {ruleGroups.map((group) => {
@@ -934,7 +945,26 @@ export function RulesPage() {
                   })}
                 </div>
               ) : (
-                visibleRoutes.map(renderRuleRow)
+                <div
+                  className="rule-virtual-canvas"
+                  style={{ height: `${ruleVirtualizer.getTotalSize()}px` }}
+                >
+                  {virtualRules.map((virtualItem) => {
+                    const route = filtered[virtualItem.index];
+                    if (!route) return null;
+                    return (
+                      <div
+                        key={route.id}
+                        ref={ruleVirtualizer.measureElement}
+                        data-index={virtualItem.index}
+                        className="rule-virtual-row"
+                        style={{ transform: `translateY(${virtualItem.start}px)` }}
+                      >
+                        {renderRuleRow(route)}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </SortableContext>
           </DndContext>
@@ -971,19 +1001,11 @@ export function RulesPage() {
             <div className="rule-actions" />
           </div>
         ) : null}
+        </div>
 
         <div className="rule-list-foot">
           <span>拖动排序 · 自动保存</span>
           <span className="spacer" />
-          {!groupBySource && filtered.length > visibleRoutes.length ? (
-            <button
-              className="inline-link"
-              disabled={isPending}
-              onClick={() => startTransition(() => setVisibleLimit((limit) => limit + 250))}
-            >
-              {isPending ? '加载中…' : `显示更多（${visibleRoutes.length} / ${filtered.length}）`}
-            </button>
-          ) : null}
           <button className="inline-link" onClick={() => navigate('/export')}>去导出预览</button>
         </div>
       </div>

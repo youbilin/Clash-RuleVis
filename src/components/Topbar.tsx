@@ -81,10 +81,11 @@ export function Topbar() {
           type="button"
           role="switch"
           aria-checked={!paused}
-          className={cx('stream-toggle', paused && 'paused')}
+          className={cx('stream-toggle', (paused || !connected) && 'paused')}
           onClick={() => setPaused(!paused)}
-          title={paused ? '继续实时数据' : '暂停实时数据'}
-          aria-label={paused ? '继续实时数据' : '暂停实时数据'}
+          disabled={!connected}
+          title={!connected ? '内核未连接' : paused ? '继续实时数据' : '暂停实时数据'}
+          aria-label={!connected ? '内核未连接' : paused ? '继续实时数据' : '暂停实时数据'}
         >
           <RadioTower size={16} />
           <span className="stream-track">

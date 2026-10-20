@@ -2014,13 +2014,18 @@ body {
   transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 
-.stream-toggle:hover {
+.stream-toggle:hover:not(:disabled) {
   border-color: var(--line-strong);
   background: #ffffff;
 }
 
 .stream-toggle.paused {
   color: var(--faint);
+}
+
+.stream-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .stream-track {
@@ -2122,22 +2127,16 @@ body {
   .rules-page .rule-list-panel {
     flex: 1 1 auto;
     min-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
+    overflow: hidden;
   }
 
   .rules-page .rule-list-head {
-    position: sticky;
-    top: 0;
-    z-index: 3;
+    position: static;
     background: #f7f7f2;
   }
 
   .rules-page .rule-list-foot {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
+    position: static;
     background: #f7f7f2;
   }
 }

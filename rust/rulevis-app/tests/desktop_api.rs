@@ -311,6 +311,37 @@ fn history_can_be_cleared() {
 }
 
 #[test]
+fn export_storage_cleanup_keeps_referenced_files() {
+    let dir = TempDir::new("export-cleanup");
+    let state = AppState::load(dir.path()).unwrap();
+    disable_base_template(&state);
+    add_manual_node(&state, "清理节点", "cleanup.example.com");
+    let exported = call(
+        &state,
+        "POST",
+        "/api/export",
+        Some(json!({ "fileName": "cleanup-test.yaml" })),
+    )
+    .unwrap();
+    let exported_path = PathBuf::from(exported["path"].as_str().unwrap());
+    let orphan = exported_path.parent().unwrap().join("orphan.yaml");
+    fs::write(&orphan, "orphan").unwrap();
+
+    let before = call(&state, "GET", "/api/exports/stats", None).unwrap();
+    assert!(before["count"].as_u64().unwrap() >= 2);
+    let cleaned = call(
+        &state,
+        "POST",
+        "/api/exports/cleanup",
+        Some(json!({ "keepDays": 0 })),
+    )
+    .unwrap();
+    assert!(cleaned["removed"].as_u64().unwrap() >= 1);
+    assert!(exported_path.is_file());
+    assert!(!orphan.exists());
+}
+
+#[test]
 fn ruleset_batch_create_dedupes_and_deletes() {
     let dir = TempDir::new("rulesets");
     let state = AppState::load(dir.path()).unwrap();

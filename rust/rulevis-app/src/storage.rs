@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime};
 
 use chrono::{SecondsFormat, Utc};
 use rulevis_core::defaults::{create_default_workspace, ensure_workspace_shape};
@@ -256,6 +257,73 @@ impl Store {
             }
         }
         Ok(count)
+    }
+
+    fn export_files(&self) -> Vec<PathBuf> {
+        let Ok(files) = fs::read_dir(&self.exports_dir) else {
+            return Vec::new();
+        };
+        files
+            .flatten()
+            .filter(|entry| {
+                entry
+                    .file_type()
+                    .map(|kind| kind.is_file())
+                    .unwrap_or(false)
+            })
+            .map(|entry| entry.path())
+            .filter(|path| {
+                path.extension()
+                    .and_then(|value| value.to_str())
+                    .is_some_and(|ext| {
+                        ext.eq_ignore_ascii_case("yaml") || ext.eq_ignore_ascii_case("yml")
+                    })
+            })
+            .collect()
+    }
+
+    pub fn export_stats(&self) -> (usize, u64) {
+        let files = self.export_files();
+        let bytes = files
+            .iter()
+            .filter_map(|path| fs::metadata(path).ok())
+            .map(|metadata| metadata.len())
+            .sum();
+        (files.len(), bytes)
+    }
+
+    pub fn cleanup_exports(&self, keep_days: u64) -> Result<(usize, u64, usize, u64), String> {
+        let mut protected: HashSet<PathBuf> = self
+            .list_history()
+            .into_iter()
+            .filter_map(|entry| entry.export_path.map(PathBuf::from))
+            .collect();
+        if let Some(record) = self.workspace.last_export.as_ref() {
+            protected.insert(PathBuf::from(&record.path));
+        }
+        let mut removed = 0;
+        let mut freed = 0;
+        for path in self.export_files() {
+            let Ok(metadata) = fs::metadata(&path) else {
+                continue;
+            };
+            let expired = keep_days == 0
+                || metadata
+                    .modified()
+                    .ok()
+                    .and_then(|modified| SystemTime::now().duration_since(modified).ok())
+                    .map(|age| age >= Duration::from_secs(keep_days.saturating_mul(86_400)))
+                    .unwrap_or(false);
+            if !expired || protected.contains(&path) {
+                continue;
+            }
+            if fs::remove_file(&path).is_ok() {
+                removed += 1;
+                freed += metadata.len();
+            }
+        }
+        let (remaining, bytes) = self.export_stats();
+        Ok((removed, freed, remaining, bytes))
     }
 
     pub fn read_history(&self, id: &str) -> Option<HistoryFile> {

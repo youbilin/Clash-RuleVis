@@ -15,6 +15,8 @@
   until “确认导出” or “导入到 Clash Verge” is pressed.
 - Export history can be cleared in one action; exported YAML files are kept on
   disk.
+- Export storage stats and a 30-day cleanup action; files referenced by history
+  or the latest export are protected.
 
 ### Changed
 
@@ -30,10 +32,11 @@
   reordering no longer makes the detail panel overlap the following rows; the
   list order is frozen until the detail is collapsed.
 - The offline empty state now offers only two actions: re-detect after starting
-  Verge, and import a subscription directly.
-- Large rule lists render in batches of 250 with “显示更多”, keeping the first
-  screen responsive for 1000+ rule workspaces.
-- README and demo screenshots were regenerated for the current UI.
+  Verge, and import a subscription directly. The stream indicator now shows
+  “等待内核” instead of a green live state while the kernel is offline.
+- Large rule lists are fully virtualized, so 1000+ rules only mount visible
+  rows while drag reordering and selection still work.
+- README screenshots and the chain demo GIF were regenerated for the current UI.
 - Notifications are centered above the app (including dialogs), have no close
   or undo controls, and dismiss automatically after a few seconds.
 - The GitHub button now opens the repository in the system browser on desktop.
@@ -43,8 +46,7 @@
 - Branding is now Clash RuleVis throughout: boot screen and logo, page title,
   generated YAML header and default export/backup file names.
 - The live page exit rail fills the available height instead of leaving a gap,
-  the stream pause control is larger and has its own column, and the redundant
-  “管理规则集” footer link was removed.
+  and the redundant “管理规则集” footer link was removed.
 
 ### Fixed
 

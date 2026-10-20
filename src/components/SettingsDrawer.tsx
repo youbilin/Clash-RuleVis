@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, Download, ExternalLink, RefreshCw, ShieldCheck, Upload } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, RefreshCw, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import type { HistoryEntry, KernelStatus, Workspace } from '../../shared/types';
 import { api, copyToClipboard, downloadText } from '../api';
 import { Drawer } from './Overlay';
@@ -9,7 +9,7 @@ import { useUi, toast } from '../store/ui';
 import { useWorkspace } from '../store/workspace';
 import { useLive } from '../store/live';
 import { cx } from '../lib/misc';
-import { formatRelative } from '../lib/format';
+import { formatBytes, formatRelative } from '../lib/format';
 import { notifyRemoved } from '../lib/undo';
 
 export function SettingsDrawer() {
@@ -44,7 +44,21 @@ function SettingsContent() {
   const [useProxy, setUseProxy] = useState(workspace?.settings.useProxyForFetch ?? true);
   const [copied, setCopied] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [exportStats, setExportStats] = useState<{ count: number; bytes: number; keepDays: number } | null>(null);
+  const [cleaningExports, setCleaningExports] = useState(false);
   const backupInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api<{ count: number; bytes: number; keepDays: number }>('/api/exports/stats')
+      .then((data) => {
+        if (!cancelled) setExportStats(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +146,38 @@ function SettingsContent() {
       toast('error', '重新探测失败', (error as Error).message);
     } finally {
       setRediscovering(false);
+    }
+  };
+
+  const cleanupExportFiles = async () => {
+    const stats = exportStats;
+    if (!stats) return;
+    const confirmed = await confirm({
+      title: '清理旧导出文件',
+      message: `当前导出目录有 ${stats.count} 个文件，共 ${formatBytes(stats.bytes)}。\n将删除 ${stats.keepDays} 天前且未被历史记录引用的 YAML；最近导出和历史引用的文件会保留。`,
+      confirmLabel: '清理',
+      danger: true,
+    });
+    if (!confirmed) return;
+    setCleaningExports(true);
+    try {
+      const result = await api<{
+        removed: number;
+        freedBytes: number;
+        count: number;
+        bytes: number;
+        keepDays: number;
+      }>('/api/exports/cleanup', { method: 'POST', body: { keepDays: stats.keepDays } });
+      setExportStats(result);
+      if (result.removed) {
+        toast('success', `已清理 ${result.removed} 个旧文件`, `释放 ${formatBytes(result.freedBytes)}`);
+      } else {
+        toast('info', '没有可清理的旧文件');
+      }
+    } catch (error) {
+      toast('error', '清理导出文件失败', (error as Error).message);
+    } finally {
+      setCleaningExports(false);
     }
   };
 
@@ -374,6 +420,18 @@ function SettingsContent() {
           <code>{status?.exportsDir ?? '—'}</code>
           <button className="icon-btn" onClick={() => copy('exports', status?.exportsDir ?? '')} title="复制路径">
             {copied === 'exports' ? <Check size={13} /> : <Copy size={13} />}
+          </button>
+        </div>
+        <div className="path-row">
+          <span className="muted">导出文件</span>
+          <code>{exportStats ? `${exportStats.count} 个 · ${formatBytes(exportStats.bytes)}` : '—'}</code>
+          <button
+            className="inline-link"
+            onClick={() => void cleanupExportFiles()}
+            disabled={cleaningExports || !exportStats}
+            title={`清理 ${exportStats?.keepDays ?? 30} 天前且未被历史引用的 YAML`}
+          >
+            {cleaningExports ? <Spinner /> : <Trash2 size={11} />} 清理旧文件
           </button>
         </div>
         <div className="settings-backup">

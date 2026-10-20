@@ -33,6 +33,11 @@ async function main() {
     '缺少 dist，请先运行 npm run build',
   );
 
+  await fs.writeFile(
+    path.join(tempDir, 'kernel.json'),
+    JSON.stringify({ mode: 'tcp', endpoint: 'http://127.0.0.1:1', secret: '' }),
+  );
+
   server = spawn(process.execPath, ['--import', 'tsx', 'server/index.ts'], {
     cwd: repo,
     env: { ...process.env, PORT: String(port), CRS_DATA_DIR: tempDir },
@@ -62,6 +67,14 @@ async function main() {
   page.on('pageerror', (error) => pageErrors.push(error.message));
 
   try {
+    await page.goto(`${baseUrl}/live`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.live-page').waitFor();
+    await page.getByText('Clash Verge 未连接').first().waitFor();
+    await page.getByRole('button', { name: '导入订阅' }).click();
+    await page.getByRole('dialog', { name: '添加来源' }).waitFor();
+    await page.keyboard.press('Escape');
+    await page.locator('.modal').waitFor({ state: 'detached' });
+
     await page.goto(`${baseUrl}/nodes`, { waitUntil: 'domcontentloaded' });
     await page.locator('.topbar').waitFor();
     await page.locator('.nodes-page').waitFor();
@@ -310,6 +323,60 @@ async function main() {
     });
     assert.ok(remainingNames.includes('Relay-A') && remainingNames.includes('Landing-B'));
     assert.ok(!remainingNames.includes('E2E 链路'));
+
+    const bulkStatus = await page.evaluate(async () => {
+      const response = await fetch('/api/workspace', {
+        headers: { 'X-Requested-With': 'clash-route-desk' },
+      });
+      const workspace = (await response.json()).workspace;
+      const exitId = workspace.exits.find((exit) => !exit.builtin)?.id ?? workspace.exits[0].id;
+      workspace.routes = Array.from({ length: 300 }, (_, index) => ({
+        id: `e2e-bulk-${index}`,
+        kind: 'rule',
+        type: 'DOMAIN-SUFFIX',
+        payload: `bulk-${index}.example.com`,
+        exitId,
+        origin: 'manual',
+        enabled: true,
+        pending: false,
+      }));
+      const saved = await fetch('/api/workspace', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'clash-route-desk',
+        },
+        body: JSON.stringify({ workspace, baseRevision: workspace.revision }),
+      });
+      return saved.status;
+    });
+    assert.equal(bulkStatus, 200, '应能写入大规则集测试数据');
+
+    await page.goto(`${baseUrl}/rulesets`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.rule-row').first().waitFor();
+    const virtualizedRows = await page.locator('.rule-row').count();
+    assert.ok(virtualizedRows < 100, `大规则集应只渲染可视行，实际 ${virtualizedRows} 行`);
+    await page.evaluate(() => {
+      const body = document.querySelector('.rule-list-body');
+      body.scrollTop = body.scrollHeight;
+    });
+    await page.locator('.rule-row', { hasText: 'bulk-299.example.com' }).waitFor();
+
+    const orphanPath = path.join(tempDir, 'exports', 'e2e-orphan.yaml');
+    await fs.writeFile(orphanPath, 'orphan');
+    const cleanup = await page.evaluate(async () => {
+      const headers = { 'X-Requested-With': 'clash-route-desk' };
+      const stats = await fetch('/api/exports/stats', { headers }).then((response) => response.json());
+      const result = await fetch('/api/exports/cleanup', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keepDays: 0 }),
+      }).then((response) => response.json());
+      return { stats, result };
+    });
+    assert.ok(cleanup.stats.count >= 2, '导出目录统计应包含导出文件和孤儿文件');
+    assert.ok(cleanup.result.removed >= 1, '清理应删除未引用的孤儿导出文件');
+    assert.equal(await fs.stat(orphanPath).then(() => true).catch(() => false), false);
 
     assert.deepEqual(pageErrors, [], `页面出现未处理错误：${pageErrors.join('\n')}`);
     console.log(`E2E smoke passed · ${baseUrl}`);

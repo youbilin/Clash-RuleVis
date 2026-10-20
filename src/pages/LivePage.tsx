@@ -959,8 +959,10 @@ export function LivePage() {
           <div className="stat-label">STREAM</div>
           <div className="stat-stream">
             <span className="stream-status">
-              <span className={cx('dot', socketConnected ? 'green pulse' : 'red')} />
-              {paused ? (
+              <span className={cx('dot', !connected ? '' : paused ? 'amber' : socketConnected ? 'green pulse' : 'red')} />
+              {!connected ? (
+                <span className="muted">等待内核</span>
+              ) : paused ? (
                 <span className="amber">已暂停 +{pausedUpdates}</span>
               ) : socketConnected ? (
                 <span>1s 实时</span>

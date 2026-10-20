@@ -14,7 +14,7 @@ import { readBaseTemplate, type BaseTemplate } from './base-template';
 import { validateConfig } from './mihomo-validator';
 import { EXPORTS_DIR } from './paths';
 import { atomicWriteFile, fileExists, isPathInside } from './fsutil';
-import { addHistory, updateWorkspace } from './store';
+import { addHistory, getWorkspace, listHistory, updateWorkspace } from './store';
 
 export class ExportValidationError extends Error {
   preview: ExportPreview;
@@ -184,4 +184,56 @@ export async function readExportForHistory(entry: HistoryEntry): Promise<string 
   } catch {
     return null;
   }
+}
+
+interface ExportFileInfo {
+  path: string;
+  size: number;
+  modifiedAt: number;
+}
+
+async function listExportFiles(): Promise<ExportFileInfo[]> {
+  const entries = await fs.readdir(EXPORTS_DIR, { withFileTypes: true }).catch(() => []);
+  const files: ExportFileInfo[] = [];
+  for (const entry of entries) {
+    if (!entry.isFile() || !/\.ya?ml$/i.test(entry.name)) continue;
+    const filePath = path.join(EXPORTS_DIR, entry.name);
+    const info = await fs.stat(filePath).catch(() => null);
+    if (info) files.push({ path: filePath, size: info.size, modifiedAt: info.mtimeMs });
+  }
+  return files;
+}
+
+export async function exportStorageStats(): Promise<{ count: number; bytes: number; keepDays: number }> {
+  const files = await listExportFiles();
+  return {
+    count: files.length,
+    bytes: files.reduce((total, file) => total + file.size, 0),
+    keepDays: 30,
+  };
+}
+
+export async function cleanupExports(
+  keepDays = 30,
+): Promise<{ removed: number; freedBytes: number; count: number; bytes: number; keepDays: number }> {
+  const [files, history] = await Promise.all([listExportFiles(), listHistory()]);
+  const protectedPaths = new Set(history.flatMap((entry) => (entry.exportPath ? [entry.exportPath] : [])));
+  const lastExport = getWorkspace().lastExport?.path;
+  if (lastExport) protectedPaths.add(lastExport);
+  const cutoff = Date.now() - Math.max(0, keepDays) * 86_400_000;
+  let removed = 0;
+  let freedBytes = 0;
+  for (const file of files) {
+    if (protectedPaths.has(file.path)) continue;
+    if (file.modifiedAt > cutoff) continue;
+    try {
+      await fs.rm(file.path, { force: true });
+      removed += 1;
+      freedBytes += file.size;
+    } catch {
+      // Leave files we cannot delete for the next run.
+    }
+  }
+  const stats = await exportStorageStats();
+  return { removed, freedBytes, count: stats.count, bytes: stats.bytes, keepDays };
 }

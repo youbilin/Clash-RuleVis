@@ -59,7 +59,35 @@
 }
 
 .rule-list-panel {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+}
+
+.rule-list-head,
+.rule-list-foot {
+  flex: 0 0 auto;
+}
+
+.rule-list-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.rule-virtual-canvas {
+  position: relative;
+  width: 100%;
+}
+
+.rule-virtual-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
 }
 
 .rule-list-head,
@@ -278,6 +306,12 @@
   .rule-list-head > :nth-child(6),
   .rule-origin {
     display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .rule-list-body {
+    max-height: 65dvh;
   }
 }
 
