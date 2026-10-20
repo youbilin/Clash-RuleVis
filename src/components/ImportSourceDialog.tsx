@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Check,
-  ChevronUp,
   ClipboardPaste,
   DownloadCloud,
   FileText,
@@ -14,6 +13,7 @@ import {
 import type { ImportSummary } from '../../shared/types';
 import { api } from '../api';
 import { Spinner } from './Common';
+import { Modal } from './Overlay';
 import { useWorkspace } from '../store/workspace';
 import { toast } from '../store/ui';
 import { parseShareLink, shareNodeDisplayName, shareNodeToProxy } from '../lib/node-link';
@@ -53,12 +53,10 @@ interface ImportResultState {
 
 export function ImportSourceDialog({
   initialTab = 'subscription',
-  onCollapse,
-  onImported,
+  onClose,
 }: {
   initialTab?: ImportTab;
-  onCollapse?: () => void;
-  onImported?: () => void;
+  onClose: () => void;
 }) {
   const workspace = useWorkspace((state) => state.workspace);
   const saveNow = useWorkspace((state) => state.saveNow);
@@ -116,7 +114,6 @@ export function ImportSourceDialog({
         warnings: response.warnings,
       });
       toast('success', '导入完成', `${label} · 新增 ${response.added} 个节点`);
-      if (onImported) window.setTimeout(onImported, 900);
     } catch (caught) {
       setError((caught as Error).message);
     } finally {
@@ -245,34 +242,35 @@ export function ImportSourceDialog({
     setManualLink('');
   };
 
+  const actionLabel = tab === 'manual' ? '添加节点' : tab === 'verge' ? '读取 Verge' : '导入';
+
   return (
-    <section className={cx('inline-importer', result && 'has-result')}>
-      <div className="inline-importer-head">
-        <div className="inline-importer-title">
-          <strong>{result ? '导入完成' : '添加来源'}</strong>
-          <span>{result ? result.label : '内容只在本机解析'}</span>
-        </div>
-        <div className="inline-importer-actions">
-          {onCollapse ? (
-            <button className="icon-btn" onClick={onCollapse} title="收起导入区" aria-label="收起导入区">
-              <ChevronUp size={14} />
-            </button>
-          ) : null}
-          {result ? (
-            <button className="btn btn-sm btn-primary" onClick={startAnother}>继续添加</button>
-          ) : (
+    <Modal
+      title={result ? '导入完成' : '添加来源'}
+      subtitle={result ? result.label : '内容只在本机解析'}
+      size="lg"
+      onClose={onClose}
+      footer={
+        result ? (
+          <>
+            <button className="btn btn-ghost" onClick={startAnother}>继续添加</button>
+            <button className="btn btn-primary" onClick={onClose}>完成</button>
+          </>
+        ) : (
+          <>
+            <button className="btn btn-ghost" onClick={onClose}>取消</button>
             <button
-              className="btn btn-sm btn-primary"
+              className="btn btn-primary"
               onClick={submit}
               disabled={loading || (tab === 'manual' && !manualParse.node)}
             >
               {loading ? <Spinner onAccent /> : <Check size={13} />}
-              {tab === 'manual' ? '添加节点' : tab === 'verge' ? '读取 Verge' : '导入'}
+              {actionLabel}
             </button>
-          )}
-        </div>
-      </div>
-      <div className="inline-importer-body">
+          </>
+        )
+      }
+    >
       {result ? (
         <div className="import-result">
           <div className="import-result-hero">
@@ -492,7 +490,6 @@ export function ImportSourceDialog({
           ) : null}
         </div>
       )}
-      </div>
-    </section>
+    </Modal>
   );
 }

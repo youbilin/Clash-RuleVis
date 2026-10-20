@@ -65,16 +65,17 @@ async function main() {
     await page.goto(`${baseUrl}/nodes`, { waitUntil: 'domcontentloaded' });
     await page.locator('.topbar').waitFor();
     await page.locator('.nodes-page').waitFor();
-    assert.ok(await page.locator('.import-collapsed').isVisible(), '导入区默认应收起');
+    assert.ok(await page.locator('.nodes-add-source').isVisible(), '节点工具栏应有添加来源入口');
 
     const importNode = async (link, expectedName) => {
-      await page.locator('.import-collapsed').click();
-      await page.locator('.inline-importer').waitFor();
+      await page.locator('.nodes-add-source').click();
+      await page.getByRole('dialog', { name: '添加来源' }).waitFor();
       await page.locator('.import-tab', { hasText: '节点链接' }).click();
       await page.locator('input[aria-label="节点分享链接"]').fill(link);
-      await page.getByRole('button', { name: '添加节点', exact: true }).click();
+      await page.locator('.modal').getByRole('button', { name: '添加节点', exact: true }).click();
+      await page.locator('.modal-title', { hasText: '导入完成' }).waitFor();
+      await page.locator('.modal').getByRole('button', { name: '完成', exact: true }).click();
       await page.locator('.node-row', { hasText: expectedName }).waitFor();
-      await page.locator('.import-collapsed').waitFor();
     };
 
     await importNode(

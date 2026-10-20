@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Check,
-  ChevronDown,
   ClipboardPaste,
   DownloadCloud,
   FileText,
@@ -554,25 +553,6 @@ export function NodesPage() {
         }
       />
 
-      <div className={cx('nodes-import-wrap', !importOpen && 'is-collapsed')}>
-        {importOpen ? (
-          <ImportSourceDialog
-            key={importTab}
-            initialTab={importTab}
-            onCollapse={() => setImportOpen(false)}
-            onImported={() => setImportOpen(false)}
-          />
-        ) : (
-          <button type="button" className="import-collapsed" onClick={() => setImportOpen(true)}>
-            <span className="import-collapsed-icon"><Plus size={13} /></span>
-            <strong>添加来源</strong>
-            <span className="import-collapsed-hint">订阅、文件、节点链接或 Verge</span>
-            <span className="spacer" />
-            <span className="import-collapsed-action">展开 <ChevronDown size={13} /></span>
-          </button>
-        )}
-      </div>
-
         <section className="nodes-main panel">
           <div className="node-toolbar">
             <div className="search-box" style={{ flex: '1 1 220px' }}>
@@ -647,6 +627,13 @@ export function NodesPage() {
               </button>
             ) : null}
             <span className="spacer" />
+            <button
+              className="btn btn-sm btn-outline nodes-add-source"
+              onClick={() => setImportOpen(true)}
+              title="从订阅、文件、节点链接或 Verge 添加来源"
+            >
+              <Plus size={12} /> 添加来源
+            </button>
             <span className="node-count faint">
               {nodes.length} / {workspace.nodes.length}
             </span>
@@ -815,6 +802,10 @@ export function NodesPage() {
             <span>{enabledCount} 个节点进入节点池</span>
           </div>
         </section>
+
+      {importOpen ? (
+        <ImportSourceDialog initialTab={importTab} onClose={() => setImportOpen(false)} />
+      ) : null}
 
       {editingNode ? <NodeEditor node={editingNode} onClose={() => setEditingNodeId(null)} /> : null}
 
