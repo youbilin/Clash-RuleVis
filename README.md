@@ -6,6 +6,10 @@
 
 看清每一次访问的「域名 → 规则 → 出口 → 节点」，把复杂的分流配置变成可观察、可拖拽、可校验的工作流。
 
+[中文](README.md) · [English](README.en.md)
+
+[![CI](https://github.com/youbilin/Clash-RuleVis/actions/workflows/ci.yml/badge.svg)](https://github.com/youbilin/Clash-RuleVis/actions/workflows/ci.yml)
+![License](https://img.shields.io/badge/license-MIT-356049)
 ![React](https://img.shields.io/badge/React-19-20232a?logo=react&logoColor=61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646cff?logo=vite&logoColor=white)
@@ -14,7 +18,17 @@
 
 </div>
 
+<p align="center">
+  <img src="docs/assets/chain-demo.gif" width="900" alt="在链路编辑器中选中转和落地节点，生成独立的链式节点" />
+</p>
+
+<p align="center">
+  <sub>演示数据均为假节点。链路编辑器生成的是独立节点，不会改变中转和落地节点原本的流量。</sub>
+</p>
+
 ---
+
+> 当前是本地 Web 工作台（Node.js 运行）。Tauri + Rust 轻量桌面版正在迁移中，安装包会在 Tauri 阶段发布，不用 Electron/Node 临时包冒充正式桌面版。
 
 ## 这是什么
 
@@ -28,6 +42,19 @@ Clash 的规则通常散落在订阅、策略组、`rule-providers` 和多份 YA
 - 不触发内核配置重载
 - 导出文件只写入本工具目录，由你手动导入 Verge
 - 控制器密钥与订阅信息只保存在本机
+
+## 界面预览
+
+<p align="center">
+  <img src="docs/assets/nodes.png" width="49%" alt="节点与来源管理" />
+  <img src="docs/assets/rules.png" width="49%" alt="规则集与拖拽排序" />
+</p>
+<p align="center">
+  <img src="docs/assets/import-sources.png" width="49%" alt="批量添加订阅、YAML 与节点链接" />
+  <img src="docs/assets/export.png" width="49%" alt="完整 YAML 与安全导出" />
+</p>
+
+<p align="center"><sub>截图使用 <code>demo/workspace.json</code> 中的演示数据，不包含真实订阅或节点地址。</sub></p>
 
 ## 主要能力
 
@@ -126,6 +153,15 @@ flowchart LR
 - Windows 10/11（当前 Verge 命名管道探测以 Windows 为主；TCP 控制器可跨平台）
 - Clash Verge Rev / mihomo（可选，离线也能编辑配置）
 
+### 直接体验（假数据，无需节点）
+
+```bash
+npm install
+npm run demo
+```
+
+访问 <http://127.0.0.1:4781>。演示使用独立的 `.demo-data` 和 `demo/workspace.json`，不会读写你的 `data/`，也不会上传任何信息。
+
 ### 开发
 
 ```bash
@@ -171,10 +207,11 @@ data/
 
 ```bash
 npm run dev        # 同时启动 Fastify 与 Vite
+npm run demo       # 构建后用演示数据启动生产版，访问 :4781
 npm run dev:server # 仅启动本地 API
 npm run dev:web    # 仅启动前端
 npm run typecheck  # 前端 + 后端类型检查
-npm test           # 37 项单元测试
+npm test           # 40 项单元测试
 npm run test:e2e   # 构建后用临时数据目录跑 Playwright 冒烟
 npm run build      # 类型检查 + 生产构建
 npm start          # 运行生产服务
@@ -201,9 +238,18 @@ server/
 ├── generator.ts       # 配置生成与校验
 └── tests/             # node:test 单元测试
 tests/e2e/             # Playwright 临时目录冒烟测试
+demo/                  # 无敏感数据的演示工作区
+docs/assets/           # README 截图与演示 GIF
 shared/                # 前后端共享类型与解析模型
-scripts/               # 规则目录生成脚本
+scripts/               # 规则目录、演示与截图脚本
 ```
+
+## Roadmap
+
+- **v0.2（当前）**：本地 Web 工作台、完整规则/出口/链路/导出闭环、自动刷新与备份。
+- **下一步**：Tauri 2 壳 + 保留 React UI；先把内核适配、导入解析、导出生成迁到 Rust，用 fixture 对齐导出结果，再发布 Windows 安装包。不会用 Electron 或 Node sidecar 冒充正式桌面版。
+- **之后**：更多协议与 Proxy Provider、桌面托盘、签名安装包、增量更新。
+- **再评估**：只有在 WebView 被证明是瓶颈时，才考虑用 Rust 重写 UI；纯 Rust UI 不是当前目标。
 
 ## 已知边界
 
@@ -220,6 +266,12 @@ scripts/               # 规则目录生成脚本
 - 不发送遥测，不接入第三方分析服务。
 - 导出的 YAML 不包含 `external-controller` 与 `secret`。
 
+## 许可证与参与
+
+- 代码以 [MIT](LICENSE) 许可发布。
+- 安全报告请走 [SECURITY.md](SECURITY.md)，不要在公开 issue 粘贴真实订阅、节点凭据或控制器 secret。
+- 开发约定和本地检查见 [CONTRIBUTING.md](CONTRIBUTING.md)，版本变化见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 致谢
 
 - [MetaCubeX/meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat) — geosite / geoip 规则数据
@@ -229,4 +281,4 @@ scripts/               # 规则目录生成脚本
 
 ---
 
-如果这个项目对你有帮助，欢迎 Star、提 Issue 或提交 PR。
+如果这个项目对你有帮助，欢迎 Star、提 Issue 或提交 PR。安全、本地优先的 Clash 工具值得被更多人看见。

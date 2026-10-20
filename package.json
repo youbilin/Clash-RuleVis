@@ -1,8 +1,9 @@
 {
   "name": "clash-route-desk",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local-first visual routing workbench for Clash Verge and mihomo.",
+  "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
@@ -16,6 +17,8 @@
   },
   "scripts": {
     "dev": "concurrently -k -n server,web -c cyan,magenta \"tsx watch server/index.ts\" \"vite\"",
+    "demo": "npm run build && node scripts/demo.mjs",
+    "fixtures:generate": "node --import tsx scripts/export-fixtures.ts",
     "dev:server": "tsx watch server/index.ts",
     "dev:web": "vite",
     "build": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json && vite build",

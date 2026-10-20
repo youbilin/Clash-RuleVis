@@ -43,7 +43,7 @@ import { RULE_SETS_DIR } from './paths';
 import { fileExists, isPathInside } from './fsutil';
 import { redactLog } from './logging';
 
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.2.0';
 const COOKIE_NAME = 'crs_session';
 
 class HttpError extends Error {

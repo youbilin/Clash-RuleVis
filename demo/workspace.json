@@ -1,0 +1,324 @@
+{
+  "version": 2,
+  "revision": 0,
+  "createdAt": "2026-10-20T00:00:00.000Z",
+  "updatedAt": "2026-10-20T00:00:00.000Z",
+  "settings": {
+    "onboarded": true,
+    "testUrl": "https://www.gstatic.com/generate_204",
+    "retentionMinutes": 5,
+    "subscriptionUserAgent": "clash-verge/v2.5.8",
+    "useProxyForFetch": true,
+    "defaultRuleType": "DOMAIN-SUFFIX",
+    "includeBaseTemplate": false,
+    "favoriteExitIds": ["exit-ai"]
+  },
+  "sources": [
+    {
+      "id": "source-demo",
+      "type": "file",
+      "name": "示例机场",
+      "prefix": "DEMO-",
+      "keepRules": false,
+      "updatedAt": "2026-10-20T00:00:00.000Z",
+      "note": "演示数据"
+    },
+    {
+      "id": "source-manual",
+      "type": "manual",
+      "name": "节点链接",
+      "prefix": "",
+      "keepRules": false,
+      "updatedAt": "2026-10-20T00:00:00.000Z",
+      "note": "manual-link"
+    },
+    {
+      "id": "source-chain",
+      "type": "chain",
+      "name": "链式代理",
+      "prefix": "",
+      "keepRules": false,
+      "updatedAt": "2026-10-20T00:00:00.000Z",
+      "note": "由链路编辑器生成"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-tokyo-01",
+      "sourceId": "source-demo",
+      "name": "东京 01",
+      "raw": {
+        "name": "东京 01",
+        "type": "ss",
+        "server": "tokyo-01.example.com",
+        "port": 8388,
+        "cipher": "aes-256-gcm",
+        "password": "demo-password",
+        "udp": true
+      },
+      "region": "日本",
+      "tags": ["AI", "流媒体"],
+      "enabled": true,
+      "addedAt": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "node-tokyo-02",
+      "sourceId": "source-demo",
+      "name": "东京 02",
+      "raw": {
+        "name": "东京 02",
+        "type": "ss",
+        "server": "tokyo-02.example.com",
+        "port": 8388,
+        "cipher": "aes-256-gcm",
+        "password": "demo-password",
+        "udp": true
+      },
+      "region": "日本",
+      "tags": ["家宽"],
+      "enabled": true,
+      "addedAt": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "node-la-01",
+      "sourceId": "source-demo",
+      "name": "洛杉矶 01",
+      "raw": {
+        "name": "洛杉矶 01",
+        "type": "ss",
+        "server": "losangeles-01.example.com",
+        "port": 8388,
+        "cipher": "aes-256-gcm",
+        "password": "demo-password",
+        "udp": true
+      },
+      "region": "美国",
+      "tags": ["AI", "流媒体"],
+      "enabled": true,
+      "addedAt": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "node-sg-01",
+      "sourceId": "source-demo",
+      "name": "新加坡 01",
+      "raw": {
+        "name": "新加坡 01",
+        "type": "ss",
+        "server": "singapore-01.example.com",
+        "port": 8388,
+        "cipher": "aes-256-gcm",
+        "password": "demo-password",
+        "udp": true
+      },
+      "region": "新加坡",
+      "tags": ["流媒体"],
+      "enabled": true,
+      "addedAt": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "node-hk-01",
+      "sourceId": "source-demo",
+      "name": "香港 01",
+      "raw": {
+        "name": "香港 01",
+        "type": "ss",
+        "server": "hongkong-01.example.com",
+        "port": 8388,
+        "cipher": "aes-256-gcm",
+        "password": "demo-password",
+        "udp": true
+      },
+      "region": "香港",
+      "tags": ["家宽"],
+      "enabled": true,
+      "addedAt": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "node-osaka-01",
+      "sourceId": "source-demo",
+      "name": "大阪 01",
+      "raw": {
+        "name": "大阪 01",
+        "type": "ss",
+        "server": "osaka-01.example.com",
+        "port": 8388,
+        "cipher": "aes-256-gcm",
+        "password": "demo-password",
+        "udp": true
+      },
+      "region": "日本",
+      "tags": ["游戏"],
+      "enabled": true,
+      "addedAt": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "node-manual-01",
+      "sourceId": "source-manual",
+      "name": "手动节点",
+      "raw": {
+        "name": "手动节点",
+        "type": "ss",
+        "server": "manual.example.com",
+        "port": 8388,
+        "cipher": "aes-256-gcm",
+        "password": "demo-password"
+      },
+      "region": "日本",
+      "tags": [],
+      "enabled": true,
+      "addedAt": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "node-chain-01",
+      "sourceId": "source-chain",
+      "name": "日本中转 → 美国落地",
+      "raw": {
+        "name": "日本中转 → 美国落地",
+        "type": "ss",
+        "server": "losangeles-01.example.com",
+        "port": 8388,
+        "cipher": "aes-256-gcm",
+        "password": "demo-password",
+        "dialer-proxy": "DEMO-东京 01"
+      },
+      "tags": ["链式"],
+      "enabled": true,
+      "addedAt": "2026-10-20T00:00:00.000Z",
+      "chain": {
+        "relayNodeId": "node-tokyo-01",
+        "landingNodeId": "node-la-01"
+      }
+    }
+  ],
+  "exits": [
+    {
+      "id": "direct",
+      "name": "DIRECT",
+      "type": "select",
+      "members": [],
+      "builtin": true,
+      "order": -2
+    },
+    {
+      "id": "reject",
+      "name": "REJECT",
+      "type": "select",
+      "members": [],
+      "builtin": true,
+      "order": -1
+    },
+    {
+      "id": "exit-auto",
+      "name": "自动选择",
+      "type": "url-test",
+      "members": [{ "by": "regex", "value": ".*" }],
+      "order": 0,
+      "interval": 300,
+      "tolerance": 50
+    },
+    {
+      "id": "exit-all",
+      "name": "全部节点",
+      "type": "select",
+      "members": [{ "by": "regex", "value": ".*" }],
+      "order": 1
+    },
+    {
+      "id": "exit-ai",
+      "name": "AI 服务",
+      "type": "select",
+      "members": [{ "by": "tag", "value": "AI" }],
+      "order": 2
+    },
+    {
+      "id": "exit-video",
+      "name": "看视频",
+      "type": "url-test",
+      "members": [{ "by": "tag", "value": "流媒体" }],
+      "order": 3,
+      "interval": 300,
+      "tolerance": 50
+    },
+    {
+      "id": "exit-home",
+      "name": "家宽",
+      "type": "select",
+      "members": [{ "by": "tag", "value": "家宽" }],
+      "order": 4
+    }
+  ],
+  "routes": [
+    {
+      "id": "route-openai",
+      "kind": "rule",
+      "type": "DOMAIN-SUFFIX",
+      "payload": "openai.com",
+      "exitId": "exit-ai",
+      "origin": "manual",
+      "enabled": true
+    },
+    {
+      "id": "route-claude",
+      "kind": "rule",
+      "type": "DOMAIN-SUFFIX",
+      "payload": "claude.ai",
+      "exitId": "exit-ai",
+      "origin": "manual",
+      "enabled": true
+    },
+    {
+      "id": "route-youtube",
+      "kind": "rule",
+      "type": "DOMAIN-SUFFIX",
+      "payload": "youtube.com",
+      "exitId": "exit-video",
+      "origin": "manual",
+      "enabled": true
+    },
+    {
+      "id": "route-netflix",
+      "kind": "rule",
+      "type": "DOMAIN-SUFFIX",
+      "payload": "netflix.com",
+      "exitId": "exit-video",
+      "origin": "manual",
+      "enabled": true
+    },
+    {
+      "id": "route-github",
+      "kind": "rule",
+      "type": "DOMAIN-SUFFIX",
+      "payload": "github.com",
+      "exitId": "direct",
+      "origin": "manual",
+      "enabled": true
+    },
+    {
+      "id": "route-bilibili",
+      "kind": "rule",
+      "type": "DOMAIN-SUFFIX",
+      "payload": "bilibili.com",
+      "exitId": "direct",
+      "origin": "manual",
+      "enabled": true
+    },
+    {
+      "id": "route-google",
+      "kind": "rule",
+      "type": "DOMAIN-SUFFIX",
+      "payload": "google.com",
+      "exitId": "exit-all",
+      "origin": "manual",
+      "enabled": true
+    },
+    {
+      "id": "route-match",
+      "kind": "rule",
+      "type": "MATCH",
+      "payload": "",
+      "exitId": "exit-auto",
+      "origin": "manual",
+      "enabled": true
+    }
+  ]
+}

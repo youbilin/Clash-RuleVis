@@ -1,0 +1,140 @@
+[
+  {
+    "link": "ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@relay.example.com:8388#Relay-A",
+    "node": {
+      "type": "ss",
+      "name": "Relay-A",
+      "server": "relay.example.com",
+      "port": 8388,
+      "cipher": "aes-256-gcm",
+      "password": "password",
+      "tls": false,
+      "network": "tcp",
+      "extras": {},
+      "warnings": []
+    }
+  },
+  {
+    "link": "ss://aes-128-gcm%3A9NosWuwAmgkVsMlBN0Pvvw%3D%3D@142.91.109.151:23025#ss",
+    "node": {
+      "type": "ss",
+      "name": "ss",
+      "server": "142.91.109.151",
+      "port": 23025,
+      "cipher": "aes-128-gcm",
+      "password": "9NosWuwAmgkVsMlBN0Pvvw==",
+      "tls": false,
+      "network": "tcp",
+      "extras": {},
+      "warnings": []
+    }
+  },
+  {
+    "link": "ssr://ZXhhbXBsZS5jb206ODM4ODpvcmlnaW46YWVzLTI1Ni1jZmI6cGxhaW46Y0dGemN3Lz9yZW1hcmtzYzNWdWF5QlNaWEJ2Y25R",
+    "node": {
+      "type": "ssr",
+      "server": "example.com",
+      "port": 8388,
+      "cipher": "aes-256-cfb",
+      "password": "pass",
+      "tls": false,
+      "network": "tcp",
+      "extras": {
+        "protocol": "origin",
+        "obfs": "plain"
+      },
+      "warnings": []
+    }
+  },
+  {
+    "link": "vmess://eyJ2IjoiMiIsInBzIjoiVG9reW8iLCJhZGQiOiJ2bS5leGFtcGxlLmNvbSIsInBvcnQiOiI0NDMiLCJpZCI6IjExMTExMTExLTIyMjItMzMzMy00NDQ0LTU1NTU1NTU1NTU1NSIsIm5ldCI6IndzIiwidGxzIjoidGxzIn0=",
+    "node": {
+      "type": "vmess",
+      "name": "Tokyo",
+      "server": "vm.example.com",
+      "port": 443,
+      "uuid": "11111111-2222-3333-4444-555555555555",
+      "tls": true,
+      "network": "ws",
+      "path": "/",
+      "extras": {},
+      "warnings": []
+    }
+  },
+  {
+    "link": "vless://11111111-2222-3333-4444-555555555555@vless.example.com:443?security=tls&type=ws&path=%2Fws#V",
+    "node": {
+      "type": "vless",
+      "name": "V",
+      "server": "vless.example.com",
+      "port": 443,
+      "uuid": "11111111-2222-3333-4444-555555555555",
+      "tls": true,
+      "network": "ws",
+      "path": "/ws",
+      "extras": {},
+      "warnings": []
+    }
+  },
+  {
+    "link": "trojan://secret@trojan.example.com:443?type=ws&path=%2Fws#T",
+    "node": {
+      "type": "trojan",
+      "name": "T",
+      "server": "trojan.example.com",
+      "port": 443,
+      "password": "secret",
+      "tls": true,
+      "network": "ws",
+      "path": "/ws",
+      "extras": {},
+      "warnings": []
+    }
+  },
+  {
+    "link": "hysteria2://auth@hy.example.com:8443?sni=front.example.com#H",
+    "node": {
+      "type": "hysteria2",
+      "name": "H",
+      "server": "hy.example.com",
+      "port": 8443,
+      "password": "auth",
+      "tls": true,
+      "sni": "front.example.com",
+      "network": "tcp",
+      "extras": {},
+      "warnings": []
+    }
+  },
+  {
+    "link": "tuic://uuid-value:pass@tuic.example.com:443?sni=front.example.com#U",
+    "node": {
+      "type": "tuic",
+      "name": "U",
+      "server": "tuic.example.com",
+      "port": 443,
+      "uuid": "uuid-value",
+      "password": "pass",
+      "tls": true,
+      "sni": "front.example.com",
+      "network": "tcp",
+      "extras": {},
+      "warnings": []
+    }
+  },
+  {
+    "link": "socks5://user:pass@127.0.0.1:1080#SOCKS",
+    "node": {
+      "type": "socks5",
+      "name": "SOCKS",
+      "server": "127.0.0.1",
+      "port": 1080,
+      "username": "user",
+      "password": "pass",
+      "tls": false,
+      "network": "tcp",
+      "extras": {},
+      "warnings": []
+    }
+  }
+]

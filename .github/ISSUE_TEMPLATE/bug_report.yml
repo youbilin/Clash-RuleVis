@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible problem
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please redact subscription URLs, node credentials, controller secrets and workspace paths before posting.
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      placeholder: v0.2.0 or commit hash
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Live connections
+        - Nodes and imports
+        - Exits
+        - Rules and rulesets
+        - Chain proxy
+        - Export / history
+        - Settings / kernel connection
+        - Desktop packaging
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: What did you click, what did you expect, and what happened?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted logs or screenshots
+      description: Do not paste real subscription URLs, node credentials or controller secrets.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I removed real subscription URLs, node credentials and controller secrets.
+          required: true
