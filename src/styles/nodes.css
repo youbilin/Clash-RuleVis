@@ -98,7 +98,7 @@
 
 .source-count {
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
 }
 
 .source-meta {
@@ -108,7 +108,7 @@
   margin-top: 4px;
   overflow: hidden;
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
   white-space: nowrap;
 }
 
@@ -124,7 +124,7 @@
   margin-top: 3px;
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .source-item-foot {
@@ -132,7 +132,7 @@
   align-items: center;
   gap: 4px;
   margin-top: 5px;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .source-actions {
@@ -160,7 +160,7 @@
 .source-empty p {
   margin-bottom: 8px;
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 /* ---------- nodes table ---------- */
@@ -182,7 +182,7 @@
 
 .node-count {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .bulk-bar {
@@ -194,7 +194,7 @@
   border-bottom: 1px solid rgba(53, 96, 73, 0.2);
   background: var(--accent-dim);
   color: var(--text-2);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .bulk-bar .selection-count {
@@ -204,7 +204,7 @@
 
 .bulk-bar .btn {
   height: 22px;
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .node-head,
@@ -221,7 +221,7 @@
   border-bottom: 1px solid var(--line-soft);
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -296,27 +296,27 @@
 .node-name .badge {
   height: 14px;
   padding: 0 4px;
-  font-size: 7.5px;
+  font-size: 10px;
 }
 
 .node-name-sub {
   margin-top: 1px;
   overflow: hidden;
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .node-type {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.5px;
   text-transform: uppercase;
 }
 
 .node-address {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .node-tag-list {
@@ -329,7 +329,7 @@
 .node-tag-list .tag {
   height: 16px;
   padding: 0 4px;
-  font-size: 8.5px;
+  font-size: 10px;
 }
 
 .node-row-actions {
@@ -359,7 +359,7 @@
   flex-wrap: wrap;
   padding: 8px 11px;
   color: var(--faint);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 /* ---------- node editor ---------- */
@@ -402,7 +402,7 @@
   gap: 4px;
   margin-top: 2px;
   color: var(--faint);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .node-enabled-row {
@@ -428,7 +428,7 @@
 .node-tag-add .input {
   width: 124px;
   height: 27px;
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .node-tag-add .icon-btn {
@@ -456,7 +456,7 @@
 .node-facts span {
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -464,7 +464,7 @@
 .node-facts strong {
   overflow: hidden;
   color: var(--text-2);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -489,7 +489,7 @@
   border-bottom: 1px solid transparent;
   background: transparent;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 11px;
   white-space: nowrap;
 }
 
@@ -538,7 +538,7 @@
 .verge-import-panel p {
   margin-top: 2px;
   color: var(--muted);
-  font-size: 9.5px;
+  font-size: 10.5px;
   line-height: 1.55;
 }
 
@@ -569,7 +569,7 @@
 .import-result-hero p {
   margin-top: 2px;
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .import-result-stats {
@@ -591,7 +591,7 @@
 
 .import-result-stats span {
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
 }
 
 .import-result-stats strong {
@@ -618,7 +618,7 @@
 .import-warning-row {
   padding: 2px 0;
   color: rgba(149, 97, 32, 0.82);
-  font-size: 9.5px;
+  font-size: 10.5px;
   line-height: 1.5;
 }
 

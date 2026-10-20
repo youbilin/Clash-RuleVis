@@ -122,7 +122,7 @@ body {
 }
 
 .stat-label {
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .stat-value {
@@ -340,7 +340,7 @@ body {
   border-color: var(--line);
   background: #f2f2ed;
   color: #70746b;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .badge-green {
@@ -371,7 +371,7 @@ body {
   border-color: var(--line);
   background: rgba(29, 32, 28, 0.018);
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .tag.accent {
@@ -403,7 +403,7 @@ body {
 .ruleset-head {
   border-bottom-color: var(--line);
   color: var(--faint);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .conn-row,
@@ -432,7 +432,7 @@ body {
 
 .domain-meta {
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .live-dot {
@@ -440,12 +440,12 @@ body {
 }
 
 .rate-cell {
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .traffic-cell {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .path-node {
@@ -470,7 +470,7 @@ body {
 
 .path-chip {
   background: #f5f5f0;
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .path-chip.domain {
@@ -1134,7 +1134,7 @@ body {
 }
 
 .eyebrow {
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .field-label {
@@ -1143,7 +1143,7 @@ body {
 
 .hint {
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.6;
 }
 
@@ -1155,7 +1155,7 @@ body {
 .node-head,
 .rule-list-head,
 .ruleset-head {
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .domain-name {
@@ -1172,7 +1172,7 @@ body {
 }
 
 .rule-note {
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .node-name {
@@ -1181,7 +1181,7 @@ body {
 
 .node-address,
 .node-type {
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .exit-drop-name {
@@ -1189,11 +1189,11 @@ body {
 }
 
 .exit-drop-meta {
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .exit-type {
-  font-size: 8.5px;
+  font-size: 10px;
 }
 
 .stats-state .stat-label {

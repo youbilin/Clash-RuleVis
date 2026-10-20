@@ -42,7 +42,7 @@
 
 .template-item-hint {
   color: var(--faint);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .template-item .badge {
@@ -126,7 +126,7 @@
   border-color: var(--line);
   background: rgba(29, 32, 28, 0.027);
   color: var(--faint);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .exit-card-tools {
@@ -169,7 +169,7 @@
   border-radius: 3px;
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 7px;
+  font-size: 10px;
   letter-spacing: 0.08em;
 }
 
@@ -193,7 +193,7 @@
 .exit-card-stats span {
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 7.5px;
+  font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -231,7 +231,7 @@
   border-radius: 3px;
   background: rgba(29, 32, 28, 0.024);
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -246,7 +246,7 @@
   gap: 4px;
   margin-top: 6px;
   color: var(--red);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .exit-card-warning.amber {
@@ -269,13 +269,13 @@
   max-width: 62%;
   min-width: 0;
   color: var(--faint);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .exit-test {
   height: 20px;
   padding: 0 4px;
-  font-size: 9px;
+  font-size: 10.5px;
   color: var(--faint);
 }
 
@@ -320,7 +320,7 @@
 .builtin-exit-card span {
   display: block;
   color: var(--faint);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .builtin-exit-hits {
@@ -329,7 +329,7 @@
   gap: 3px;
   margin-left: auto;
   color: var(--faint);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 /* ---------- exit editor ---------- */
@@ -376,7 +376,7 @@
 
 .exit-type-card span {
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
   line-height: 1.4;
 }
 
@@ -407,17 +407,17 @@
   height: 30px;
   padding-left: 7px;
   padding-right: 20px;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .member-value {
   height: 30px;
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .member-count {
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
   text-align: right;
   white-space: nowrap;
 }
@@ -445,7 +445,7 @@
   border: 1px dashed var(--line);
   border-radius: 6px;
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: 11px;
   text-align: center;
 }
 
@@ -467,7 +467,7 @@
   align-items: flex-start;
   gap: 5px;
   color: var(--amber);
-  font-size: 9.5px;
+  font-size: 10.5px;
   line-height: 1.45;
 }
 
@@ -513,7 +513,7 @@
   border-bottom: 1px solid var(--line-soft);
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -579,7 +579,7 @@
   border-color: var(--line);
   background: #f4f4ef;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.5px;
   letter-spacing: 0;
 }
 
@@ -606,14 +606,14 @@
 .exit-row-name .badge {
   height: 15px;
   padding: 0 4px;
-  font-size: 8px;
+  font-size: 10px;
   flex: 0 0 auto;
 }
 
 .exit-row-desc {
   margin-left: 2px;
   overflow: hidden;
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 400;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -622,7 +622,7 @@
 .exit-row-members {
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .exit-row-members.danger {
@@ -631,13 +631,13 @@
 
 .exit-row-current {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .exit-row-delay {
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .exit-row-delay.good {
@@ -658,7 +658,7 @@
   gap: 3px;
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .exit-row-actions {
@@ -703,5 +703,5 @@
   font-family: var(--font-ui);
   letter-spacing: 0;
   text-transform: none;
-  font-size: 9px;
+  font-size: 10.5px;
 }

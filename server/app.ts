@@ -43,7 +43,7 @@ import { RULE_SETS_DIR } from './paths';
 import { fileExists, isPathInside } from './fsutil';
 import { redactLog } from './logging';
 
-const APP_VERSION = '0.3.1';
+const APP_VERSION = '0.3.2';
 const COOKIE_NAME = 'crs_session';
 
 class HttpError extends Error {
@@ -67,8 +67,8 @@ interface WsClient {
 
 function openExternalUrl(target: string): boolean {
   try {
-    const command = process.platform === 'win32' ? 'cmd.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
-    const args = process.platform === 'win32' ? ['/c', 'start', '', target] : [target];
+    const command = process.platform === 'win32' ? 'rundll32.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+    const args = process.platform === 'win32' ? ['url.dll,FileProtocolHandler', target] : [target];
     const child = spawn(command, args, { detached: true, stdio: 'ignore', windowsHide: true });
     child.unref();
     return true;
@@ -381,6 +381,12 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
       expiresAt: new Date(expiresAt).toISOString(),
       opened: body.open === false ? false : openExternalUrl(schemeUrl),
     };
+  });
+
+  app.post('/api/open-url', async (request) => {
+    const body = (request.body ?? {}) as { url?: unknown };
+    const url = validateHttpUrl(body.url);
+    return { ok: openExternalUrl(url) };
   });
 
   app.get('/share/clash/:file', async (request, reply) => {

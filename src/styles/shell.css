@@ -53,7 +53,7 @@
   margin-top: 3px;
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.2em;
 }
 
@@ -111,7 +111,7 @@
 .settings-summary span {
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -119,7 +119,7 @@
 .settings-summary strong {
   overflow: hidden;
   color: var(--text-2);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -135,7 +135,7 @@
 .path-row > span {
   flex: 0 0 auto;
   width: 52px;
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .path-row code {
@@ -144,7 +144,7 @@
   overflow: hidden;
   color: var(--text-2);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 10.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -207,7 +207,7 @@
   border-radius: 50%;
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .onboarding-step.active .step-index {
@@ -232,14 +232,14 @@
   display: block;
   margin-top: 1px;
   color: var(--faint);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .onboarding-footnote {
   margin-top: auto;
   padding: 8px;
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
   line-height: 1.6;
 }
 
@@ -307,7 +307,7 @@
 .onboard-kernel-grid .mono {
   overflow: hidden;
   color: var(--text-2);
-  font-size: 10px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -318,7 +318,7 @@
   border-radius: 4px;
   background: var(--red-dim);
   color: var(--red);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .onboard-option {
@@ -381,7 +381,7 @@
   display: block;
   margin-top: 2px;
   color: var(--faint);
-  font-size: 9.5px;
+  font-size: 10.5px;
   line-height: 1.45;
 }
 
@@ -412,7 +412,7 @@
 .onboard-exit-type {
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -426,7 +426,7 @@
 }
 
 .onboard-exit .faint {
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .onboard-diagram {
@@ -438,7 +438,7 @@
   border: 1px dashed var(--line);
   border-radius: 6px;
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 @media (max-width: 640px) {

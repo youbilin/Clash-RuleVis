@@ -77,7 +77,7 @@
   background: var(--amber-dim);
   color: var(--amber);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .topbar-status {
@@ -90,7 +90,7 @@
 .topbar-counts {
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10.5px;
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
@@ -102,7 +102,7 @@
   border: 0;
   background: transparent;
   color: var(--faint);
-  font-size: 9.5px;
+  font-size: 10.5px;
   white-space: nowrap;
 }
 
@@ -141,7 +141,7 @@
 
 .kernel-chip-meta {
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
   letter-spacing: 0.03em;
 }
 
@@ -189,7 +189,7 @@
   margin-bottom: 7px;
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }

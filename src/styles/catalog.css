@@ -19,7 +19,7 @@
 .catalog-total {
   margin-left: 1px;
   color: var(--faint);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .combo-grid {
@@ -67,14 +67,14 @@
 .combo-category {
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 10px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
 .combo-count {
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
 }
 
 .combo-card strong {
@@ -85,7 +85,7 @@
 
 .combo-card p {
   color: var(--muted);
-  font-size: 9.5px;
+  font-size: 10.5px;
   line-height: 1.5;
 }
 
@@ -95,7 +95,7 @@
   gap: 3px;
   margin-top: 2px;
   color: var(--accent);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .catalog-all {
@@ -170,7 +170,7 @@
   border: 1px solid var(--accent-line);
   border-radius: 3px;
   color: var(--accent);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .catalog-row-slug {
@@ -179,7 +179,7 @@
   overflow: hidden;
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -188,25 +188,25 @@
   height: 16px;
   flex: 0 0 auto;
   padding: 0 4px;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .catalog-row-category {
   flex: 0 0 62px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.5px;
   text-align: right;
 }
 
 .catalog-hint {
   color: var(--faint);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .catalog-empty {
   padding: 30px;
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: 11px;
   text-align: center;
 }
 
@@ -256,7 +256,7 @@
 }
 
 .catalog-side-empty span {
-  font-size: 9px;
+  font-size: 10.5px;
   line-height: 1.55;
 }
 

@@ -24,6 +24,9 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ClipboardCopy,
+  ExternalLink,
+  Globe,
   GripVertical,
   Layers,
   ListChecks,
@@ -44,7 +47,7 @@ import {
   routeTargetInfo,
   suggestRootDomain,
 } from '../../shared/model';
-import { api } from '../api';
+import { api, copyToClipboard, openExternal } from '../api';
 import { useWorkspace } from '../store/workspace';
 import { useUi, toast } from '../store/ui';
 import { useLive } from '../store/live';
@@ -53,7 +56,7 @@ import { behaviorLabel, formatLabel, ruleOriginLabel, rulesetOriginLabel, ruleTy
 import { EmptyState, PageHeader, Spinner, Switch } from '../components/Common';
 import { Modal } from '../components/Overlay';
 import { formatCompact, formatRelative } from '../lib/format';
-import { cx } from '../lib/misc';
+import { cx, repositoryUrl } from '../lib/misc';
 import { offerUndo } from '../lib/undo';
 import { RuleTargetSelect } from '../components/RuleTargetSelect';
 import { Select } from '../components/Select';
@@ -123,6 +126,7 @@ interface RuleRowProps {
   onEdit: () => void;
   onDelete: () => void;
   onRefresh: (() => void) | null;
+  onShowSource?: () => void;
   onTargetChange: (target: { exitId: string; targetNodeId?: string }) => void;
   onToggle: (enabled: boolean) => void;
 }
@@ -146,6 +150,7 @@ function RuleRow({
   onEdit,
   onDelete,
   onRefresh,
+  onShowSource,
   onTargetChange,
   onToggle,
 }: RuleRowProps) {
@@ -178,6 +183,7 @@ function RuleRow({
       onClick={() => {
         if (selectMode) onToggleSelect();
         else if (route.kind === 'rule') onEdit();
+        else onShowSource?.();
       }}
     >
       <button
@@ -319,11 +325,18 @@ function RuleRow({
           <button className="icon-btn" title="编辑规则" onClick={onEdit}>
             <Pencil size={12} />
           </button>
-        ) : onRefresh ? (
-          <button className="icon-btn" title="刷新规则集" onClick={onRefresh} disabled={refreshing}>
-            {refreshing ? <Spinner /> : <RefreshCw size={12} />}
-          </button>
-        ) : null}
+        ) : (
+          <>
+            <button className="icon-btn" title="查看来源与源仓库" onClick={onShowSource}>
+              <Globe size={12} />
+            </button>
+            {onRefresh ? (
+              <button className="icon-btn" title="刷新规则集" onClick={onRefresh} disabled={refreshing}>
+                {refreshing ? <Spinner /> : <RefreshCw size={12} />}
+              </button>
+            ) : null}
+          </>
+        )}
         <button className="icon-btn danger" title="删除" onClick={onDelete}>
           <Trash2 size={12} />
         </button>
@@ -350,6 +363,7 @@ export function RulesPage() {
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
   const snapshot = useLive((state) => state.snapshot);
   const [hitDetail, setHitDetail] = useState<{ route: RuleSetRoute; hits: RecentHit[] } | null>(null);
+  const [sourceDetail, setSourceDetail] = useState<RuleSetRoute | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [groupBySource, setGroupBySource] = useState(false);
@@ -562,6 +576,7 @@ export function RulesPage() {
       onEdit={() => setEditing({ mode: 'edit', id: route.id })}
       onDelete={() => void deleteRoute(route)}
       onRefresh={route.kind === 'ruleset' ? () => void refreshRuleSet(route) : null}
+      onShowSource={route.kind === 'ruleset' ? () => setSourceDetail(route) : undefined}
       onTargetChange={(target) =>
         updateRoute(route.id, (draft) => {
           draft.exitId = target.exitId;
@@ -972,6 +987,102 @@ export function RulesPage() {
               : undefined
           }
         />
+      ) : null}
+
+      {sourceDetail ? (
+        <Modal
+          title="规则集来源"
+          subtitle={sourceDetail.name}
+          size="md"
+          onClose={() => setSourceDetail(null)}
+          footer={
+            <>
+              <button className="btn btn-ghost" onClick={() => setSourceDetail(null)}>
+                关闭
+              </button>
+              {sourceDetail.source.type === 'url' ? (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    const target = repositoryUrl(sourceDetail.source.value) ?? sourceDetail.source.value;
+                    void openExternal(target).catch((error) => {
+                      toast('error', '打开来源失败', (error as Error).message);
+                    });
+                  }}
+                >
+                  <ExternalLink size={13} />
+                  {repositoryUrl(sourceDetail.source.value) ? '打开源仓库' : '打开源地址'}
+                </button>
+              ) : null}
+            </>
+          }
+        >
+          <div className="ruleset-source-dialog">
+            <div className="ruleset-source-facts">
+              <div>
+                <span>provider</span>
+                <strong className="mono">{sourceDetail.providerName ?? sourceDetail.name}</strong>
+              </div>
+              <div>
+                <span>类型</span>
+                <strong>{behaviorLabel(sourceDetail.behavior)} / {formatLabel(sourceDetail.format)}</strong>
+              </div>
+              <div>
+                <span>规则数量</span>
+                <strong className="mono">
+                  {sourceDetail.ruleCount ?? sourceDetail.inlineRules?.length ?? '—'}
+                </strong>
+              </div>
+              <div>
+                <span>运行方式</span>
+                <strong>{sourceDetail.inline ? '内联展开' : '内核 provider'}</strong>
+              </div>
+            </div>
+            <div className="ruleset-source-field">
+              <span>源地址</span>
+              <div className="ruleset-source-value">
+                <code>{sourceDetail.source.value}</code>
+                <button
+                  className="icon-btn"
+                  title="复制源地址"
+                  aria-label="复制源地址"
+                  onClick={() => {
+                    void copyToClipboard(sourceDetail.source.value).then(() =>
+                      toast('success', '源地址已复制'),
+                    );
+                  }}
+                >
+                  <ClipboardCopy size={12} />
+                </button>
+              </div>
+            </div>
+            {sourceDetail.source.type === 'url' && repositoryUrl(sourceDetail.source.value) ? (
+              <div className="ruleset-source-field">
+                <span>源仓库</span>
+                <div className="ruleset-source-value">
+                  <code>{repositoryUrl(sourceDetail.source.value)}</code>
+                  <button
+                    className="icon-btn"
+                    title="复制仓库地址"
+                    aria-label="复制仓库地址"
+                    onClick={() => {
+                      const repo = repositoryUrl(sourceDetail.source.value);
+                      if (!repo) return;
+                      void copyToClipboard(repo).then(() => toast('success', '仓库地址已复制'));
+                    }}
+                  >
+                    <ClipboardCopy size={12} />
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            <div className="hint">
+              {sourceDetail.source.type === 'url'
+                ? '规则内容由上游仓库维护。打开源地址或源仓库即可查看原始规则。'
+                : '本地文件来源没有远程仓库地址，可在规则集目录中查看文件。'}
+            </div>
+          </div>
+        </Modal>
       ) : null}
 
       {hitDetail ? (

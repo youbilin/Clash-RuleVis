@@ -168,7 +168,7 @@ GitHub Actions 会运行 Rust 核心与桌面 API 测试，并在 Windows runner
 
 ## 下载安装（Windows）
 
-从 [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest) 下载 `Clash.RuleVis_0.3.1_x64-setup.exe`（NSIS，当前用户安装）。安装包未签名，SmartScreen 可能提示未知发布者；Release 页面会提供 SHA256，可自行校验。
+从 [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest) 下载 `Clash.RuleVis_0.3.2_x64-setup.exe`（NSIS，当前用户安装）。安装包未签名，SmartScreen 可能提示未知发布者；Release 页面会提供 SHA256，可自行校验。
 
 桌面数据保存在 `%APPDATA%\io.github.youbilin.clash-rulevis`（可用 `CRS_DATA_DIR` 覆盖），与 Web 版的 `data/` 相互独立。首次使用可在设置中导入 Web 版工作区 JSON 备份。
 

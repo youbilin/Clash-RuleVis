@@ -753,6 +753,17 @@ pub fn handle_request(
             Ok(json!({ "ok": true }))
         }
         ("POST", "/api/exports/import-to-verge") => import_to_verge(state, body),
+        ("POST", "/api/open-url") => {
+            let body = body_object(body.as_ref());
+            let url = required_string(&body, "url", "地址", 2048)?;
+            let parsed =
+                url::Url::parse(&url).map_err(|_| ApiFailure::bad_request("地址格式无效"))?;
+            if !matches!(parsed.scheme(), "http" | "https") {
+                return Err(ApiFailure::bad_request("只允许打开 http / https 地址"));
+            }
+            let opened = open_external_url(parsed.as_str());
+            Ok(json!({ "ok": opened }))
+        }
         ("GET", "/api/export/preview") => with_store(state, |store| {
             let preview = build_preview(store).map_err(ApiFailure::internal)?;
             serialize(preview)
@@ -2052,25 +2063,31 @@ fn import_to_verge(state: &AppState, body: Option<Value>) -> Result<Value, ApiFa
 }
 
 fn open_external_url(target: &str) -> bool {
-    let mut command = if cfg!(target_os = "windows") {
-        let mut command = Command::new("cmd.exe");
-        command.args(["/c", "start", "", target]);
-        command
-    } else if cfg!(target_os = "macos") {
-        let mut command = Command::new("open");
-        command.arg(target);
-        command
-    } else {
-        let mut command = Command::new("xdg-open");
-        command.arg(target);
-        command
-    };
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        command.creation_flags(0x08000000);
+    if cfg!(target_os = "windows") {
+        return open_windows_url(target);
     }
+    if cfg!(target_os = "macos") {
+        return Command::new("open").arg(target).spawn().is_ok();
+    }
+    Command::new("xdg-open").arg(target).spawn().is_ok()
+}
+
+#[cfg(target_os = "windows")]
+fn open_windows_url(target: &str) -> bool {
+    use std::os::windows::process::CommandExt;
+
+    let mut command = Command::new("cmd.exe");
+    command.creation_flags(0x08000000);
+    command.raw_arg("/c");
+    command.raw_arg("start");
+    command.raw_arg("\"\"");
+    command.raw_arg(format!("\"{}\"", target.replace('"', "%22")));
     command.spawn().is_ok()
+}
+
+#[cfg(not(target_os = "windows"))]
+fn open_windows_url(_target: &str) -> bool {
+    false
 }
 
 fn open_directory(path: &Path) -> Result<(), ApiFailure> {

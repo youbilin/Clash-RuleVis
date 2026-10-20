@@ -96,7 +96,7 @@ ul {
 
 .eyebrow {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 10.5px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--faint);
@@ -252,7 +252,7 @@ ul {
 .field-label .optional {
   font-weight: 400;
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .input,
@@ -382,7 +382,7 @@ ul {
   background: var(--panel-2);
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 10.5px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -429,7 +429,7 @@ ul {
   border-radius: 4px;
   background: rgba(29, 32, 28, 0.027);
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .tag button {
@@ -742,7 +742,7 @@ ul {
   background: var(--panel-2);
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .section-divider {

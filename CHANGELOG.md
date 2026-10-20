@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.2 — 2026-10-21
+
+### Added
+
+- Rule set source inspector: click a rule set row (or its globe action) to see
+  the provider, type, rule count, runtime mode, full source URL and the derived
+  repository URL, with copy/open actions. Available on both the rules page and
+  the rule set management page.
+- `POST /api/open-url` on both the desktop and web backends (http/https only) so
+  external links open in the system browser instead of inside the app.
+- Repository URL derivation for raw GitHub, GitHub, jsDelivr and Gitee sources.
+
+### Changed
+
+- Readability pass across every page: all sub-11px text tokens were raised
+  (small labels now at least 10px), badges auto-size instead of clipping, and
+  dense rows keep their layout.
+- The live page exit rail now hugs its content instead of stretching into an
+  empty panel, and live exit cards keep the compact three-row layout.
+
 ## 0.3.1 — 2026-10-21
 
 ### Added

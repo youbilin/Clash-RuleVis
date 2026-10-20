@@ -28,7 +28,7 @@
   border-radius: 4px;
   background: transparent;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 11px;
   white-space: nowrap;
 }
 
@@ -47,7 +47,7 @@
   min-width: 16px;
   height: 15px;
   padding: 0 4px;
-  font-size: 8.5px;
+  font-size: 10px;
 }
 
 .rule-issue-count {
@@ -55,7 +55,7 @@
   align-items: center;
   gap: 4px;
   color: var(--amber);
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .rule-list-panel {
@@ -76,7 +76,7 @@
   border-bottom: 1px solid var(--line-soft);
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -132,7 +132,7 @@
 
 .rule-index {
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
 }
 
 .rule-kind {
@@ -144,7 +144,7 @@
 .rule-kind .badge {
   height: 17px;
   padding: 0 5px;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .rule-content {
@@ -160,7 +160,7 @@
 
 .rule-payload {
   color: var(--text-2);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .rule-name {
@@ -172,13 +172,13 @@
 .rule-main-line .badge {
   height: 15px;
   padding: 0 4px;
-  font-size: 7.5px;
+  font-size: 10px;
 }
 
 .rule-note {
   margin-top: 1px;
   color: var(--faint);
-  font-size: 8.5px;
+  font-size: 10px;
 }
 
 .rule-target {
@@ -190,7 +190,7 @@
   padding-left: 7px;
   padding-right: 22px;
   background-position: right 6px center;
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .rule-target .select.invalid {
@@ -206,7 +206,7 @@
 .rule-origin .badge {
   height: 15px;
   padding: 0 4px;
-  font-size: 7.5px;
+  font-size: 10px;
 }
 
 .rule-marks {
@@ -262,11 +262,11 @@
   flex-wrap: wrap;
   padding: 8px 12px;
   color: var(--faint);
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .rule-list-foot .inline-link {
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 @media (max-width: 1150px) {

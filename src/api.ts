@@ -114,6 +114,18 @@ export function liveSocketUrl(): string {
   return `${protocol}//${window.location.host}/ws/live`;
 }
 
+export async function openExternal(url: string): Promise<void> {
+  const parsed = new URL(url);
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('只允许打开 http / https 地址');
+  }
+  if (isDesktopRuntime()) {
+    await api('/api/open-url', { method: 'POST', body: { url: parsed.toString() } });
+    return;
+  }
+  window.open(parsed.toString(), '_blank', 'noopener,noreferrer');
+}
+
 export async function copyToClipboard(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);

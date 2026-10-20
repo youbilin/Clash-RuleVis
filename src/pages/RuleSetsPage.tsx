@@ -4,6 +4,8 @@ import {
   AlertTriangle,
   ArrowRight,
   Check,
+  ClipboardCopy,
+  ExternalLink,
   FileUp,
   Globe,
   Layers,
@@ -16,7 +18,7 @@ import {
 import type { RuleSetInspect, RuleSetRoute, RulesetBehavior, RulesetFormat, Workspace } from '../../shared/types';
 import { providerSlug } from '../../shared/model';
 import { RECOMMENDED_RULE_SETS, type RecommendedRuleSet } from '../../shared/recommended';
-import { api } from '../api';
+import { api, copyToClipboard, openExternal } from '../api';
 import { useWorkspace } from '../store/workspace';
 import { useLive } from '../store/live';
 import { useUi, toast } from '../store/ui';
@@ -24,7 +26,7 @@ import { EmptyState, PageHeader, Spinner, Switch } from '../components/Common';
 import { Select } from '../components/Select';
 import { Modal } from '../components/Overlay';
 import { formatCompact, formatDateTime, formatRelative } from '../lib/format';
-import { baseName, cx, hostFromUrl, urlTail } from '../lib/misc';
+import { baseName, cx, hostFromUrl, repositoryUrl, urlTail } from '../lib/misc';
 import { offerUndo } from '../lib/undo';
 import { exitTypeLabel } from '../lib/labels';
 import { useEscape } from '../lib/hooks';
@@ -47,6 +49,7 @@ export function RuleSetsPage() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardSource, setWizardSource] = useState<'url' | 'file' | 'recommended'>('url');
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
+  const [sourceDetail, setSourceDetail] = useState<RuleSetRoute | null>(null);
 
   const routesets = useMemo(
     () => (workspace?.routes ?? []).filter((route): route is RuleSetRoute => route.kind === 'ruleset'),
@@ -193,17 +196,19 @@ export function RuleSetsPage() {
                     {route.inline ? <span className="badge badge-green">内联</span> : <span className="badge badge-blue">PROVIDER</span>}
                   </div>
                   <div className="ruleset-meta">
-                    {route.source.type === 'url' ? (
-                      <>
-                        <Globe size={10} />
-                        <span className="truncate" title={route.source.value}>{urlTail(route.source.value)}</span>
-                      </>
-                    ) : (
-                      <>
-                        <FileUp size={10} />
-                        <span className="truncate" title={route.source.value}>{route.source.fileName ?? baseName(route.source.value)}</span>
-                      </>
-                    )}
+                    <button
+                      type="button"
+                      className="ruleset-source-link"
+                      onClick={() => setSourceDetail(route)}
+                      title="查看完整来源与源仓库"
+                    >
+                      {route.source.type === 'url' ? <Globe size={10} /> : <FileUp size={10} />}
+                      <span className="truncate">
+                        {route.source.type === 'url'
+                          ? urlTail(route.source.value)
+                          : route.source.fileName ?? baseName(route.source.value)}
+                      </span>
+                    </button>
                     <span className="meta-sep">·</span>
                     <span>{route.inline ? '静态写入 YAML' : `interval ${route.interval ?? 86400}s`}</span>
                   </div>
@@ -257,6 +262,13 @@ export function RuleSetsPage() {
                 <div className="ruleset-actions">
                   <button
                     className="icon-btn"
+                    title="查看来源与源仓库"
+                    onClick={() => setSourceDetail(route)}
+                  >
+                    <Globe size={12} />
+                  </button>
+                  <button
+                    className="icon-btn"
                     title="重新下载 / 展开"
                     disabled={refreshingId === route.id}
                     onClick={() => void refresh(route)}
@@ -283,6 +295,102 @@ export function RuleSetsPage() {
           </button>
         </div>
       </div>
+
+      {sourceDetail ? (
+        <Modal
+          title="规则集来源"
+          subtitle={sourceDetail.name}
+          size="md"
+          onClose={() => setSourceDetail(null)}
+          footer={
+            <>
+              <button className="btn btn-ghost" onClick={() => setSourceDetail(null)}>
+                关闭
+              </button>
+              {sourceDetail.source.type === 'url' ? (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    const target = repositoryUrl(sourceDetail.source.value) ?? sourceDetail.source.value;
+                    void openExternal(target).catch((error) => {
+                      toast('error', '打开来源失败', (error as Error).message);
+                    });
+                  }}
+                >
+                  <ExternalLink size={13} />
+                  {repositoryUrl(sourceDetail.source.value) ? '打开源仓库' : '打开源地址'}
+                </button>
+              ) : null}
+            </>
+          }
+        >
+          <div className="ruleset-source-dialog">
+            <div className="ruleset-source-facts">
+              <div>
+                <span>provider</span>
+                <strong className="mono">{sourceDetail.providerName ?? sourceDetail.name}</strong>
+              </div>
+              <div>
+                <span>类型</span>
+                <strong>{BEHAVIOR_LABELS[sourceDetail.behavior]} / {FORMAT_LABELS[sourceDetail.format]}</strong>
+              </div>
+              <div>
+                <span>规则数量</span>
+                <strong className="mono">
+                  {sourceDetail.ruleCount ?? sourceDetail.inlineRules?.length ?? '—'}
+                </strong>
+              </div>
+              <div>
+                <span>运行方式</span>
+                <strong>{sourceDetail.inline ? '内联展开' : '内核 provider'}</strong>
+              </div>
+            </div>
+            <div className="ruleset-source-field">
+              <span>源地址</span>
+              <div className="ruleset-source-value">
+                <code>{sourceDetail.source.value}</code>
+                <button
+                  className="icon-btn"
+                  title="复制源地址"
+                  aria-label="复制源地址"
+                  onClick={() => {
+                    void copyToClipboard(sourceDetail.source.value).then(() =>
+                      toast('success', '源地址已复制'),
+                    );
+                  }}
+                >
+                  <ClipboardCopy size={12} />
+                </button>
+              </div>
+            </div>
+            {sourceDetail.source.type === 'url' && repositoryUrl(sourceDetail.source.value) ? (
+              <div className="ruleset-source-field">
+                <span>源仓库</span>
+                <div className="ruleset-source-value">
+                  <code>{repositoryUrl(sourceDetail.source.value)}</code>
+                  <button
+                    className="icon-btn"
+                    title="复制仓库地址"
+                    aria-label="复制仓库地址"
+                    onClick={() => {
+                      const repo = repositoryUrl(sourceDetail.source.value);
+                      if (!repo) return;
+                      void copyToClipboard(repo).then(() => toast('success', '仓库地址已复制'));
+                    }}
+                  >
+                    <ClipboardCopy size={12} />
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            <div className="hint">
+              {sourceDetail.source.type === 'url'
+                ? '规则内容由上游仓库维护。打开源地址或源仓库即可查看原始规则。'
+                : '本地文件来源没有远程仓库地址，可在导出目录或规则集目录中查看文件。'}
+            </div>
+          </div>
+        </Modal>
+      ) : null}
 
       {wizardOpen ? (
         <RuleSetWizard
