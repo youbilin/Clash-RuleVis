@@ -105,7 +105,7 @@ npm run rust:test
 npm run desktop:check
 ```
 
-40 web unit tests plus 25 Rust tests, a Playwright smoke flow and a hardware-gated real-controller test. The E2E flow imports nodes, merges duplicates, creates an exit and a chain node, cleans invalid rules, exports, restores history and round-trips a workspace backup.
+40 web unit tests plus 26 Rust tests, a Playwright smoke flow and a hardware-gated real-controller test. The E2E flow imports nodes, merges duplicates, creates an exit and a chain node, cleans invalid rules, exports, restores history, clears history and round-trips a workspace backup.
 
 ## Windows download
 

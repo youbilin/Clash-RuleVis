@@ -291,6 +291,26 @@ fn manual_nodes_chain_export_history_and_restore_work_end_to_end() {
 }
 
 #[test]
+fn history_can_be_cleared() {
+    let dir = TempDir::new("history-clear");
+    let state = AppState::load(dir.path()).unwrap();
+    call(
+        &state,
+        "POST",
+        "/api/history/snapshot",
+        Some(json!({ "label": "待清除快照" })),
+    )
+    .unwrap();
+    let before = call(&state, "GET", "/api/history", None).unwrap();
+    assert!(!before["entries"].as_array().unwrap().is_empty());
+
+    let cleared = call(&state, "DELETE", "/api/history", None).unwrap();
+    assert!(cleared["cleared"].as_u64().unwrap() >= 1);
+    let after = call(&state, "GET", "/api/history", None).unwrap();
+    assert_eq!(after["entries"].as_array().unwrap().len(), 0);
+}
+
+#[test]
 fn ruleset_batch_create_dedupes_and_deletes() {
     let dir = TempDir::new("rulesets");
     let state = AppState::load(dir.path()).unwrap();

@@ -22,7 +22,7 @@
   border-bottom: 1px solid var(--line-soft);
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -49,7 +49,7 @@
   gap: 5px;
   min-width: 0;
   color: var(--text);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -72,7 +72,7 @@
 .ruleset-title .badge {
   height: 15px;
   padding: 0 4px;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .ruleset-meta {
@@ -83,7 +83,7 @@
   margin-top: 2px;
   overflow: hidden;
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11.5px;
   white-space: nowrap;
 }
 
@@ -100,7 +100,7 @@
   padding-left: 7px;
   padding-right: 22px;
   background-position: right 6px center;
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .ruleset-target .select.invalid {
@@ -116,13 +116,13 @@
 
 .ruleset-counts strong {
   color: var(--text-2);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 
 .ruleset-counts span {
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .ruleset-status {
@@ -136,7 +136,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .ruleset-live {
@@ -150,7 +150,7 @@
 .ruleset-updated {
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .ruleset-switch {
@@ -182,11 +182,11 @@
   flex-wrap: wrap;
   padding: 8px 12px;
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .ruleset-foot .inline-link {
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 /* ---------- wizard ---------- */
@@ -209,14 +209,14 @@
 .wizard-step strong {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .wizard-step small {
   display: block;
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .wizard-step.active {
@@ -258,7 +258,7 @@
   gap: 8px;
   padding: 28px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .recommended-grid {
@@ -298,27 +298,27 @@
 .recommended-category {
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .recommended-card strong {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .recommended-url {
   overflow: hidden;
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .recommended-note {
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .inspect-summary {
@@ -345,7 +345,7 @@
 .inspect-summary strong {
   display: block;
   overflow: hidden;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -357,7 +357,7 @@
   gap: 4px;
   margin-top: 2px;
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .sample-preview {
@@ -376,7 +376,7 @@
 .sample-line {
   padding: 1px 0;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 11.5px;
   line-height: 1.55;
   white-space: nowrap;
 }

@@ -790,6 +790,10 @@ pub fn handle_request(
         ("GET", "/api/history") => with_store(state, |store| {
             Ok(json!({ "entries": store.list_history() }))
         }),
+        ("DELETE", "/api/history") => with_store(state, |store| {
+            let cleared = store.clear_history().map_err(ApiFailure::internal)?;
+            Ok(json!({ "cleared": cleared }))
+        }),
         ("POST", "/api/history/snapshot") => {
             let body = body_object(body.as_ref());
             let label = optional_string(&body, "label").unwrap_or_else(|| "手动快照".to_string());

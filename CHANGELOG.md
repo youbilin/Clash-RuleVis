@@ -13,16 +13,21 @@
 - Repository URL derivation for raw GitHub, GitHub, jsDelivr and Gitee sources.
 - Export confirmation dialog with an editable file name; no file is written
   until “确认导出” or “导入到 Clash Verge” is pressed.
+- Export history can be cleared in one action; exported YAML files are kept on
+  disk.
 
 ### Changed
 
-- Readability pass across every page: all sub-11px text tokens were raised
-  (small labels now at least 10px), badges auto-size instead of clipping, and
-  dense rows keep their layout.
-- Topbar navigation is now icon-only and left-aligned; the active page name is
-  shown next to the search button.
-- Live stream pause/resume is a dedicated switch control instead of a small
+- Readability pass across every page: small text was raised again (minimum
+  11.5px, most labels 12px), badges auto-size instead of clipping, and dense
+  rows keep their layout.
+- Topbar navigation is icon-only and left-aligned; the active page name is
+  shown next to search, and the live stream pause switch lives in the
+  navigation bar.
+- Live stream pause/resume uses a dedicated switch control instead of a small
   square button.
+- Expanded live connection rows are measured by connection key, so live
+  reordering no longer makes the detail panel overlap the following rows.
 - Notifications are centered above the app (including dialogs), have no close
   or undo controls, and dismiss automatically after a few seconds.
 - The GitHub button now opens the repository in the system browser on desktop.

@@ -122,7 +122,7 @@ body {
 }
 
 .stat-label {
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .stat-value {
@@ -223,7 +223,7 @@ body {
 .btn-sm {
   height: 27px;
   padding: 0 9px;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .btn-lg {
@@ -340,7 +340,7 @@ body {
   border-color: var(--line);
   background: #f2f2ed;
   color: #70746b;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .badge-green {
@@ -371,7 +371,7 @@ body {
   border-color: var(--line);
   background: rgba(29, 32, 28, 0.018);
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .tag.accent {
@@ -403,7 +403,7 @@ body {
 .ruleset-head {
   border-bottom-color: var(--line);
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .conn-row,
@@ -432,7 +432,7 @@ body {
 
 .domain-meta {
   color: var(--faint);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .live-dot {
@@ -440,12 +440,12 @@ body {
 }
 
 .rate-cell {
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .traffic-cell {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .path-node {
@@ -470,7 +470,7 @@ body {
 
 .path-chip {
   background: #f5f5f0;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .path-chip.domain {
@@ -495,7 +495,7 @@ body {
 
 .fact-value {
   color: var(--text-2);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* ---------- exit rail / live ---------- */
@@ -1130,16 +1130,16 @@ body {
 }
 
 .eyebrow {
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .field-label {
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .hint {
   color: var(--faint);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 
@@ -1151,7 +1151,7 @@ body {
 .node-head,
 .rule-list-head,
 .ruleset-head {
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .domain-name {
@@ -1159,16 +1159,16 @@ body {
 }
 
 .rule-payload {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-2);
 }
 
 .rule-name {
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .rule-note {
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .node-name {
@@ -1177,7 +1177,7 @@ body {
 
 .node-address,
 .node-type {
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .exit-drop-name {
@@ -1185,11 +1185,11 @@ body {
 }
 
 .exit-drop-meta {
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .exit-type {
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .stats-state .stat-label {

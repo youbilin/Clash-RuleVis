@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Terminal,
+  Trash2,
   X,
 } from 'lucide-react';
 import type {
@@ -77,6 +78,7 @@ export function ExportPage() {
   } | null>(null);
   const [viewing, setViewing] = useState<{ entry: HistoryEntry; yaml: string } | null>(null);
   const [snapshotting, setSnapshotting] = useState(false);
+  const [clearingHistory, setClearingHistory] = useState(false);
   const [historyMenuOpen, setHistoryMenuOpen] = useState(false);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const requestId = useRef(0);
@@ -287,8 +289,30 @@ export function ExportPage() {
     }
   };
 
-  const viewHistoryExport = async (entry: HistoryEntry) => {
-    if (!entry.exportPath) return;
+  const clearHistory = async () => {
+    const confirmed = await confirm({
+      title: '清除历史快照',
+      message: `将删除全部 ${history.length} 条历史快照与导出记录。\n已导出的 YAML 文件不会删除。`,
+      confirmLabel: '清除',
+      danger: true,
+    });
+    if (!confirmed) return;
+    setClearingHistory(true);
+    try {
+      const result = await api<{ cleared: number }>('/api/history', { method: 'DELETE' });
+      setHistory([]);
+      setSelectedHistoryId(null);
+      setViewing(null);
+      setHistoryMenuOpen(false);
+      toast('success', '历史快照已清除', result.cleared ? `已删除 ${result.cleared} 条记录` : undefined);
+    } catch (error) {
+      toast('error', '清除历史失败', (error as Error).message);
+    } finally {
+      setClearingHistory(false);
+    }
+  };
+
+  const viewHistoryExport = async (entry: HistoryEntry) => {    if (!entry.exportPath) return;
     try {
       const result = await api<{ entry: HistoryEntry; yaml: string }>(`/api/history/${entry.id}/export`);
       setViewing(result);
@@ -467,6 +491,15 @@ export function ExportPage() {
                         <FileOutput size={11} /> 查看 YAML
                       </button>
                     ) : null}
+                    {history.length ? (
+                      <button
+                        className="btn btn-sm btn-ghost export-history-clear"
+                        onClick={() => void clearHistory()}
+                        disabled={clearingHistory}
+                      >
+                        {clearingHistory ? <Spinner /> : <Trash2 size={11} />} 清除历史快照
+                      </button>
+                    ) : null}
                     <button
                       className="btn btn-sm btn-primary"
                       onClick={() => selectedHistory && void restore(selectedHistory)}
@@ -633,7 +666,7 @@ export function ExportPage() {
                     <div className="panel-header">
                       <div className="panel-title"><FileOutput size={13} /> 配置规模</div>
                       {preview?.previousExportAt ? (
-                        <span className="faint" style={{ fontSize: 9 }}>对比 {formatDateTime(preview.previousExportAt)}</span>
+                        <span className="faint" style={{ fontSize: 11.5 }}>对比 {formatDateTime(preview.previousExportAt)}</span>
                       ) : null}
                     </div>
                     <div className="export-counts">

@@ -262,6 +262,18 @@ async function main() {
     await page.getByRole('button', { name: '恢复此快照' }).click();
     await page.locator('.toast-title', { hasText: '工作区已恢复' }).waitFor();
 
+    await page.locator('.export-history-select > button').click();
+    await page.getByRole('button', { name: '清除历史快照' }).click();
+    await page.locator('.modal-title', { hasText: '清除历史快照' }).waitFor();
+    await page
+      .getByRole('alertdialog', { name: '清除历史快照' })
+      .getByRole('button', { name: '清除', exact: true })
+      .click();
+    await page.locator('.toast-title', { hasText: '历史快照已清除' }).waitFor();
+    await page.waitForFunction(
+      () => document.querySelector('.export-history-select .number-badge')?.textContent === '0',
+    );
+
     await page.locator('.kernel-chip').click();
     await page.locator('.drawer').waitFor();
     const downloadPromise = page.waitForEvent('download');

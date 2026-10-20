@@ -831,9 +831,9 @@ export function RulesPage() {
             <AlertTriangle size={12} /> {issuesCount} 条需要注意
           </span>
         ) : null}
-        {(dragDisabled || selectMode || groupBySource) ? <span className="faint" style={{ fontSize: 9.5 }}>{selectMode ? '选择模式' : groupBySource ? '分组视图' : '筛选时不可拖动排序'}</span> : null}
+        {(dragDisabled || selectMode || groupBySource) ? <span className="faint" style={{ fontSize: 11.5 }}>{selectMode ? '选择模式' : groupBySource ? '分组视图' : '筛选时不可拖动排序'}</span> : null}
         <span className="spacer" />
-        <span className="faint" style={{ fontSize: 9.5 }}>{filtered.length} / {sortableRoutes.length}</span>
+        <span className="faint" style={{ fontSize: 11.5 }}>{filtered.length} / {sortableRoutes.length}</span>
       </div>
 
       {selectMode ? (
@@ -1261,7 +1261,7 @@ function RuleEditDialog({
           />
           {error ? <span className="error-text">{error}</span> : null}
           {rootSuggestion && rootSuggestion !== payload && type === 'DOMAIN-SUFFIX' ? (
-            <button className="inline-link" style={{ fontSize: 9.5, alignSelf: 'flex-start' }} onClick={() => setPayload(rootSuggestion)}>
+            <button className="inline-link" style={{ fontSize: 11.5, alignSelf: 'flex-start' }} onClick={() => setPayload(rootSuggestion)}>
               使用根域名：{rootSuggestion}
             </button>
           ) : null}

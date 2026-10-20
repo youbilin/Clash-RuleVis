@@ -4,6 +4,7 @@ import {
   FileOutput,
   GitBranch,
   Layers,
+  RadioTower,
   Search,
   Server,
   Settings,
@@ -42,6 +43,8 @@ export function Topbar() {
   const snapshot = useLive((state) => state.snapshot);
   const setSettingsOpen = useUi((state) => state.setSettingsOpen);
   const setCommandOpen = useUi((state) => state.setCommandOpen);
+  const paused = useLive((state) => state.paused);
+  const setPaused = useLive((state) => state.setPaused);
   const location = useLocation();
   const currentPage = NAV_ITEMS.find((item) => location.pathname.startsWith(item.to))?.label ?? '';
 
@@ -73,6 +76,21 @@ export function Topbar() {
             </NavLink>
           );
         })}
+        <span className="topnav-divider" aria-hidden />
+        <button
+          type="button"
+          role="switch"
+          aria-checked={!paused}
+          className={cx('stream-toggle', paused && 'paused')}
+          onClick={() => setPaused(!paused)}
+          title={paused ? '继续实时数据' : '暂停实时数据'}
+          aria-label={paused ? '继续实时数据' : '暂停实时数据'}
+        >
+          <RadioTower size={16} />
+          <span className="stream-track">
+            <span className="stream-knob" />
+          </span>
+        </button>
       </nav>
 
       <div className="topbar-status">

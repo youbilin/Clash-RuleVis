@@ -24,7 +24,7 @@ import type {
 import { WORKSPACE_VERSION } from '../shared/types';
 import { nodeDisplayName, insertRouteOrdered, resolveExit } from '../shared/model';
 import { DATA_DIR, DIST_DIR, EXPORTS_DIR, SERVER_PORT, ensureDataDirs } from './paths';
-import { getWorkspace, initStore, listHistory, readHistory, replaceWorkspace, restoreHistory, updateWorkspace, addHistory, RevisionConflictError } from './store';
+import { getWorkspace, initStore, listHistory, readHistory, replaceWorkspace, restoreHistory, updateWorkspace, addHistory, clearHistory, RevisionConflictError } from './store';
 import { ensureWorkspaceShape, MANUAL_SOURCE_NAME, MANUAL_SOURCE_NOTE } from './defaults';
 import { kernel, getActiveProfile, probeKernel } from './kernel';
 import { LiveAggregator } from './aggregator';
@@ -1199,6 +1199,8 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
   });
 
   app.get('/api/history', async () => ({ entries: await listHistory() }));
+
+  app.delete('/api/history', async () => ({ cleared: await clearHistory() }));
 
   app.post('/api/history/snapshot', async (request) => {
     const body = (request.body ?? {}) as { label?: string; note?: string };

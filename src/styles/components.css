@@ -65,7 +65,7 @@
 .modal-sub {
   margin-top: 4px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -93,7 +93,7 @@
 .modal-foot .foot-note {
   margin-right: auto;
   color: var(--faint);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* ---------- drawer ---------- */
@@ -274,7 +274,7 @@
 .toast-msg {
   margin-top: 2px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -308,7 +308,7 @@
   padding: 6px 8px 4px;
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.12em;
 }
 
@@ -323,7 +323,7 @@
   border-radius: 4px;
   background: transparent;
   color: var(--text-2);
-  font-size: 11.5px;
+  font-size: 12px;
   text-align: left;
 }
 
@@ -374,7 +374,7 @@
   outline: 0;
   background: transparent;
   color: var(--text);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .search-box input::placeholder {
@@ -384,7 +384,7 @@
 .search-box .search-hint {
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   white-space: nowrap;
 }
 
@@ -399,7 +399,7 @@
   width: auto;
   min-width: 92px;
   height: 30px;
-  font-size: 11px;
+  font-size: 12px;
   padding-left: 9px;
 }
 
@@ -430,7 +430,7 @@
   gap: 5px;
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -450,7 +450,7 @@
 
 .stat-value small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
 }
@@ -474,7 +474,7 @@
   border-radius: 6px;
   background: rgba(29, 32, 28, 0.020);
   color: var(--text-2);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.65;
 }
 
@@ -533,7 +533,7 @@
   border-radius: 7px;
   background: var(--code-bg);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.72;
 }
 
@@ -591,7 +591,7 @@
   border-radius: 7px;
   background: var(--code-bg);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
 }
 
@@ -776,7 +776,7 @@
   background: var(--panel-3);
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 @media (max-width: 640px) {
@@ -837,7 +837,7 @@
   padding: 4px 7px;
   border-radius: 4px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -897,7 +897,7 @@
   flex-wrap: wrap;
   gap: 4px 14px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .export-success-icon {
@@ -918,7 +918,7 @@
 
 .export-success-panel p {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .export-success-panel code {
@@ -930,7 +930,7 @@
   background: var(--panel-2);
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .export-success-path {
@@ -977,7 +977,7 @@
   justify-content: space-between;
   gap: 8px;
   color: var(--text-2);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .export-share-row {
@@ -995,14 +995,14 @@
   border-radius: 4px;
   background: var(--bg);
   color: var(--text);
-  font-size: 10.5px;
+  font-size: 11.5px;
   user-select: all;
 }
 
 .export-share .hint {
   margin-top: 5px;
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .export-success-panel .callout {

@@ -245,6 +245,19 @@ impl Store {
         entries
     }
 
+    pub fn clear_history(&self) -> Result<usize, String> {
+        let count = self.list_history().len();
+        let files = fs::read_dir(&self.history_dir)
+            .map_err(|error| format!("无法读取历史目录：{}", error))?;
+        for file in files.flatten() {
+            let path = file.path();
+            if path.extension().and_then(|value| value.to_str()) == Some("json") {
+                fs::remove_file(&path).map_err(|error| format!("无法删除历史快照：{}", error))?;
+            }
+        }
+        Ok(count)
+    }
+
     pub fn read_history(&self, id: &str) -> Option<HistoryFile> {
         if !is_valid_history_id(id) {
             return None;

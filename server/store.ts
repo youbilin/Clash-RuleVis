@@ -122,6 +122,17 @@ export async function listHistory(): Promise<HistoryEntry[]> {
   return readIndex();
 }
 
+export async function clearHistory(): Promise<number> {
+  const entries = await readIndex();
+  const files = await fs.readdir(HISTORY_DIR).catch(() => [] as string[]);
+  await Promise.all(
+    files
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => fs.rm(path.join(HISTORY_DIR, file), { force: true })),
+  );
+  return entries.length;
+}
+
 export async function addHistory(
   entry: Omit<HistoryEntry, 'id' | 'at'> & { at?: string },
   workspace: Workspace,

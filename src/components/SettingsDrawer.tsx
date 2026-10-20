@@ -330,7 +330,7 @@ function SettingsContent() {
                   onChange={(event) => setRetention(event.target.value)}
                   style={{ width: 82 }}
                 />
-                <span className="muted" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>分钟</span>
+                <span className="muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>分钟</span>
               </div>
             </label>
             <label className="field">

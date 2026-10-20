@@ -28,7 +28,7 @@
   border-radius: 4px;
   background: transparent;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
@@ -47,7 +47,7 @@
   min-width: 16px;
   height: 15px;
   padding: 0 4px;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .rule-issue-count {
@@ -55,7 +55,7 @@
   align-items: center;
   gap: 4px;
   color: var(--amber);
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .rule-list-panel {
@@ -65,7 +65,7 @@
 .rule-list-head,
 .rule-row {
   display: grid;
-  grid-template-columns: 18px 22px 92px minmax(0, 1fr) 158px 50px 24px 30px 50px;
+  grid-template-columns: 18px 22px 92px minmax(0, 1fr) 158px 50px 40px 40px 50px;
   align-items: center;
   gap: 7px;
   padding: 0 12px;
@@ -76,7 +76,7 @@
   border-bottom: 1px solid var(--line-soft);
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -132,7 +132,7 @@
 
 .rule-index {
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .rule-kind {
@@ -144,7 +144,7 @@
 .rule-kind .badge {
   height: 17px;
   padding: 0 5px;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .rule-content {
@@ -160,25 +160,25 @@
 
 .rule-payload {
   color: var(--text-2);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .rule-name {
   color: var(--text);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .rule-main-line .badge {
   height: 15px;
   padding: 0 4px;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .rule-note {
   margin-top: 1px;
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .rule-target {
@@ -190,7 +190,7 @@
   padding-left: 7px;
   padding-right: 22px;
   background-position: right 6px center;
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .rule-target .select.invalid {
@@ -206,7 +206,7 @@
 .rule-origin .badge {
   height: 15px;
   padding: 0 4px;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .rule-marks {
@@ -252,7 +252,7 @@
 }
 
 .match-row .rule-name {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .rule-list-foot {
@@ -262,11 +262,11 @@
   flex-wrap: wrap;
   padding: 8px 12px;
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .rule-list-foot .inline-link {
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 @media (max-width: 1150px) {

@@ -28,7 +28,6 @@ import {
   MousePointerClick,
   Plus,
   Radar,
-  RadioTower,
   RefreshCw,
   Search,
   Settings2,
@@ -524,7 +523,6 @@ export function LivePage() {
   const pausedAt = useLive((state) => state.pausedAt);
   const pausedUpdates = useLive((state) => state.pausedUpdates);
   const lastMessageAt = useLive((state) => state.lastMessageAt);
-  const setPaused = useLive((state) => state.setPaused);
   const navigate = useNavigate();
   const setSettingsOpen = useUi((state) => state.setSettingsOpen);
 
@@ -603,9 +601,14 @@ export function LivePage() {
   const virtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => listRef.current,
-    estimateSize: (index) => (expandedKey === filtered[index]?.key ? 380 : 48),
+    getItemKey: (index) => filtered[index]?.key ?? index,
+    estimateSize: (index) => (expandedKey === filtered[index]?.key ? 380 : 50),
     overscan: 8,
   });
+
+  useEffect(() => {
+    virtualizer.measure();
+  }, [expandedKey, virtualizer]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: 0 });
@@ -940,20 +943,6 @@ export function LivePage() {
                 <span className="danger">重连中</span>
               )}
             </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={!paused}
-              className={cx('stream-toggle', paused && 'paused')}
-              onClick={() => setPaused(!paused)}
-              title={paused ? '继续实时数据' : '暂停实时数据'}
-              aria-label={paused ? '继续实时数据' : '暂停实时数据'}
-            >
-              <RadioTower size={16} />
-              <span className="stream-track">
-                <span className="stream-knob" />
-              </span>
-            </button>
           </div>
         </div>
       </div>

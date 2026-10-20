@@ -307,7 +307,7 @@ fixtures/              # TypeScript ↔ Rust 的 parity 契约
 
 - **v0.2**：本地 Web 工作台、完整规则/出口/链路/导出闭环、自动刷新与备份。
 - **v0.3（当前）**：Tauri 2 + Rust 桌面版；订阅/YAML 导入、内核 TCP/命名管道、实时连接、测速、规则集、mihomo 校验与 NSIS 安装包全部落地。
-- **Rust 地基**：`rulevis-core` 与 `rulevis-app` 共 25 项测试，包含 fixture 语义对齐、订阅抓取、桌面 API 与真实控制器冒烟。
+- **Rust 地基**：`rulevis-core` 与 `rulevis-app` 共 26 项测试，包含 fixture 语义对齐、订阅抓取、桌面 API 与真实控制器冒烟。
 - **下一步**：代码签名、自动更新、桌面托盘、多跳链路与 Proxy Provider。
 - **边界**：安装包目前只提供 Windows x64；不会用 Electron 或 Node sidecar 冒充桌面版。
 - **再评估**：只有在 WebView 被证明是瓶颈时，才考虑用 Rust 重写 UI；纯 Rust UI 不是当前目标。

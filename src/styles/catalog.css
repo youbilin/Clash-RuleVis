@@ -19,7 +19,7 @@
 .catalog-total {
   margin-left: 1px;
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .combo-grid {
@@ -67,14 +67,14 @@
 .combo-category {
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
 .combo-count {
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .combo-card strong {
@@ -85,7 +85,7 @@
 
 .combo-card p {
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 11.5px;
   line-height: 1.5;
 }
 
@@ -95,7 +95,7 @@
   gap: 3px;
   margin-top: 2px;
   color: var(--accent);
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .catalog-all {
@@ -160,7 +160,7 @@
   gap: 5px;
   overflow: hidden;
   color: var(--text);
-  font-size: 11.5px;
+  font-size: 12px;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -170,7 +170,7 @@
   border: 1px solid var(--accent-line);
   border-radius: 3px;
   color: var(--accent);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .catalog-row-slug {
@@ -179,7 +179,7 @@
   overflow: hidden;
   color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11.5px;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -188,25 +188,25 @@
   height: 16px;
   flex: 0 0 auto;
   padding: 0 4px;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .catalog-row-category {
   flex: 0 0 62px;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 11.5px;
   text-align: right;
 }
 
 .catalog-hint {
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .catalog-empty {
   padding: 30px;
   color: var(--faint);
-  font-size: 11px;
+  font-size: 12px;
   text-align: center;
 }
 
@@ -223,7 +223,7 @@
   align-items: center;
   gap: 6px;
   color: var(--text-2);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -252,11 +252,11 @@
 
 .catalog-side-empty p {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .catalog-side-empty span {
-  font-size: 10.5px;
+  font-size: 11.5px;
   line-height: 1.55;
 }
 
