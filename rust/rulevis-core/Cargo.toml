@@ -1,6 +1,6 @@
 [package]
 name = "rulevis-core"
-version = "0.1.0"
+version = "0.3.2"
 edition = "2021"
 description = "Rust core for Clash Route Desk: workspace normalization, config generation and share-link parsing."
 license = "MIT"
