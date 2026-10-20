@@ -536,6 +536,8 @@ export function LivePage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [lastSelectedKey, setLastSelectedKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  // 展开详情时冻结列表顺序，避免实时排序把详情行和邻行挤乱。
+  const frozenOrderRef = useRef<string[] | null>(null);
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
   const [composer, setComposer] = useState<ComposerState | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -594,8 +596,16 @@ export function LivePage() {
         return b.lastSeen - a.lastSeen;
       });
     }
+    if (expandedKey && frozenOrderRef.current) {
+      const rank = new Map(frozenOrderRef.current.map((key, index) => [key, index]));
+      items.sort(
+        (a, b) =>
+          (rank.get(a.key) ?? Number.MAX_SAFE_INTEGER) -
+          (rank.get(b.key) ?? Number.MAX_SAFE_INTEGER),
+      );
+    }
     return items;
-  }, [entries, workspace, query, exitFilter, ruleFilter, sortMode]);
+  }, [entries, workspace, query, exitFilter, ruleFilter, sortMode, expandedKey]);
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const virtualizer = useVirtualizer({
@@ -612,6 +622,8 @@ export function LivePage() {
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: 0 });
+    frozenOrderRef.current = null;
+    setExpandedKey(null);
   }, [query, exitFilter, ruleFilter, sortMode]);
 
   useEffect(() => {
@@ -670,8 +682,21 @@ export function LivePage() {
       const next = new Set([...current].filter((key) => existing.has(key)));
       return next.size === current.size ? current : next;
     });
-    if (expandedKey && !existing.has(expandedKey)) setExpandedKey(null);
-  }, [entries]);
+    if (expandedKey && !existing.has(expandedKey)) {
+      frozenOrderRef.current = null;
+      setExpandedKey(null);
+    }
+  }, [entries, expandedKey]);
+
+  const toggleExpanded = (key: string) => {
+    if (expandedKey === key) {
+      frozenOrderRef.current = null;
+      setExpandedKey(null);
+      return;
+    }
+    frozenOrderRef.current = filtered.map((entry) => entry.key);
+    setExpandedKey(key);
+  };
 
   useEffect(() => {
     const visible = new Set(filtered.map((entry) => entry.key));
@@ -1081,13 +1106,13 @@ export function LivePage() {
                 ) : filtered.length === 0 ? (
                   <EmptyState
                     icon={connected ? <Radar size={20} /> : <WifiOff size={20} />}
-                    title={connected ? '还没有可显示的连接' : '内核未连接'}
+                    title={connected ? '还没有可显示的连接' : 'Clash Verge 未连接'}
                     description={
                       connected
                         ? entries.length
                           ? '当前筛选条件下没有连接，试试清除搜索或筛选。'
                           : '访问任意网站，或在上方搜索框输入域名并点击「探测」，连接会实时出现在这里。'
-                        : '实时流已暂停。打开设置检查控制器地址与密钥；编辑规则不需要内核在线。'
+                        : '启动 Clash Verge 后重新探测；也可以先导入订阅，编辑工作区不需要内核在线。'
                     }
                     actions={
                       connected ? (
@@ -1100,11 +1125,11 @@ export function LivePage() {
                         </button>
                       ) : (
                         <>
-                          <button className="btn btn-primary btn-sm" onClick={() => setSettingsOpen(true)}>
-                            打开设置
+                          <button className="btn btn-primary btn-sm" onClick={rediscover} disabled={rediscovering}>
+                            <RefreshCw size={12} /> 启动 Verge 后重新探测
                           </button>
-                          <button className="btn btn-outline btn-sm" onClick={rediscover} disabled={rediscovering}>
-                            <RefreshCw size={12} /> 重新探测
+                          <button className="btn btn-outline btn-sm" onClick={() => navigate('/nodes?add=1')}>
+                            <Plus size={12} /> 导入订阅
                           </button>
                         </>
                       )
@@ -1131,7 +1156,7 @@ export function LivePage() {
                             status={statusForEntry(entry, workspace)}
                             selectedKeys={selected}
                             onToggleSelect={toggleSelect}
-                            onToggleExpand={(key) => setExpandedKey((current) => (current === key ? null : key))}
+                            onToggleExpand={toggleExpanded}
                             onContext={(event, item) => {
                               event.preventDefault();
                               setContext({

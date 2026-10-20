@@ -27,7 +27,13 @@
 - Live stream pause/resume uses a dedicated switch control instead of a small
   square button.
 - Expanded live connection rows are measured by connection key, so live
-  reordering no longer makes the detail panel overlap the following rows.
+  reordering no longer makes the detail panel overlap the following rows; the
+  list order is frozen until the detail is collapsed.
+- The offline empty state now offers only two actions: re-detect after starting
+  Verge, and import a subscription directly.
+- Large rule lists render in batches of 250 with “显示更多”, keeping the first
+  screen responsive for 1000+ rule workspaces.
+- README and demo screenshots were regenerated for the current UI.
 - Notifications are centered above the app (including dialogs), have no close
   or undo controls, and dismiss automatically after a few seconds.
 - The GitHub button now opens the repository in the system browser on desktop.

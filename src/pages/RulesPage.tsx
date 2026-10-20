@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, memo, Suspense, useEffect, useMemo, useState, useTransition } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   DndContext,
@@ -131,7 +131,7 @@ interface RuleRowProps {
   onToggle: (enabled: boolean) => void;
 }
 
-function RuleRow({
+const RuleRow = memo(function RuleRow({
   route,
   index,
   display,
@@ -343,7 +343,23 @@ function RuleRow({
       </div>
     </div>
   );
-}
+}, (prev, next) =>
+  // 回调只捕获 route id 与稳定的 store 操作，数据变化时再重渲染。
+  prev.route === next.route &&
+  prev.index === next.index &&
+  prev.display === next.display &&
+  prev.exits === next.exits &&
+  prev.nodes === next.nodes &&
+  prev.sources === next.sources &&
+  prev.dragDisabled === next.dragDisabled &&
+  prev.providerHits === next.providerHits &&
+  prev.recentHit === next.recentHit &&
+  prev.selectMode === next.selectMode &&
+  prev.checked === next.checked &&
+  prev.refreshing === next.refreshing &&
+  prev.issue?.cover === next.issue?.cover &&
+  prev.issue?.duplicate === next.issue?.duplicate
+);
 
 export function RulesPage() {
   const workspace = useWorkspace((state) => state.workspace);
@@ -368,6 +384,9 @@ export function RulesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [groupBySource, setGroupBySource] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  // 大目录分批挂载可排序行，避免一次渲染上千条。
+  const [visibleLimit, setVisibleLimit] = useState(250);
+  const [isPending, startTransition] = useTransition();
   const [catalogDisplay, setCatalogDisplay] = useState<((route: RuleSetRoute) => RouteDisplayInfo) | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -377,6 +396,10 @@ export function RulesPage() {
     const route = useWorkspace.getState().workspace?.routes.find((item) => item.id === editId);
     if (route && route.kind === 'rule' && route.type !== 'MATCH') setEditing({ mode: 'edit', id: editId });
   }, [params]);
+
+  useEffect(() => {
+    setVisibleLimit(250);
+  }, [filter, query, onlyInvalid, onlyZeroHit]);
 
   useEffect(() => {
     const q = params.get('q');
@@ -484,6 +507,7 @@ export function RulesPage() {
       route.source.value.toLowerCase().includes(q)
     );
   });
+  const visibleRoutes = groupBySource ? filtered : filtered.slice(0, visibleLimit);
   const issuesCount = issues.size;
   const zeroHitCount = snapshot
     ? sortableRoutes.filter((route) => route.enabled && ruleHitCount(route) === 0).length
@@ -881,7 +905,7 @@ export function RulesPage() {
           <EmptyState icon={<Search size={20} />} title="没有匹配的规则" description="试试其他关键词或筛选条件。" />
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={filtered.map((route) => route.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext items={visibleRoutes.map((route) => route.id)} strategy={verticalListSortingStrategy}>
               {groupBySource ? (
                 <div className="rule-groups">
                   {ruleGroups.map((group) => {
@@ -910,7 +934,7 @@ export function RulesPage() {
                   })}
                 </div>
               ) : (
-                filtered.map(renderRuleRow)
+                visibleRoutes.map(renderRuleRow)
               )}
             </SortableContext>
           </DndContext>
@@ -951,6 +975,15 @@ export function RulesPage() {
         <div className="rule-list-foot">
           <span>拖动排序 · 自动保存</span>
           <span className="spacer" />
+          {!groupBySource && filtered.length > visibleRoutes.length ? (
+            <button
+              className="inline-link"
+              disabled={isPending}
+              onClick={() => startTransition(() => setVisibleLimit((limit) => limit + 250))}
+            >
+              {isPending ? '加载中…' : `显示更多（${visibleRoutes.length} / ${filtered.length}）`}
+            </button>
+          ) : null}
           <button className="inline-link" onClick={() => navigate('/export')}>去导出预览</button>
         </div>
       </div>
