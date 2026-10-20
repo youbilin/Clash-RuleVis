@@ -2,11 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Check,
+  ChevronDown,
   ClipboardPaste,
   DownloadCloud,
   FileText,
+  GitBranch,
   Link2,
   Pencil,
+  Plus,
   Plug,
   RefreshCw,
   Search,
@@ -16,7 +19,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import type { DelayResult, RefreshSummary, Source, SourceType, Workspace } from '../../shared/types';
+import type { DelayResult, ProxyNode, RefreshSummary, Source, SourceType, Workspace } from '../../shared/types';
 import { collectTags, nodeDisplayName, nodeTagLabels } from '../../shared/model';
 import { regionEmoji } from '../../shared/regions';
 import { api } from '../api';
@@ -27,7 +30,7 @@ import { ImportSourceDialog } from '../components/ImportSourceDialog';
 import { NodeEditor } from '../components/NodeEditor';
 import { Modal } from '../components/Overlay';
 import { Select } from '../components/Select';
-import { delayTone, formatDateTime, formatDelay, formatRelative } from '../lib/format';
+import { delayTone, expiresIn, formatDateTime, formatDelay, formatRelative, formatTrafficAmount } from '../lib/format';
 import { cx } from '../lib/misc';
 import { offerUndo } from '../lib/undo';
 
@@ -39,6 +42,7 @@ const TYPE_META: Record<SourceType, { label: string; icon: typeof Link2 }> = {
   paste: { label: '粘贴内容', icon: ClipboardPaste },
   manual: { label: '手动节点', icon: Plug },
   verge: { label: 'Clash Verge', icon: DownloadCloud },
+  chain: { label: '链式代理', icon: GitBranch },
 };
 
 interface NodeHealth {
@@ -75,8 +79,10 @@ export function NodesPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [importTab, setImportTab] = useState<ImportTab>('subscription');
+  const [importOpen, setImportOpen] = useState(false);
   const [settingsSourceId, setSettingsSourceId] = useState<string | null>(null);
   const [refreshingSource, setRefreshingSource] = useState<string | null>(null);
+  const [refreshingAll, setRefreshingAll] = useState(false);
   const [refreshReport, setRefreshReport] = useState<RefreshReport | null>(null);
   const [bulkTagOpen, setBulkTagOpen] = useState(false);
   const [bulkTagInput, setBulkTagInput] = useState('');
@@ -89,6 +95,8 @@ export function NodesPage() {
     }
   });
   const [onlyFailed, setOnlyFailed] = useState(false);
+  const [onlyDisabled, setOnlyDisabled] = useState(false);
+  const [onlyDuplicate, setOnlyDuplicate] = useState(false);
   const [testingNodeId, setTestingNodeId] = useState<string | null>(null);
   const [testingAll, setTestingAll] = useState(false);
   const selectAllRef = useRef<HTMLInputElement | null>(null);
@@ -103,6 +111,7 @@ export function NodesPage() {
         ? (add as ImportTab)
         : 'subscription';
       setImportTab(tab);
+      setImportOpen(true);
     }
     const next = new URLSearchParams(params);
     next.delete('add');
@@ -119,6 +128,18 @@ export function NodesPage() {
     return counts;
   }, [workspace?.nodes]);
 
+  const duplicateInfo = useMemo(() => {
+    const groups = new Map<string, ProxyNode[]>();
+    for (const node of workspace?.nodes ?? []) {
+      if (node.chain) continue;
+      const key = duplicateKey(node);
+      groups.set(key, [...(groups.get(key) ?? []), node]);
+    }
+    const duplicated = [...groups.values()].filter((group) => group.length > 1);
+    const ids = new Set(duplicated.flatMap((group) => group.map((node) => node.id)));
+    return { groups: duplicated, ids };
+  }, [workspace?.nodes]);
+
   const nodes = useMemo(() => {
     const list = [...(workspace?.nodes ?? [])].sort((a, b) =>
       nodeDisplayName(a, sourcesById.get(a.sourceId)).localeCompare(
@@ -133,6 +154,8 @@ export function NodesPage() {
         if (!labels.includes(tagFilter.toLowerCase())) return false;
       }
       if (onlyFailed && !nodeHealth[node.id]?.error) return false;
+      if (onlyDisabled && node.enabled) return false;
+      if (onlyDuplicate && !duplicateInfo.ids.has(node.id)) return false;
       if (query.trim()) {
         const q = query.trim().toLowerCase();
         const display = nodeDisplayName(node, sourcesById.get(node.sourceId)).toLowerCase();
@@ -142,9 +165,10 @@ export function NodesPage() {
       }
       return true;
     });
-  }, [workspace?.nodes, sourcesById, sourceFilter, tagFilter, query, onlyFailed, nodeHealth]);
+  }, [workspace?.nodes, sourcesById, sourceFilter, tagFilter, query, onlyFailed, onlyDisabled, onlyDuplicate, duplicateInfo, nodeHealth]);
 
   const failedCount = (workspace?.nodes ?? []).filter((node) => nodeHealth[node.id]?.error).length;
+  const disabledCount = (workspace?.nodes ?? []).filter((node) => !node.enabled).length;
 
   useEffect(() => {
     try {
@@ -157,6 +181,14 @@ export function NodesPage() {
   useEffect(() => {
     if (!failedCount && onlyFailed) setOnlyFailed(false);
   }, [failedCount, onlyFailed]);
+
+  useEffect(() => {
+    if (!disabledCount && onlyDisabled) setOnlyDisabled(false);
+  }, [disabledCount, onlyDisabled]);
+
+  useEffect(() => {
+    if (!duplicateInfo.ids.size && onlyDuplicate) setOnlyDuplicate(false);
+  }, [duplicateInfo, onlyDuplicate]);
 
   useEffect(() => {
     const valid = new Set((workspace?.nodes ?? []).map((node) => node.id));
@@ -172,7 +204,7 @@ export function NodesPage() {
       const next = new Set([...current].filter((id) => visible.has(id)));
       return next.size === current.size ? current : next;
     });
-  }, [sourceFilter, tagFilter, query, onlyFailed]);
+  }, [sourceFilter, tagFilter, query, onlyFailed, onlyDisabled, onlyDuplicate]);
 
   if (!workspace) return null;
 
@@ -216,6 +248,99 @@ export function NodesPage() {
     setBulkTagOpen(false);
     setBulkTagInput('');
     toast('success', '标签已添加', values.join('、'));
+  };
+
+  const mergeDuplicates = async () => {
+    if (!duplicateInfo.groups.length) return;
+    const removeCount = duplicateInfo.groups.reduce((sum, group) => sum + group.length - 1, 0);
+    const confirmed = await confirm({
+      title: '合并重复节点',
+      message: [
+        `发现 ${duplicateInfo.groups.length} 组重复节点，将保留每组中的一个节点并移除 ${removeCount} 个副本。`,
+        '引用副本的规则、出口成员和链路关系会改指向保留节点。',
+        '中转和落地节点本身不会被修改。',
+      ].join('\n\n'),
+      confirmLabel: '合并',
+      danger: true,
+    });
+    if (!confirmed) return;
+    const idMap = new Map<string, string>();
+    for (const group of duplicateInfo.groups) {
+      const keep = group.find((node) => node.enabled) ?? group[0];
+      for (const node of group) {
+        if (node.id !== keep.id) idMap.set(node.id, keep.id);
+      }
+    }
+    const undo = await createUndoPoint('合并重复节点');
+    update((draft) => {
+      for (const route of draft.routes) {
+        if (route.kind === 'rule' && route.targetNodeId && idMap.has(route.targetNodeId)) {
+          route.targetNodeId = idMap.get(route.targetNodeId);
+        }
+      }
+      for (const exit of draft.exits) {
+        for (const member of exit.members) {
+          if (member.by === 'node' && idMap.has(member.value)) member.value = idMap.get(member.value)!;
+        }
+      }
+      for (const node of draft.nodes) {
+        if (!node.chain) continue;
+        const relay = idMap.get(node.chain.relayNodeId);
+        if (relay) node.chain.relayNodeId = relay;
+        const landing = idMap.get(node.chain.landingNodeId);
+        if (landing) node.chain.landingNodeId = landing;
+      }
+      draft.nodes = draft.nodes.filter((node) => !idMap.has(node.id));
+    });
+    offerUndo(undo, '重复节点已合并', `移除 ${removeCount} 个副本`);
+  };
+
+  const refreshAllSources = async () => {
+    const targets = workspace?.sources.filter(
+      (source) => source.type === 'subscription' || source.type === 'verge',
+    ) ?? [];
+    if (!targets.length) return;
+    setRefreshingAll(true);
+    const summary: RefreshReport = {
+      sourceName: `全部来源 · ${targets.length}`,
+      added: 0,
+      removed: 0,
+      changed: 0,
+      groups: 0,
+      rules: 0,
+      warnings: [],
+    };
+    const failures: string[] = [];
+    try {
+      await saveNow();
+      if (useWorkspace.getState().saveState === 'error') {
+        throw new Error('工作区尚未保存，已取消刷新');
+      }
+      for (const source of targets) {
+        try {
+          const result = await api<RefreshSummary>(`/api/sources/${source.id}/refresh`, { method: 'POST' });
+          applyServerWorkspace(result.workspace);
+          summary.added += result.added;
+          summary.removed += result.removed;
+          summary.changed += result.changed;
+          summary.groups += result.groups;
+          summary.rules += result.rules;
+          summary.warnings.push(...result.warnings);
+        } catch (error) {
+          failures.push(`${source.name}：${(error as Error).message}`);
+        }
+      }
+      setNodeHealth({});
+      summary.warnings.push(...failures);
+      setRefreshReport(summary);
+      if (failures.length) {
+        toast('warn', '部分来源刷新失败', `${targets.length - failures.length}/${targets.length} 个来源已更新`);
+      } else {
+        toast('success', '全部来源已刷新', `新增 ${summary.added} · 消失 ${summary.removed} · 变化 ${summary.changed}`);
+      }
+    } finally {
+      setRefreshingAll(false);
+    }
   };
 
   const refreshSource = async (source: Source) => {
@@ -275,6 +400,27 @@ export function NodesPage() {
 
   const enabledCount = workspace.nodes.filter((node) => node.enabled).length;
   const selectedSource = sourceFilter ? workspace.sources.find((source) => source.id === sourceFilter) : undefined;
+  const refreshableSources = workspace.sources.filter(
+    (source) => source.type === 'subscription' || source.type === 'verge',
+  );
+  const latestSourceUpdate = refreshableSources.reduce<number | null>((latest, source) => {
+    if (!source.updatedAt) return latest;
+    const time = new Date(source.updatedAt).getTime();
+    return Number.isNaN(time) ? latest : Math.max(latest ?? 0, time);
+  }, null);
+  const sourceStatus = selectedSource
+    ? [
+        selectedSource.updatedAt
+          ? `${selectedSource.name} 更新 ${formatRelative(new Date(selectedSource.updatedAt).getTime())}`
+          : null,
+        selectedSource.userinfo
+          ? `剩余 ${formatTrafficAmount(Math.max(0, selectedSource.userinfo.total - selectedSource.userinfo.used))}`
+          : null,
+        selectedSource.userinfo ? expiresIn(selectedSource.userinfo.expire) : null,
+      ].filter(Boolean).join(' · ')
+    : latestSourceUpdate
+      ? `最近来源更新 ${formatRelative(latestSourceUpdate)}`
+      : '';
 
   const requestDelays = async (targets: Workspace['nodes']) => {
     const nameToNodes = new Map<string, Workspace['nodes']>();
@@ -346,7 +492,7 @@ export function NodesPage() {
       <PageHeader
         kicker="NODES & SOURCES"
         title="节点与订阅"
-        subtitle={`${workspace.nodes.length} 个节点 · ${enabledCount} 个启用 · ${workspace.sources.length} 个来源`}
+        subtitle={`${workspace.nodes.length} 个节点 · ${enabledCount} 个启用 · ${workspace.sources.length} 个来源${sourceStatus ? ` · ${sourceStatus}` : ''}`}
         actions={
           <div className="nodes-source-filter">
             <span className="nodes-source-label">来源</span>
@@ -364,6 +510,17 @@ export function NodesPage() {
                 })),
               ]}
             />
+            {refreshableSources.length ? (
+              <button
+                className="node-test-all node-refresh-all"
+                onClick={() => void refreshAllSources()}
+                disabled={refreshingAll || Boolean(refreshingSource)}
+                title="刷新全部订阅与 Verge 来源"
+                aria-label="刷新全部来源"
+              >
+                {refreshingAll ? <Spinner /> : <RefreshCw size={14} />}
+              </button>
+            ) : null}
             <button
               className="node-test-all"
               onClick={() => void testAllNodes()}
@@ -397,8 +554,23 @@ export function NodesPage() {
         }
       />
 
-      <div className="nodes-import-wrap">
-        <ImportSourceDialog key={importTab} initialTab={importTab} />
+      <div className={cx('nodes-import-wrap', !importOpen && 'is-collapsed')}>
+        {importOpen ? (
+          <ImportSourceDialog
+            key={importTab}
+            initialTab={importTab}
+            onCollapse={() => setImportOpen(false)}
+            onImported={() => setImportOpen(false)}
+          />
+        ) : (
+          <button type="button" className="import-collapsed" onClick={() => setImportOpen(true)}>
+            <span className="import-collapsed-icon"><Plus size={13} /></span>
+            <strong>添加来源</strong>
+            <span className="import-collapsed-hint">订阅、文件、节点链接或 Verge</span>
+            <span className="spacer" />
+            <span className="import-collapsed-action">展开 <ChevronDown size={13} /></span>
+          </button>
+        )}
       </div>
 
         <section className="nodes-main panel">
@@ -432,13 +604,43 @@ export function NodesPage() {
                 <TriangleAlert size={12} /> 失败 {failedCount}
               </button>
             ) : null}
-            {tagFilter || query || sourceFilter || onlyFailed ? (
+            {disabledCount > 0 || onlyDisabled ? (
+              <button
+                className={cx('node-muted-filter', onlyDisabled && 'active')}
+                onClick={() => setOnlyDisabled((value) => !value)}
+                title="只显示已禁用节点"
+              >
+                禁用 {disabledCount}
+              </button>
+            ) : null}
+            {duplicateInfo.ids.size > 0 || onlyDuplicate ? (
+              <button
+                className={cx('node-muted-filter', onlyDuplicate && 'active')}
+                onClick={() => setOnlyDuplicate((value) => !value)}
+                title="只显示配置重复的节点"
+              >
+                重复 {duplicateInfo.ids.size}
+              </button>
+            ) : null}
+            {duplicateInfo.groups.length ? (
+              <button
+                className="btn btn-sm btn-ghost node-merge-btn"
+                onClick={() => void mergeDuplicates()}
+                title="合并配置完全相同的节点，并保留一个"
+              >
+                合并 {duplicateInfo.groups.length} 组
+              </button>
+            ) : null}
+            {tagFilter || query || sourceFilter || onlyFailed || onlyDisabled || onlyDuplicate ? (
               <button
                 className="btn btn-sm btn-ghost"
                 onClick={() => {
                   setTagFilter('');
                   setQuery('');
                   setSourceFilter('');
+                  setOnlyFailed(false);
+                  setOnlyDisabled(false);
+                  setOnlyDuplicate(false);
                 }}
               >
                 <X size={12} /> 清除
@@ -497,6 +699,9 @@ export function NodesPage() {
                       setQuery('');
                       setTagFilter('');
                       setSourceFilter('');
+                      setOnlyFailed(false);
+                      setOnlyDisabled(false);
+                      setOnlyDuplicate(false);
                     }}>
                       清除筛选
                     </button>
@@ -546,6 +751,8 @@ export function NodesPage() {
                         <div className="node-name" title={display}>
                           {display}
                           {!node.enabled ? <span className="badge badge-plain">禁用</span> : null}
+                          {duplicateInfo.ids.has(node.id) ? <span className="badge badge-amber">重复</span> : null}
+                          {node.chain ? <span className="badge badge-blue">链式</span> : null}
                         </div>
                         <div className="node-name-sub">
                           {source?.name ?? '未知来源'}
@@ -674,6 +881,15 @@ export function NodesPage() {
         </Modal>
       ) : null}
     </div>
+  );
+}
+
+function duplicateKey(node: ProxyNode): string {
+  const raw = node.raw as Record<string, unknown>;
+  return JSON.stringify(
+    Object.entries(raw)
+      .filter(([key]) => key !== 'name')
+      .sort(([a], [b]) => a.localeCompare(b)),
   );
 }
 

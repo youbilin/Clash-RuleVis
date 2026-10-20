@@ -1,6 +1,6 @@
 export const WORKSPACE_VERSION = 2;
 
-export type SourceType = 'subscription' | 'file' | 'paste' | 'manual' | 'verge';
+export type SourceType = 'subscription' | 'file' | 'paste' | 'manual' | 'verge' | 'chain';
 
 export interface SubscriptionUserinfo {
   used: number;
@@ -20,6 +20,11 @@ export interface Source {
   note?: string;
 }
 
+export interface ChainMeta {
+  relayNodeId: string;
+  landingNodeId: string;
+}
+
 export interface ProxyNode {
   id: string;
   sourceId: string;
@@ -30,6 +35,7 @@ export interface ProxyNode {
   enabled: boolean;
   addedAt: string;
   updatedAt?: string;
+  chain?: ChainMeta;
 }
 
 export type ExitType = 'select' | 'url-test' | 'fallback' | 'load-balance';
@@ -305,6 +311,18 @@ export interface HistoryEntry {
   fileName?: string;
   counts?: ExportCounts;
   note?: string;
+}
+
+export interface WorkspaceCounts {
+  sources: number;
+  nodes: number;
+  exits: number;
+  rules: number;
+}
+
+export interface HistorySummary {
+  snapshot: WorkspaceCounts;
+  current: WorkspaceCounts;
 }
 
 export interface ImportSummary {

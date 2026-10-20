@@ -21,7 +21,8 @@
     "build": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json && vite build",
     "start": "tsx server/index.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
-    "test": "node --import tsx --test server/tests/model.test.ts server/tests/importer.test.ts server/tests/generator.test.ts server/tests/rulesets.test.ts server/tests/node-link.test.ts"
+    "test": "node --import tsx --test server/tests/model.test.ts server/tests/importer.test.ts server/tests/generator.test.ts server/tests/rulesets.test.ts server/tests/node-link.test.ts",
+    "test:e2e": "npm run build && node tests/e2e/smoke.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -47,6 +48,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "concurrently": "^10.0.6",
+    "playwright-core": "^1.64.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.4"

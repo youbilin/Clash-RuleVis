@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   Activity,
   FileOutput,
+  GitBranch,
   Layers,
   Search,
   Server,
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { to: '/live', label: '实时连接', icon: Activity },
   { to: '/nodes', label: '节点与订阅', icon: Server },
   { to: '/exits', label: '出口', icon: Waypoints },
+  { to: '/chains', label: '链路', icon: GitBranch },
   { to: '/rulesets', label: '规则集', icon: Layers },
   { to: '/export', label: '导出', icon: FileOutput },
 ];

@@ -15,5 +15,29 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    chunkSizeWarningLimit: 900,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'react-vendor',
+              test: /node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom)[\\/]/,
+              priority: 30,
+            },
+            {
+              name: 'dnd-vendor',
+              test: /node_modules[\\/](@dnd-kit|@tanstack)[\\/]/,
+              priority: 20,
+            },
+            {
+              name: 'icons',
+              test: /node_modules[\\/]lucide-react[\\/]/,
+              priority: 10,
+            },
+          ],
+        },
+      },
+    },
   },
 });

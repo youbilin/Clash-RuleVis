@@ -342,6 +342,8 @@ export function RulesPage() {
   const [params, setParams] = useSearchParams();
   const [filter, setFilter] = useState<FilterKind>('all');
   const [query, setQuery] = useState('');
+  const [onlyInvalid, setOnlyInvalid] = useState(false);
+  const [onlyZeroHit, setOnlyZeroHit] = useState(false);
   const [editing, setEditing] = useState<{ mode: 'new' } | { mode: 'edit'; id: string } | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -376,7 +378,7 @@ export function RulesPage() {
 
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [filter, query, groupBySource]);
+  }, [filter, query, groupBySource, onlyInvalid, onlyZeroHit]);
 
   useEffect(() => {
     let active = true;
@@ -421,6 +423,18 @@ export function RulesPage() {
   const customSingle = sortableRoutes.filter((route) => route.kind === 'rule' && !isSource(route)).length;
   const rulesetTotal = sortableRoutes.filter((route) => route.kind === 'ruleset').length;
   const sourceCount = sortableRoutes.filter(isSource).length;
+  const ruleHitCount = (route: Route): number => {
+    if (route.kind === 'ruleset') {
+      const keys = [route.providerName || route.name, route.providerName, route.name].filter(Boolean);
+      for (const key of keys) {
+        const hits = snapshot?.ruleHits[`RULE-SET|${key}`];
+        if (typeof hits === 'number') return hits;
+      }
+      return 0;
+    }
+    return snapshot?.ruleHits[`${route.type}|${route.payload}`] ?? 0;
+  };
+  const invalidTargets = sortableRoutes.filter((route) => !routeTargetInfo(route, workspace).available);
   const describeRoute = (route: RuleSetRoute): RouteDisplayInfo =>
     catalogDisplay?.(route) ?? {
       name: route.name,
@@ -432,6 +446,8 @@ export function RulesPage() {
     if (filter === 'single' && !(route.kind === 'rule' && !isSource(route))) return false;
     if (filter === 'ruleset' && route.kind !== 'ruleset') return false;
     if (filter === 'source' && !isSource(route)) return false;
+    if (onlyInvalid && routeTargetInfo(route, workspace).available) return false;
+    if (onlyZeroHit && (!route.enabled || ruleHitCount(route) > 0)) return false;
     if (!query.trim()) return true;
     const q = query.trim().toLowerCase();
     const targetName = routeTargetInfo(route, workspace).name;
@@ -455,7 +471,10 @@ export function RulesPage() {
     );
   });
   const issuesCount = issues.size;
-  const dragDisabled = filter !== 'all' || Boolean(query.trim());
+  const zeroHitCount = snapshot
+    ? sortableRoutes.filter((route) => route.enabled && ruleHitCount(route) === 0).length
+    : 0;
+  const dragDisabled = filter !== 'all' || Boolean(query.trim()) || onlyInvalid || onlyZeroHit;
 
   const ruleGroups = (() => {
     if (!groupBySource) return [];
@@ -656,6 +675,25 @@ export function RulesPage() {
     }
   };
 
+  const cleanInvalidTargets = async () => {
+    if (!invalidTargets.length) return;
+    const confirmed = await confirm({
+      title: '清理失效目标规则',
+      message: `将删除 ${invalidTargets.length} 条目标节点或出口已失效的规则。此操作可以通过历史记录恢复。`,
+      confirmLabel: '清理',
+      danger: true,
+    });
+    if (!confirmed) return;
+    const undo = await createUndoPoint('清理失效目标规则');
+    const ids = new Set(invalidTargets.map((route) => route.id));
+    update((draft) => {
+      draft.routes = draft.routes.filter((route) => !ids.has(route.id));
+    });
+    setOnlyInvalid(false);
+    if (selectMode) exitSelectMode();
+    offerUndo(undo, '失效规则已清理', `${ids.size} 条`);
+  };
+
   const deleteRoute = async (route: Route) => {
     const isRuleSet = route.kind === 'ruleset';
     const confirmed = await confirm({
@@ -717,7 +755,11 @@ export function RulesPage() {
               <button
                 key={item.id}
                 className={cx('rule-filter-tab', filter === item.id && 'active')}
-                onClick={() => setFilter(item.id)}
+                onClick={() => {
+                  setFilter(item.id);
+                  setOnlyInvalid(false);
+                  setOnlyZeroHit(false);
+                }}
               >
                 {item.label}
                 <span className="number-badge">{count}</span>
@@ -729,6 +771,29 @@ export function RulesPage() {
           <Search size={13} />
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索中文规则名、域名、出口或来源" />
         </div>
+        {invalidTargets.length ? (
+          <button
+            className={cx('rule-view-btn', onlyInvalid && 'active')}
+            onClick={() => setOnlyInvalid((value) => !value)}
+            title="只显示目标节点或出口已失效的规则"
+          >
+            <AlertTriangle size={12} /> 失效 {invalidTargets.length}
+          </button>
+        ) : null}
+        {snapshot ? (
+          <button
+            className={cx('rule-view-btn', onlyZeroHit && 'active')}
+            onClick={() => setOnlyZeroHit((value) => !value)}
+            title="只显示已启用、内核累计命中为 0 的规则；需先应用当前配置"
+          >
+            零命中 {zeroHitCount}
+          </button>
+        ) : null}
+        {invalidTargets.length ? (
+          <button className="rule-view-btn" onClick={() => void cleanInvalidTargets()} title="删除目标已失效的规则">
+            <Trash2 size={12} /> 清理失效
+          </button>
+        ) : null}
         <button
           className={cx('rule-view-btn', selectMode && 'active')}
           onClick={() => {

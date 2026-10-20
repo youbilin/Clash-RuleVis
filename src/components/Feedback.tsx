@@ -58,7 +58,7 @@ export function ConfirmDialog() {
   if (!state) return null;
   const { options } = state;
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => {
+    <div className="modal-backdrop confirm-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget) resolve(false);
     }}>
       <div ref={panelRef} className="modal sm" role="alertdialog" aria-modal="true" aria-label={options.title}>

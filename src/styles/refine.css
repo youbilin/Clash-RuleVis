@@ -809,6 +809,10 @@ body {
   animation: fade-in var(--duration) var(--ease-out);
 }
 
+.confirm-backdrop {
+  z-index: 320;
+}
+
 .modal {
   max-height: calc(100dvh - 48px);
   border-color: var(--line-strong);
@@ -983,7 +987,7 @@ body {
   }
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1100px) {
   .topnav-label {
     display: none;
   }
@@ -1010,6 +1014,66 @@ body {
 
 .live-page.has-tray {
   padding-bottom: 200px;
+}
+
+/* ---------- global render fallback ---------- */
+
+.app-crash {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg);
+}
+
+.app-crash-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(430px, 100%);
+  padding: 30px 26px 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: #fbfbf8;
+  text-align: center;
+  box-shadow: var(--shadow-modal);
+}
+
+.app-crash-mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--red-line);
+  border-radius: 12px;
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+.app-crash-card h1 {
+  margin-top: 13px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.app-crash-card p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.app-crash-actions {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0 14px;
+}
+
+.app-crash-card > span {
+  color: var(--faint);
+  font-size: 9.5px;
 }
 
 /* ---------- responsive ---------- */
@@ -1789,6 +1853,18 @@ body {
   height: 16px;
   min-width: 16px;
   font-size: 8.5px;
+}
+
+.settings-backup {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.settings-backup .hint {
+  display: block;
+  margin-top: 8px;
+  line-height: 1.65;
 }
 
 @media (max-width: 640px) {
@@ -2598,6 +2674,45 @@ body {
   color: #ffffff;
 }
 
+.node-muted-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--control-h-sm);
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+.node-muted-filter:hover {
+  border-color: var(--line-strong);
+  background: #ffffff;
+}
+
+.node-muted-filter.active {
+  border-color: var(--accent-line);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.node-merge-btn {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.node-refresh-all {
+  color: var(--muted);
+}
+
+.node-refresh-all:hover {
+  color: var(--accent);
+}
+
 .export-details-scroll .export-card.validation-alert {
   padding-left: 10px;
   box-shadow: inset 2px 0 0 var(--red);
@@ -2768,7 +2883,7 @@ body {
 .nodes-import-wrap .inline-importer {
   display: flex;
   flex-direction: column;
-  height: 200px;
+  height: 282px;
   min-height: 0;
   margin-bottom: 0;
   padding-bottom: 0;
@@ -2790,6 +2905,68 @@ body {
 .nodes-import-wrap .inline-importer .textarea {
   height: 98px;
   min-height: 98px;
+}
+
+.inline-importer-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+}
+
+.import-collapsed {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 3px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.import-collapsed:hover {
+  background: rgba(29, 32, 28, 0.024);
+}
+
+.import-collapsed-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fdfdfb;
+  color: var(--accent);
+}
+
+.import-collapsed strong {
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.import-collapsed-hint {
+  color: var(--faint);
+  font-size: 10px;
+}
+
+.import-collapsed-action {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--faint);
+  font-size: 10px;
+}
+
+@media (max-width: 640px) {
+  .import-collapsed-hint {
+    display: none;
+  }
 }
 
 .nodes-source-filter .node-test-all {
@@ -2821,53 +2998,51 @@ body {
 }
 
 .node-toolbar .select-trigger.compact.node-tag-filter {
-  width: 118px;
-  min-width: 118px;
+  width: 168px;
+  min-width: 168px;
 }
 
-@media (min-width: 900px) {
-  .nodes-page {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-    padding-bottom: 18px;
-  }
+.nodes-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 18px;
+}
 
-  .nodes-page .page-header,
-  .nodes-page .nodes-import-wrap {
-    flex: 0 0 auto;
-  }
+.nodes-page .page-header,
+.nodes-page .nodes-import-wrap {
+  flex: 0 0 auto;
+}
 
-  .nodes-page .nodes-main {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-  }
+.nodes-page .nodes-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
 
-  .nodes-page .node-toolbar,
-  .nodes-page .bulk-bar,
-  .nodes-page .node-foot {
-    flex: 0 0 auto;
-  }
+.nodes-page .node-toolbar,
+.nodes-page .bulk-bar,
+.nodes-page .node-foot {
+  flex: 0 0 auto;
+}
 
-  .nodes-page .node-table {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-  }
+.nodes-page .node-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
 
-  .nodes-page .node-head {
-    position: sticky;
-    top: 0;
-    z-index: 3;
-    background: #f7f7f2;
-  }
+.nodes-page .node-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #f7f7f2;
 }
 
 @media (max-width: 900px) {
@@ -2884,10 +3059,6 @@ body {
 
   .nodes-import-wrap {
     width: 100%;
-  }
-
-  .nodes-import-wrap .inline-importer {
-    height: auto;
   }
 }
 

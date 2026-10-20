@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Check,
+  ChevronUp,
   ClipboardPaste,
   DownloadCloud,
   FileText,
@@ -52,8 +53,12 @@ interface ImportResultState {
 
 export function ImportSourceDialog({
   initialTab = 'subscription',
+  onCollapse,
+  onImported,
 }: {
   initialTab?: ImportTab;
+  onCollapse?: () => void;
+  onImported?: () => void;
 }) {
   const workspace = useWorkspace((state) => state.workspace);
   const saveNow = useWorkspace((state) => state.saveNow);
@@ -111,6 +116,7 @@ export function ImportSourceDialog({
         warnings: response.warnings,
       });
       toast('success', '导入完成', `${label} · 新增 ${response.added} 个节点`);
+      if (onImported) window.setTimeout(onImported, 900);
     } catch (caught) {
       setError((caught as Error).message);
     } finally {
@@ -246,18 +252,25 @@ export function ImportSourceDialog({
           <strong>{result ? '导入完成' : '添加来源'}</strong>
           <span>{result ? result.label : '内容只在本机解析'}</span>
         </div>
-        {result ? (
-          <button className="btn btn-sm btn-primary" onClick={startAnother}>继续添加</button>
-        ) : (
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={submit}
-            disabled={loading || (tab === 'manual' && !manualParse.node)}
-          >
-            {loading ? <Spinner onAccent /> : <Check size={13} />}
-            {tab === 'manual' ? '添加节点' : tab === 'verge' ? '读取 Verge' : '导入'}
-          </button>
-        )}
+        <div className="inline-importer-actions">
+          {onCollapse ? (
+            <button className="icon-btn" onClick={onCollapse} title="收起导入区" aria-label="收起导入区">
+              <ChevronUp size={14} />
+            </button>
+          ) : null}
+          {result ? (
+            <button className="btn btn-sm btn-primary" onClick={startAnother}>继续添加</button>
+          ) : (
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={submit}
+              disabled={loading || (tab === 'manual' && !manualParse.node)}
+            >
+              {loading ? <Spinner onAccent /> : <Check size={13} />}
+              {tab === 'manual' ? '添加节点' : tab === 'verge' ? '读取 Verge' : '导入'}
+            </button>
+          )}
+        </div>
       </div>
       <div className="inline-importer-body">
       {result ? (

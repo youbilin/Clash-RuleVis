@@ -54,17 +54,30 @@ async function send<T>(path: string, options: RequestOptions): Promise<T> {
 }
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  await ensureSession();
-  try {
-    return await send<T>(path, options);
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
-      sessionPromise = null;
+  const method = options.method ?? 'GET';
+  const retryable = method === 'GET';
+  let sessionRetried = false;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
       await ensureSession();
-      return send<T>(path, options);
+      return await send<T>(path, options);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 401 && !sessionRetried) {
+          sessionRetried = true;
+          sessionPromise = null;
+          continue;
+        }
+        throw error;
+      }
+      if (retryable && attempt < 2) {
+        await new Promise((resolve) => window.setTimeout(resolve, 220 * (attempt + 1)));
+        continue;
+      }
+      throw error;
     }
-    throw error;
   }
+  throw new Error('本地服务连接失败');
 }
 
 export function liveSocketUrl(): string {

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Check, Copy, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
-import type { KernelStatus } from '../../shared/types';
-import { api, copyToClipboard } from '../api';
+import { useEffect, useRef, useState } from 'react';
+import { Check, Copy, Download, ExternalLink, RefreshCw, ShieldCheck, Upload } from 'lucide-react';
+import type { HistoryEntry, KernelStatus, Workspace } from '../../shared/types';
+import { api, copyToClipboard, downloadText } from '../api';
 import { Drawer } from './Overlay';
 import { Spinner } from './Common';
 import { Select } from './Select';
@@ -10,6 +10,7 @@ import { useWorkspace } from '../store/workspace';
 import { useLive } from '../store/live';
 import { cx } from '../lib/misc';
 import { formatRelative } from '../lib/format';
+import { offerUndo } from '../lib/undo';
 
 export function SettingsDrawer() {
   const open = useUi((state) => state.settingsOpen);
@@ -19,10 +20,12 @@ export function SettingsDrawer() {
 
 function SettingsContent() {
   const setOpen = useUi((state) => state.setSettingsOpen);
+  const confirm = useUi((state) => state.confirm);
   const workspace = useWorkspace((state) => state.workspace);
   const status = useWorkspace((state) => state.status);
   const update = useWorkspace((state) => state.update);
   const refreshStatus = useWorkspace((state) => state.refreshStatus);
+  const applyServerWorkspace = useWorkspace((state) => state.applyServerWorkspace);
   const liveKernel = useLive((state) => state.snapshot?.kernel);
   const kernel: KernelStatus | undefined = liveKernel ?? status?.kernel;
 
@@ -40,6 +43,8 @@ function SettingsContent() {
   const [defaultRuleType, setDefaultRuleType] = useState(workspace?.settings.defaultRuleType ?? 'DOMAIN-SUFFIX');
   const [useProxy, setUseProxy] = useState(workspace?.settings.useProxyForFetch ?? true);
   const [copied, setCopied] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const backupInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,6 +132,60 @@ function SettingsContent() {
       toast('error', '重新探测失败', (error as Error).message);
     } finally {
       setRediscovering(false);
+    }
+  };
+
+  const exportBackup = () => {
+    if (!workspace) return;
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backup = {
+      app: 'Clash Route Desk',
+      backupVersion: 1,
+      workspaceVersion: workspace.version,
+      exportedAt: new Date().toISOString(),
+      workspace,
+    };
+    downloadText(`clash-routedesk-backup-${stamp}.json`, JSON.stringify(backup, null, 2));
+    toast('success', '工作区备份已导出', '备份包含订阅地址与节点凭据，请只保存在本机');
+  };
+
+  const importBackup = async (file: File | undefined) => {
+    if (!file || importing) return;
+    try {
+      const parsed = JSON.parse(await file.text()) as {
+        backup?: { workspace?: Workspace; workspaceVersion?: number };
+        workspace?: Workspace;
+      } & Workspace;
+      const candidate = parsed.backup?.workspace ?? parsed.workspace ?? parsed;
+      if (!Array.isArray(candidate.sources) || !Array.isArray(candidate.nodes) || !Array.isArray(candidate.exits) || !Array.isArray(candidate.routes)) {
+        throw new Error('备份文件结构无效');
+      }
+      const confirmed = await confirm({
+        title: '导入工作区备份',
+        message: [
+          `将当前工作区替换为「${file.name}」中的配置。`,
+          `备份内容：${candidate.sources.length} 个来源 · ${candidate.nodes.length} 个节点 · ${candidate.exits.filter((exit) => !exit.builtin).length} 个出口 · ${candidate.routes.length} 条规则。`,
+          '导入前会自动创建当前工作区的快照。',
+        ].join('\n\n'),
+        confirmLabel: '导入备份',
+        danger: true,
+      });
+      if (!confirmed) return;
+      setImporting(true);
+      await useWorkspace.getState().saveNow();
+      const result = await api<{ workspace: Workspace; undoEntry: HistoryEntry }>('/api/workspace/import', {
+        method: 'POST',
+        body: { backup: parsed },
+      });
+      applyServerWorkspace(result.workspace);
+      await refreshStatus();
+      offerUndo(result.undoEntry, '备份已导入', '可通过历史恢复导入前的状态');
+      toast('success', '工作区备份已导入', file.name);
+    } catch (error) {
+      toast('error', '导入备份失败', (error as Error).message);
+    } finally {
+      setImporting(false);
+      if (backupInputRef.current) backupInputRef.current.value = '';
     }
   };
 
@@ -316,6 +375,26 @@ function SettingsContent() {
           <button className="icon-btn" onClick={() => copy('exports', status?.exportsDir ?? '')} title="复制路径">
             {copied === 'exports' ? <Check size={13} /> : <Copy size={13} />}
           </button>
+        </div>
+        <div className="settings-backup">
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            <button className="btn btn-outline" onClick={exportBackup} disabled={!workspace}>
+              <Download size={13} /> 导出工作区 JSON
+            </button>
+            <button className="btn btn-outline" onClick={() => backupInputRef.current?.click()} disabled={importing}>
+              {importing ? <Spinner /> : <Upload size={13} />} 导入备份
+            </button>
+            <input
+              ref={backupInputRef}
+              type="file"
+              accept=".json,application/json"
+              hidden
+              onChange={(event) => void importBackup(event.target.files?.[0])}
+            />
+          </div>
+          <p className="hint">
+            备份包含来源、节点凭据、规则与设置，只保存在本机文件；导入会先自动创建当前工作区快照。
+          </p>
         </div>
         {status?.vergeProfile ? (
           <div className="callout info" style={{ marginTop: 10 }}>

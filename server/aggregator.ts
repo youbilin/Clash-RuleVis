@@ -14,6 +14,7 @@ import {
   type MihomoProxy,
   type MihomoRule,
 } from './kernel';
+import { redactLog } from './logging';
 
 const RULE_TYPE_MAP: Record<string, string> = {
   Domain: 'DOMAIN',
@@ -136,7 +137,7 @@ export class LiveAggregator {
   private async loop(): Promise<void> {
     if (!this.running) return;
     await this.poll().catch((error) => {
-      console.warn('[live] 轮询失败：', (error as Error).message);
+      console.warn('[live] 轮询失败：', redactLog(error));
     });
     if (!this.running) return;
     this.timer = setTimeout(() => void this.loop(), 1000);

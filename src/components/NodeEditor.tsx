@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, Server, Tag, X } from 'lucide-react';
+import { GitBranch, Plus, Server, Tag, X } from 'lucide-react';
 import type { ProxyNode } from '../../shared/types';
 import { nodeDisplayName } from '../../shared/model';
 import { REGION_EMOJI } from '../../shared/regions';
@@ -21,6 +21,11 @@ export function NodeEditor({ node, onClose }: { node: ProxyNode; onClose: () => 
 
   const source = workspace?.sources.find((item) => item.id === node.sourceId);
   const displayName = source ? `${source.prefix}${name}` : name;
+  const chainRelay = node.chain ? workspace?.nodes.find((item) => item.id === node.chain!.relayNodeId) : undefined;
+  const chainLanding = node.chain ? workspace?.nodes.find((item) => item.id === node.chain!.landingNodeId) : undefined;
+  const chainNames = node.chain
+    ? `${chainRelay ? nodeDisplayName(chainRelay, workspace?.sources.find((item) => item.id === chainRelay.sourceId)) : '中转已失效'} → ${chainLanding ? nodeDisplayName(chainLanding, workspace?.sources.find((item) => item.id === chainLanding.sourceId)) : '落地已失效'}`
+    : '';
   const allTags = useMemo(() => {
     const values = new Set<string>();
     for (const item of workspace?.nodes ?? []) {
@@ -95,6 +100,14 @@ export function NodeEditor({ node, onClose }: { node: ProxyNode; onClose: () => 
           </div>
           <Switch checked={enabled} onChange={setEnabled} label="启用节点" />
         </div>
+        {node.chain ? (
+          <div className="callout info" style={{ marginTop: 10 }}>
+            <GitBranch size={14} />
+            <span className="truncate" title={chainNames}>
+              链式节点：{chainNames}。只有该节点经过中转链路，中转与落地节点原本的流量不受影响。
+            </span>
+          </div>
+        ) : null}
       </div>
 
       <div className="editor-section">

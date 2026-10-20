@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import fastifyStatic from '@fastify/static';
@@ -14,14 +15,17 @@ import type {
   RefreshSummary,
   RuleSetInspect,
   RuleSetRoute,
+  ProxyNode,
   RulesetBehavior,
   RulesetFormat,
   Source,
   Workspace,
 } from '../shared/types';
+import { WORKSPACE_VERSION } from '../shared/types';
 import { nodeDisplayName, insertRouteOrdered, resolveExit } from '../shared/model';
 import { DATA_DIR, DIST_DIR, EXPORTS_DIR, SERVER_PORT, ensureDataDirs } from './paths';
 import { getWorkspace, initStore, listHistory, readHistory, replaceWorkspace, restoreHistory, updateWorkspace, addHistory, RevisionConflictError } from './store';
+import { ensureWorkspaceShape } from './defaults';
 import { kernel, getActiveProfile, probeKernel } from './kernel';
 import { LiveAggregator } from './aggregator';
 import { fetchUrl, parseSubscriptionUserinfo, type FetchOptions } from './fetcher';
@@ -37,6 +41,7 @@ import { validateConfig } from './mihomo-validator';
 import { probeThroughProxy } from './probe';
 import { RULE_SETS_DIR } from './paths';
 import { fileExists, isPathInside } from './fsutil';
+import { redactLog } from './logging';
 
 const APP_VERSION = '0.1.0';
 const COOKIE_NAME = 'crs_session';
@@ -157,7 +162,7 @@ async function recordHistory(
   try {
     await addHistory({ label, kind, note, exportPath, fileName }, getWorkspace());
   } catch (error) {
-    console.warn('[history] 快照写入失败：', (error as Error).message);
+    console.warn('[history] 快照写入失败：', redactLog(error));
   }
 }
 
@@ -220,7 +225,7 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
   ensureDataDirs();
   await initStore();
   await kernel.start().catch((error) => {
-    console.warn('[kernel] 启动探测失败：', (error as Error).message);
+    console.warn('[kernel] 启动探测失败：', redactLog(error));
   });
 
   const app = Fastify({ logger: false, bodyLimit: 45 * 1024 * 1024 });
@@ -277,7 +282,7 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
       reply.code(413).headers(baseHeaders()).send({ error: '请求内容过大' });
       return;
     }
-    console.error('[api] 未处理错误：', (error as Error).message.replace(/https?:\/\/\S+/g, '[url]'));
+    console.error('[api] 未处理错误：', redactLog(error));
     reply.code(500).headers(baseHeaders()).send({ error: '服务器内部错误' });
   });
 
@@ -318,9 +323,47 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
     };
   });
 
+  app.post('/api/exports/open', async () => {
+    const command = process.platform === 'win32' ? 'explorer.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+    try {
+      const child = spawn(command, [EXPORTS_DIR], { detached: true, stdio: 'ignore' });
+      child.unref();
+      return { ok: true };
+    } catch (error) {
+      throw new HttpError(500, `无法打开导出目录：${(error as Error).message}`);
+    }
+  });
+
   app.get('/api/live', async () => aggregator.getSnapshot());
 
   app.get('/api/workspace', async () => ({ workspace: getWorkspace() }));
+
+  app.post('/api/workspace/import', async (request) => {
+    const body = request.body as {
+      backup?: { workspace?: Workspace; workspaceVersion?: number };
+      workspace?: Workspace;
+    };
+    const candidate = body.backup?.workspace ?? body.workspace ?? (body as unknown as Workspace);
+    if (!candidate || typeof candidate !== 'object') throw new HttpError(400, '备份文件无效');
+    const declaredVersion = Number(body.backup?.workspaceVersion ?? candidate.version ?? WORKSPACE_VERSION);
+    if (declaredVersion > WORKSPACE_VERSION) {
+      throw new HttpError(400, `备份版本 ${declaredVersion} 高于当前工作区版本 ${WORKSPACE_VERSION}，请升级工具后再导入`);
+    }
+    if (!Array.isArray(candidate.sources) || !Array.isArray(candidate.nodes) || !Array.isArray(candidate.exits) || !Array.isArray(candidate.routes)) {
+      throw new HttpError(400, '备份数据结构无效');
+    }
+    const undoEntry = await addHistory(
+      { label: '导入工作区前的快照', kind: 'manual', note: '导入备份前自动创建' },
+      getWorkspace(),
+    );
+    const next = ensureWorkspaceShape(structuredClone(candidate));
+    const workspace = await replaceWorkspace(next);
+    await addHistory(
+      { label: '导入工作区备份', kind: 'restore', note: new Date().toISOString() },
+      workspace,
+    );
+    return { workspace, undoEntry };
+  });
 
   app.put('/api/workspace', async (request, reply) => {
     const body = request.body as { workspace?: Workspace; baseRevision?: number };
@@ -694,6 +737,90 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
     return { workspace };
   });
 
+  app.post('/api/chains', async (request) => {
+    const body = request.body as { relayNodeId?: string; landingNodeId?: string; name?: string };
+    const relayNodeId = requireString(body.relayNodeId, '中转节点', 120);
+    const landingNodeId = requireString(body.landingNodeId, '落地节点', 120);
+    const requestedName = requireString(body.name, '节点名称', 120).trim();
+    if (relayNodeId === landingNodeId) throw new HttpError(400, '中转和落地不能是同一个节点');
+    if (/[\r\n,]/.test(requestedName)) throw new HttpError(400, '节点名称不能包含换行或逗号');
+    const { value, workspace } = await updateWorkspace((draft) => {
+      const relay = draft.nodes.find((node) => node.id === relayNodeId);
+      const landing = draft.nodes.find((node) => node.id === landingNodeId);
+      if (!relay || !landing) throw new HttpError(404, '节点不存在');
+      if (relay.chain || landing.chain) throw new HttpError(400, '链式节点不能再次作为中转或落地');
+      if (!relay.enabled) throw new HttpError(400, '中转节点已禁用');
+      if (!landing.enabled) throw new HttpError(400, '落地节点已禁用');
+      const sourcesById = new Map(draft.sources.map((source) => [source.id, source]));
+      const duplicate = draft.nodes.some(
+        (node) =>
+          nodeDisplayName(node, sourcesById.get(node.sourceId)).toLowerCase() === requestedName.toLowerCase(),
+      );
+      if (duplicate) throw new HttpError(400, `节点名「${requestedName}」已存在`);
+      if (draft.exits.some((exit) => exit.name.toLowerCase() === requestedName.toLowerCase())) {
+        throw new HttpError(400, `节点名「${requestedName}」与出口重名`);
+      }
+      if (['DIRECT', 'REJECT', 'GLOBAL', 'PASS', 'COMPATIBLE', 'REJECT-DROP'].includes(requestedName.toUpperCase())) {
+        throw new HttpError(400, `节点名「${requestedName}」与内置出站冲突`);
+      }
+      const relayName = nodeDisplayName(relay, sourcesById.get(relay.sourceId));
+      const landingName = nodeDisplayName(landing, sourcesById.get(landing.sourceId));
+      let chainSource = draft.sources.find((source) => source.type === 'chain');
+      if (!chainSource) {
+        chainSource = {
+          id: randomUUID(),
+          type: 'chain',
+          name: '链式代理',
+          prefix: '',
+          keepRules: false,
+          updatedAt: new Date().toISOString(),
+          note: '由链路编辑器生成',
+        };
+        draft.sources.push(chainSource);
+      }
+      const raw = structuredClone(landing.raw) as Record<string, unknown>;
+      raw.name = requestedName;
+      raw['dialer-proxy'] = relayName;
+      const node: ProxyNode = {
+        id: randomUUID(),
+        sourceId: chainSource.id,
+        name: requestedName,
+        raw,
+        tags: ['链式'],
+        enabled: true,
+        addedAt: new Date().toISOString(),
+        chain: { relayNodeId, landingNodeId },
+      };
+      draft.nodes.push(node);
+      return { nodeId: node.id, relayName, landingName };
+    });
+    await recordHistory(`链式代理 · ${requestedName}`, 'manual', `${value.relayName} → ${value.landingName}`);
+    return { workspace, nodeId: value.nodeId };
+  });
+
+  app.delete('/api/chains/:nodeId', async (request) => {
+    const { nodeId } = request.params as { nodeId: string };
+    const { value, workspace } = await updateWorkspace((draft) => {
+      const node = draft.nodes.find((item) => item.id === nodeId && item.chain);
+      if (!node) throw new HttpError(404, '链路节点不存在');
+      const sourceId = node.sourceId;
+      const removedRoutes = draft.routes.filter(
+        (route) => route.kind === 'rule' && route.targetNodeId === nodeId,
+      ).length;
+      draft.nodes = draft.nodes.filter((item) => item.id !== nodeId);
+      draft.routes = draft.routes.filter(
+        (route) => !(route.kind === 'rule' && route.targetNodeId === nodeId),
+      );
+      const source = draft.sources.find((item) => item.id === sourceId && item.type === 'chain');
+      if (source && !draft.nodes.some((item) => item.sourceId === sourceId)) {
+        draft.sources = draft.sources.filter((item) => item.id !== sourceId);
+      }
+      return { name: node.name, removedRoutes };
+    });
+    await recordHistory(`删除链路 · ${value.name}`, 'manual', `同时移除 ${value.removedRoutes} 条目标规则`);
+    return { workspace, removedRoutes: value.removedRoutes };
+  });
+
   app.patch('/api/nodes/:id', async (request) => {
     const { id } = request.params as { id: string };
     const body = request.body as { name?: string; tags?: string[]; region?: string; enabled?: boolean };
@@ -1006,6 +1133,19 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
       : '用户手动创建的工作区快照';
     const entry = await addHistory({ label, kind: 'manual', note }, getWorkspace());
     return { entry };
+  });
+
+  app.get('/api/history/:id/summary', async (request) => {
+    const { id } = request.params as { id: string };
+    const data = await readHistory(id);
+    if (!data) throw new HttpError(404, '历史记录不存在');
+    const count = (workspace: Workspace) => ({
+      sources: workspace.sources.length,
+      nodes: workspace.nodes.length,
+      exits: workspace.exits.filter((exit) => !exit.builtin).length,
+      rules: workspace.routes.length,
+    });
+    return { summary: { snapshot: count(data.workspace), current: count(getWorkspace()) } };
   });
 
   app.get('/api/history/:id/export', async (request) => {

@@ -8,6 +8,7 @@ import { SettingsDrawer } from './components/SettingsDrawer';
 import { LivePage } from './pages/LivePage';
 import { NodesPage } from './pages/NodesPage';
 import { ExitsPage } from './pages/ExitsPage';
+import { ChainPage } from './pages/ChainPage';
 import { RulesPage } from './pages/RulesPage';
 import { ExportPage } from './pages/ExportPage';
 import { useWorkspace } from './store/workspace';
@@ -92,6 +93,7 @@ export default function App() {
           <Route path="/live" element={<LivePage />} />
           <Route path="/nodes" element={<NodesPage />} />
           <Route path="/exits" element={<ExitsPage />} />
+          <Route path="/chains" element={<ChainPage />} />
           <Route path="/rules" element={<Navigate to="/rulesets" replace />} />
           <Route path="/rulesets" element={<RulesPage />} />
           <Route path="/export" element={<ExportPage />} />

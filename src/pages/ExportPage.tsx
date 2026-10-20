@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -10,6 +10,7 @@ import {
   ClipboardCopy,
   Download,
   FileOutput,
+  FolderOpen,
   GitCompare,
   History,
   RefreshCw,
@@ -25,6 +26,7 @@ import type {
   ExportPreview,
   ExportResult,
   HistoryEntry,
+  HistorySummary,
   KernelValidation,
   Workspace,
 } from '../../shared/types';
@@ -184,6 +186,15 @@ export function ExportPage() {
     }
   };
 
+  const openExportsDir = async () => {
+    try {
+      await api('/api/exports/open', { method: 'POST' });
+      toast('success', '已打开导出目录');
+    } catch (error) {
+      toast('error', '打开目录失败', (error as Error).message);
+    }
+  };
+
   const runValidation = async () => {
     setValidating(true);
     try {
@@ -238,9 +249,29 @@ export function ExportPage() {
   };
 
   const restore = async (entry: HistoryEntry) => {
+    await saveNow();
+    let summary: HistorySummary | null = null;
+    try {
+      const result = await api<{ summary: HistorySummary }>(`/api/history/${entry.id}/summary`);
+      summary = result.summary;
+    } catch {
+      summary = null;
+    }
+    const summaryLines = summary
+      ? [
+          `恢复后：节点 ${summary.snapshot.nodes} · 出口 ${summary.snapshot.exits} · 规则 ${summary.snapshot.rules}`,
+          `当前：节点 ${summary.current.nodes} · 出口 ${summary.current.exits} · 规则 ${summary.current.rules}`,
+        ].join('\n')
+      : '';
     const confirmed = await confirm({
       title: '恢复工作区',
-      message: `将当前工作区替换为「${entry.label}」的快照（${formatDateTime(entry.at)}）。\n\n当前配置会被覆盖，建议先创建一个手动快照。`,
+      message: [
+        `将当前工作区替换为「${entry.label}」的快照（${formatDateTime(entry.at)}）。`,
+        summaryLines,
+        '当前配置会被覆盖，建议先创建一个手动快照。',
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
       confirmLabel: '恢复此快照',
       danger: true,
     });
@@ -295,6 +326,20 @@ export function ExportPage() {
     }
   }, [history, selectedHistoryId]);
 
+  const onHistoryKeyDown = (event: ReactKeyboardEvent) => {
+    if (!history.length) return;
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    if (!historyMenuOpen) setHistoryMenuOpen(true);
+    const currentIndex = history.findIndex((entry) => entry.id === selectedHistoryId);
+    let next: number;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = history.length - 1;
+    else if (currentIndex < 0) next = event.key === 'ArrowDown' ? 0 : history.length - 1;
+    else next = (currentIndex + (event.key === 'ArrowDown' ? 1 : -1) + history.length) % history.length;
+    setSelectedHistoryId(history[next].id);
+  };
+
   return (
     <div className="page export-page">
       <PageHeader
@@ -307,6 +352,7 @@ export function ExportPage() {
               <button
                 className={cx('btn btn-outline', historyMenuOpen && 'active')}
                 onClick={() => setHistoryMenuOpen((open) => !open)}
+                onKeyDown={onHistoryKeyDown}
                 aria-expanded={historyMenuOpen}
                 aria-haspopup="dialog"
               >
@@ -315,9 +361,9 @@ export function ExportPage() {
                 <ChevronDown size={12} />
               </button>
               {historyMenuOpen ? (
-                <div className="export-history-menu" role="dialog" aria-label="历史快照">
+                <div className="export-history-menu" role="dialog" aria-label="历史快照" onKeyDown={onHistoryKeyDown}>
                   <div className="export-history-menu-head">
-                    <span>选择快照后恢复</span>
+                    <span>选择快照后恢复 · ↑↓ 选择</span>
                     <button className="btn btn-sm btn-outline" onClick={() => void createSnapshot()} disabled={snapshotting}>
                       {snapshotting ? <Spinner /> : <Camera size={12} />} 创建工作区快照
                     </button>
@@ -635,8 +681,24 @@ export function ExportPage() {
           onClose={() => setSuccess(null)}
           footer={
             <>
-              <button className="btn btn-outline" onClick={() => copyToClipboard(success.path)}>
-                <ClipboardCopy size={13} /> 复制路径
+              <button className="btn btn-outline" onClick={() => void openExportsDir()}>
+                <FolderOpen size={13} /> 打开目录
+              </button>
+              <button
+                className="btn btn-outline"
+                onClick={() =>
+                  copyToClipboard(
+                    [
+                      '在 Clash Verge 中导入本工具生成的配置：',
+                      '1. 配置 → 新建 / 导入本地文件',
+                      `2. 选择：${success.path}`,
+                      '3. 切换前备份当前 Verge 配置；本工具不会写入 Verge，也不会自动重载内核',
+                      '4. 切换后确认端口、DNS、TUN 是否与你的预期一致',
+                    ].join('\n'),
+                  )
+                }
+              >
+                <ClipboardCopy size={13} /> 复制步骤
               </button>
               <button className="btn btn-primary" onClick={() => setSuccess(null)}>完成</button>
             </>
@@ -655,7 +717,7 @@ export function ExportPage() {
                   ? ' 已包含端口 / DNS / TUN 等基础设置；切换前仍建议备份 Verge 当前配置。'
                   : ' 此 YAML 不含端口 / DNS / TUN，切换前请备份并确认 Verge 会沿用自身网络设置；'}
                 {success.validation?.available && success.validation.ok
-                  ? ' 内核校验通过。'
+                  ? ` 内核校验通过（${success.validation.binary ?? 'mihomo'} · ${success.validation.durationMs ?? 0}ms）。`
                   : success.validation && !success.validation.available
                     ? ' 未找到 mihomo，已跳过内核校验。'
                     : ''}

@@ -118,6 +118,17 @@ export function generateConfig(workspace: Workspace, options: GenerateOptions = 
     }
   }
 
+  for (const node of enabledNodes) {
+    if (!node.chain) continue;
+    const label = nodeNameById.get(node.id) ?? node.name;
+    const relay = workspace.nodes.find((item) => item.id === node.chain!.relayNodeId);
+    if (!relay) {
+      addIssue('error', 'chain-relay-missing', `链式节点「${label}」的中转节点已不存在`);
+    } else if (!relay.enabled) {
+      addIssue('error', 'chain-relay-disabled', `链式节点「${label}」的中转节点「${relay.name}」已禁用`);
+    }
+  }
+
   const groupNameByLower = new Map<string, Exit>();
   const activeExits = exits.filter((exit) => !exit.builtin);
   for (const exit of activeExits) {

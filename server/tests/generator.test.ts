@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parse as parseYaml } from 'yaml';
 import type { Exit, ProxyNode, RuleRoute, RuleSetRoute, Source, Workspace } from '../../shared/types';
-import { createDefaultWorkspace } from '../defaults';
+import { createDefaultWorkspace, ensureWorkspaceShape } from '../defaults';
 import { generateConfig, ruleTypeLabel } from '../generator';
 import { extractBaseSettings } from '../base-template';
 
@@ -212,6 +212,80 @@ test('generator merges base settings but keeps its own sections', () => {
   assert.deepEqual(doc.proxies.map((proxy) => proxy.name), ['T-日本 01', 'T-日本 02']);
   assert.equal(doc.rules.at(-1), 'MATCH,自动选择');
   assert.ok(!doc.rules.includes('MATCH,STALE'));
+});
+
+test('chain nodes export as independent proxies with dialer-proxy', () => {
+  const workspace = makeWorkspace();
+  const chainSource: Source = {
+    id: 'chain-source',
+    type: 'chain',
+    name: '链式代理',
+    prefix: '',
+    keepRules: false,
+    updatedAt: NOW,
+  };
+  const chainNode: ProxyNode = {
+    id: 'chain-node',
+    sourceId: chainSource.id,
+    name: '日本中转 · 日本落地',
+    raw: {
+      ...workspace.nodes[1]!.raw,
+      name: '日本中转 · 日本落地',
+      'dialer-proxy': 'T-日本 01',
+    },
+    tags: ['链式'],
+    enabled: true,
+    addedAt: NOW,
+    chain: { relayNodeId: 'n1', landingNodeId: 'n2' },
+  };
+  workspace.sources.push(chainSource);
+  workspace.nodes.push(chainNode);
+  const generated = generateConfig(workspace);
+  assert.equal(generated.issues.filter((issue) => issue.severity === 'error').length, 0);
+  const doc = parseYaml(generated.yaml) as { proxies: Array<Record<string, unknown>> };
+  const chainProxy = doc.proxies.find((proxy) => proxy.name === '日本中转 · 日本落地');
+  assert.equal(chainProxy?.['dialer-proxy'], 'T-日本 01');
+  assert.equal(chainProxy?.server, 'a.example.com');
+  assert.equal(chainProxy?.type, 'ss');
+
+  workspace.sources[0]!.prefix = 'X-';
+  ensureWorkspaceShape(workspace);
+  assert.equal(chainNode.raw['dialer-proxy'], 'X-日本 01');
+});
+
+test('chain nodes with missing relays block export', () => {
+  const workspace = makeWorkspace();
+  workspace.sources.push({
+    id: 'chain-source',
+    type: 'chain',
+    name: '链式代理',
+    prefix: '',
+    keepRules: false,
+  });
+  workspace.nodes.push({
+    id: 'chain-node',
+    sourceId: 'chain-source',
+    name: '失效链路',
+    raw: { ...workspace.nodes[0]!.raw, 'dialer-proxy': 'T-日本 01' },
+    tags: ['链式'],
+    enabled: true,
+    addedAt: NOW,
+    chain: { relayNodeId: 'missing', landingNodeId: 'n2' },
+  });
+  const generated = generateConfig(workspace);
+  assert.ok(generated.issues.some((issue) => issue.code === 'chain-relay-missing' && issue.severity === 'error'));
+});
+
+test('generated YAML never contains subscription URLs', () => {
+  const workspace = makeWorkspace();
+  workspace.sources[0] = {
+    ...workspace.sources[0]!,
+    type: 'subscription',
+    url: 'https://secret-provider.example.com/sub?token=top-secret',
+  };
+  const generated = generateConfig(workspace);
+  assert.ok(!generated.yaml.includes('secret-provider.example.com'));
+  assert.ok(!generated.yaml.includes('top-secret'));
 });
 
 test('rules can target a single node directly', () => {

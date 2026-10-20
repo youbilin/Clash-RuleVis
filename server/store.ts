@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type { HistoryEntry, Workspace } from '../shared/types';
 import { createDefaultWorkspace, ensureWorkspaceShape } from './defaults';
 import { atomicWriteFile, readJsonFile } from './fsutil';
+import { redactLog } from './logging';
 import { HISTORY_DIR, WORKSPACE_PATH } from './paths';
 
 interface HistoryFile {
@@ -25,7 +26,7 @@ export async function initStore(): Promise<Workspace> {
   } catch (error) {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     await fs.rename(WORKSPACE_PATH, path.join(path.dirname(WORKSPACE_PATH), `workspace.corrupt-${stamp}.json`)).catch(() => {});
-    console.warn('[store] workspace.json 解析失败，已备份并重建：', (error as Error).message);
+    console.warn('[store] workspace.json 解析失败，已备份并重建：', redactLog(error));
   }
   current = createDefaultWorkspace();
   await persist(current);

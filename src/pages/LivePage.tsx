@@ -17,6 +17,7 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  Ban,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -39,7 +40,7 @@ import {
   Zap,
 } from 'lucide-react';
 import type { Exit, LiveDomainConnection, LiveSnapshot, ProxyNode, Source, Workspace } from '../../shared/types';
-import { nodeDisplayName, resolveExit, routeTargetInfo, ruleMatchesHost } from '../../shared/model';
+import { isIPv6, nodeDisplayName, resolveExit, routeTargetInfo, ruleMatchesHost } from '../../shared/model';
 import { api, copyToClipboard } from '../api';
 import { useLive } from '../store/live';
 import { useWorkspace } from '../store/workspace';
@@ -519,6 +520,7 @@ export function LivePage() {
   const workspace = useWorkspace((state) => state.workspace);
   const status = useWorkspace((state) => state.status);
   const update = useWorkspace((state) => state.update);
+  const addPendingRules = useWorkspace((state) => state.addPendingRules);
   const refreshStatus = useWorkspace((state) => state.refreshStatus);
   const snapshot = useLive((state) => state.snapshot);
   const socketConnected = useLive((state) => state.socketConnected);
@@ -875,6 +877,24 @@ export function LivePage() {
         : [...list, id];
     });
   };
+  const quickTargets = customExits.filter((exit) => favoriteIds.has(exit.id)).slice(0, 3);
+
+  const quickRule = (entry: LiveDomainConnection, exitId: string, targetName: string) => {
+    const type = entry.isIp ? (isIPv6(entry.host) ? 'IP-CIDR6' : 'IP-CIDR') : 'DOMAIN';
+    const payload = entry.isIp ? `${entry.host}/${isIPv6(entry.host) ? 128 : 32}` : entry.host;
+    const result = addPendingRules([
+      {
+        type,
+        payload,
+        exitId,
+        origin: 'manual',
+        note: '来自实时连接快捷规则',
+      },
+    ]);
+    if (result.added) toast('success', '已加入待应用', `${payload} → ${targetName}`);
+    else toast('info', '规则已存在', `${type} · ${payload}`);
+    setContext(null);
+  };
   const activeEntries = activeKeys
     .map((key) => entries.find((entry) => entry.key === key))
     .filter((entry): entry is LiveDomainConnection => Boolean(entry));
@@ -1130,8 +1150,8 @@ export function LivePage() {
                             onContext={(event, item) => {
                               event.preventDefault();
                               setContext({
-                                x: Math.min(event.clientX, window.innerWidth - 215),
-                                y: Math.min(event.clientY, window.innerHeight - 240),
+                                x: Math.min(event.clientX, window.innerWidth - 235),
+                                y: Math.min(event.clientY, window.innerHeight - 390),
                                 entry: item,
                               });
                             }}
@@ -1347,6 +1367,19 @@ export function LivePage() {
           onMouseDown={(event) => event.stopPropagation()}
         >
           <div className="ctx-label">{context.entry.displayHost}</div>
+          <div className="ctx-label">快速规则</div>
+          <button className="ctx-item" onClick={() => quickRule(context.entry, 'direct', 'DIRECT')}>
+            <ArrowRight size={13} /> 直连此目标
+          </button>
+          <button className="ctx-item" onClick={() => quickRule(context.entry, 'reject', 'REJECT')}>
+            <Ban size={13} /> 拒绝此目标
+          </button>
+          {quickTargets.map((exit) => (
+            <button className="ctx-item" key={exit.id} onClick={() => quickRule(context.entry, exit.id, exit.name)}>
+              <Zap size={13} /> 走「{exit.name}」
+            </button>
+          ))}
+          <div className="ctx-sep" />
           <button className="ctx-item" onClick={() => compose(context.entry)}>
             <Plus size={13} /> 生成规则…
           </button>

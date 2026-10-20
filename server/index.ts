@@ -1,6 +1,7 @@
 import { buildServer } from './app';
 import { kernel } from './kernel';
 import { SERVER_HOST, SERVER_PORT } from './paths';
+import { redactLog } from './logging';
 
 const { app, aggregator } = await buildServer();
 
@@ -16,7 +17,7 @@ try {
   );
   console.log('');
 } catch (error) {
-  console.error('启动失败：', (error as Error).message);
+  console.error('启动失败：', redactLog(error));
   process.exit(1);
 }
 

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Exit, RuleRoute, Workspace, WorkspaceSettings } from '../shared/types';
 import { WORKSPACE_VERSION } from '../shared/types';
+import { nodeDisplayName } from '../shared/model';
 
 export const DEFAULT_SETTINGS: WorkspaceSettings = {
   onboarded: false,
@@ -75,6 +76,18 @@ export function ensureWorkspaceShape(workspace: Workspace): Workspace {
   if (!Array.isArray(workspace.routes)) workspace.routes = [];
   workspace.settings = { ...DEFAULT_SETTINGS, ...(workspace.settings ?? {}) };
   workspace.version = WORKSPACE_VERSION;
+
+  const sourcesById = new Map(workspace.sources.map((source) => [source.id, source]));
+  for (const node of workspace.nodes) {
+    if (!node.chain) continue;
+    const relay = workspace.nodes.find((item) => item.id === node.chain!.relayNodeId);
+    if (relay) {
+      node.raw = {
+        ...node.raw,
+        'dialer-proxy': nodeDisplayName(relay, sourcesById.get(relay.sourceId)),
+      };
+    }
+  }
 
   const builtins = createBuiltinExits();
   for (const b of builtins) {
