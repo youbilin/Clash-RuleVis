@@ -21,9 +21,12 @@ redacted examples.
 ## Security boundaries
 
 - The web build binds `127.0.0.1` and uses a session cookie plus an Origin allowlist.
-- The desktop app does not start an HTTP listener. It uses Tauri IPC, a
-  restricted CSP and a minimal capability set; it does not ship Node or an
-  Electron/Node sidecar.
+- The desktop app normally uses Tauri IPC only, with a restricted CSP and a
+  minimal capability set; it does not ship Node or an Electron/Node sidecar.
+- The explicit "Import to Clash Verge" action starts a temporary loopback HTTP
+  listener on a random port. It serves only the current exported YAML under a
+  random 36-character token for 30 minutes, then expires. It never exposes the
+  exports directory.
 - The current Windows installer is unsigned. Verify the SHA256 published in the
   GitHub release before running it; SmartScreen may warn about an unknown
   publisher.

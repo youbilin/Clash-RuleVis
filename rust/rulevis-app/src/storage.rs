@@ -312,7 +312,10 @@ impl Store {
     }
 
     pub fn read_export(&self, entry: &HistoryEntry) -> Option<String> {
-        let path = entry.export_path.as_deref()?;
+        self.read_export_path(entry.export_path.as_deref()?)
+    }
+
+    pub fn read_export_path(&self, path: &str) -> Option<String> {
         let path = PathBuf::from(path);
         let canonical_parent = self.exports_dir.canonicalize().ok()?;
         let canonical = path.canonicalize().ok()?;

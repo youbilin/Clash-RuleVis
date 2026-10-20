@@ -207,6 +207,24 @@ fn manual_nodes_chain_export_history_and_restore_work_end_to_end() {
         assert_eq!(exported["validation"]["ok"], json!(true));
     }
     assert_eq!(exported["workspace"]["lastExport"]["nodeCount"], json!(3));
+
+    let share = call(
+        &state,
+        "POST",
+        "/api/exports/import-to-verge",
+        Some(json!({ "path": export_path, "open": false })),
+    )
+    .unwrap();
+    assert_eq!(share["opened"], json!(false));
+    let share_url = share["url"].as_str().unwrap();
+    assert!(share_url.starts_with("http://127.0.0.1:"));
+    assert!(share["schemeUrl"]
+        .as_str()
+        .unwrap()
+        .starts_with("clash://install-config?url="));
+    let shared_yaml = ureq::get(share_url).call().unwrap().into_string().unwrap();
+    assert!(shared_yaml.contains("东京 → 洛杉矶"));
+
     let history_id = exported["historyId"].as_str().unwrap().to_string();
 
     let history = call(&state, "GET", "/api/history", None).unwrap();

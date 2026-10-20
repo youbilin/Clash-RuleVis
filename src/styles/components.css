@@ -904,10 +904,82 @@
   overflow-wrap: anywhere;
   border: 1px solid var(--line);
   border-radius: 5px;
-  background: #080c11;
-  color: var(--text-2);
+  background: var(--panel-2);
+  color: var(--text);
   font-family: var(--font-mono);
   font-size: 10px;
+}
+
+.export-success-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 3px 5px 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  text-align: left;
+}
+
+.export-success-path code {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  user-select: all;
+}
+
+.export-success-path .icon-btn {
+  flex: 0 0 auto;
+}
+
+.export-share {
+  width: 100%;
+  max-width: 560px;
+  margin-top: 2px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  text-align: left;
+}
+
+.export-share-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: 10px;
+}
+
+.export-share-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.export-share-row code {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 9.5px;
+  user-select: all;
+}
+
+.export-share .hint {
+  margin-top: 5px;
+  color: var(--faint);
+  font-size: 9.5px;
 }
 
 .export-success-panel .callout {

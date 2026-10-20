@@ -412,7 +412,7 @@ function SettingsContent() {
           本地服务只监听 127.0.0.1，用一次性 Cookie 保护接口。本工具不会改写 Clash Verge 的
           profiles.yaml，也不会重载内核；导出文件只写入上方导出目录。
         </p>
-        <p className="hint" style={{ marginTop: 8 }}>路由台 v{status?.version ?? '0.3.0'}</p>
+        <p className="hint" style={{ marginTop: 8 }}>路由台 v{status?.version ?? '0.3.1'}</p>
       </section>
     </Drawer>
   );

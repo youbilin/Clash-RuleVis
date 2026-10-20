@@ -69,6 +69,13 @@ export function ExportPage() {
     baseIncluded: boolean;
     validation?: KernelValidation;
   } | null>(null);
+  const [importingVerge, setImportingVerge] = useState(false);
+  const [shareInfo, setShareInfo] = useState<{
+    url: string;
+    schemeUrl: string;
+    expiresAt: string;
+    opened: boolean;
+  } | null>(null);
   const [viewing, setViewing] = useState<{ entry: HistoryEntry; yaml: string } | null>(null);
   const [snapshotting, setSnapshotting] = useState(false);
   const [historyMenuOpen, setHistoryMenuOpen] = useState(false);
@@ -166,6 +173,7 @@ export function ExportPage() {
       });
       applyServerWorkspace(result.workspace);
       setValidation(result.validation ?? null);
+      setShareInfo(null);
       setSuccess({
         path: result.path,
         counts: result.counts,
@@ -192,6 +200,32 @@ export function ExportPage() {
       toast('success', '已打开导出目录');
     } catch (error) {
       toast('error', '打开目录失败', (error as Error).message);
+    }
+  };
+
+  const importToVerge = async () => {
+    if (!success) return;
+    setImportingVerge(true);
+    try {
+      const result = await api<{
+        url: string;
+        schemeUrl: string;
+        expiresAt: string;
+        opened: boolean;
+      }>('/api/exports/import-to-verge', {
+        method: 'POST',
+        body: { path: success.path },
+      });
+      setShareInfo(result);
+      if (result.opened) {
+        toast('success', '已发送到 Clash Verge', '如未出现导入窗口，可复制下方地址手动添加');
+      } else {
+        toast('warn', '请手动导入', '已生成临时订阅地址，复制到 Clash Verge 添加配置');
+      }
+    } catch (error) {
+      toast('error', '导入 Clash Verge 失败', (error as Error).message);
+    } finally {
+      setImportingVerge(false);
     }
   };
 
@@ -700,7 +734,10 @@ export function ExportPage() {
               >
                 <ClipboardCopy size={13} /> 复制步骤
               </button>
-              <button className="btn btn-primary" onClick={() => setSuccess(null)}>完成</button>
+              <button className="btn btn-primary" onClick={() => void importToVerge()} disabled={importingVerge}>
+                {importingVerge ? <Spinner onAccent /> : <Download size={13} />} 导入到 Clash Verge
+              </button>
+              <button className="btn btn-ghost" onClick={() => setSuccess(null)}>完成</button>
             </>
           }
         >
@@ -708,7 +745,39 @@ export function ExportPage() {
             <div className="export-success-icon"><Check size={22} /></div>
             <h3>YAML 已保存</h3>
             <p>节点 {success.counts.nodes} · 出口 {success.counts.exits} · 规则集 {success.counts.providers} · 规则 {success.counts.rules}</p>
-            <code>{success.path}</code>
+            <div className="export-success-path">
+              <code>{success.path}</code>
+              <button
+                className="icon-btn"
+                title="复制文件路径"
+                aria-label="复制文件路径"
+                onClick={() => {
+                  void copyToClipboard(success.path).then(() => toast('success', '文件路径已复制'));
+                }}
+              >
+                <ClipboardCopy size={12} />
+              </button>
+            </div>
+            {shareInfo ? (
+              <div className="export-share">
+                <div className="export-share-head">
+                  <span>临时订阅地址</span>
+                  <span className="faint">30 分钟内有效</span>
+                </div>
+                <div className="export-share-row">
+                  <code>{shareInfo.url}</code>
+                  <button
+                    className="btn btn-sm btn-outline"
+                    onClick={() => {
+                      void copyToClipboard(shareInfo.url).then(() => toast('success', '订阅地址已复制'));
+                    }}
+                  >
+                    <ClipboardCopy size={12} /> 复制
+                  </button>
+                </div>
+                <div className="hint">仅在应用运行期间有效，供 Clash Verge 本次导入使用。</div>
+              </div>
+            ) : null}
             <div className="callout info">
               <FileOutput size={14} />
               <span>

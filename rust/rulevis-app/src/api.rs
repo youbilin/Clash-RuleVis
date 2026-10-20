@@ -23,6 +23,7 @@ use crate::kernel::{test_node_with, Kernel, KernelSettings};
 use crate::live::LiveAggregator;
 use crate::probe::probe_through_proxy;
 use crate::rulesets::{expand_ruleset, inspect_buffer, is_path_inside, store_ruleset_file};
+use crate::share::ShareServer;
 use crate::storage::{now_iso, NewHistory, Store, StoreError};
 use crate::types::{ApiFailure, AppStatus, KernelStatus, StatusCounts, StatusWorkspace};
 use crate::validation::validate_config;
@@ -32,6 +33,7 @@ pub struct AppState {
     store: Arc<Mutex<Store>>,
     kernel: Arc<Mutex<Kernel>>,
     live: Arc<Mutex<LiveAggregator>>,
+    share: Mutex<ShareServer>,
 }
 
 impl AppState {
@@ -43,6 +45,7 @@ impl AppState {
             store: Arc::new(Mutex::new(store)),
             kernel: Arc::new(Mutex::new(kernel)),
             live: Arc::new(Mutex::new(live)),
+            share: Mutex::new(ShareServer::new()),
         })
     }
 
@@ -749,6 +752,7 @@ pub fn handle_request(
             open_directory(&exports_dir)?;
             Ok(json!({ "ok": true }))
         }
+        ("POST", "/api/exports/import-to-verge") => import_to_verge(state, body),
         ("GET", "/api/export/preview") => with_store(state, |store| {
             let preview = build_preview(store).map_err(ApiFailure::internal)?;
             serialize(preview)
@@ -2002,6 +2006,71 @@ fn refresh_ruleset(state: &AppState, id: &str) -> Result<Value, ApiFailure> {
     let route_value = serde_json::to_value(Route::Ruleset(updated))
         .map_err(|error| ApiFailure::internal(error.to_string()))?;
     Ok(json!({ "workspace": workspace, "route": route_value }))
+}
+
+fn import_to_verge(state: &AppState, body: Option<Value>) -> Result<Value, ApiFailure> {
+    let body = body_object(body.as_ref());
+    let path = if let Some(path) = optional_string(&body, "path") {
+        path
+    } else {
+        with_store(state, |store| {
+            store
+                .workspace()
+                .last_export
+                .as_ref()
+                .map(|record| record.path.clone())
+                .ok_or_else(|| ApiFailure::bad_request("请先导出配置"))
+        })?
+    };
+    let yaml = with_store(state, |store| {
+        store
+            .read_export_path(&path)
+            .ok_or_else(|| ApiFailure::not_found("导出文件不存在，请重新导出"))
+    })?;
+    let (info, opened) = {
+        let mut share = state
+            .share
+            .lock()
+            .map_err(|_| ApiFailure::internal("分享服务锁不可用，请重启应用"))?;
+        let info = share.publish(yaml).map_err(ApiFailure::internal)?;
+        let opened = if body.get("open").and_then(Value::as_bool) == Some(false) {
+            false
+        } else {
+            open_external_url(&info.scheme_url)
+        };
+        (info, opened)
+    };
+    let expires_at = chrono::DateTime::<chrono::Utc>::from_timestamp_millis(info.expires_at as i64)
+        .map(|date| date.to_rfc3339_opts(chrono::SecondsFormat::Millis, true))
+        .unwrap_or_default();
+    Ok(json!({
+        "url": info.url,
+        "schemeUrl": info.scheme_url,
+        "expiresAt": expires_at,
+        "opened": opened
+    }))
+}
+
+fn open_external_url(target: &str) -> bool {
+    let mut command = if cfg!(target_os = "windows") {
+        let mut command = Command::new("cmd.exe");
+        command.args(["/c", "start", "", target]);
+        command
+    } else if cfg!(target_os = "macos") {
+        let mut command = Command::new("open");
+        command.arg(target);
+        command
+    } else {
+        let mut command = Command::new("xdg-open");
+        command.arg(target);
+        command
+    };
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x08000000);
+    }
+    command.spawn().is_ok()
 }
 
 fn open_directory(path: &Path) -> Result<(), ApiFailure> {

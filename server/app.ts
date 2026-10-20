@@ -43,7 +43,7 @@ import { RULE_SETS_DIR } from './paths';
 import { fileExists, isPathInside } from './fsutil';
 import { redactLog } from './logging';
 
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.3.1';
 const COOKIE_NAME = 'crs_session';
 
 class HttpError extends Error {
@@ -63,6 +63,18 @@ interface WsClient {
   send(data: string): void;
   close(): void;
   on(event: string, listener: (...args: unknown[]) => void): void;
+}
+
+function openExternalUrl(target: string): boolean {
+  try {
+    const command = process.platform === 'win32' ? 'cmd.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+    const args = process.platform === 'win32' ? ['/c', 'start', '', target] : [target];
+    const child = spawn(command, args, { detached: true, stdio: 'ignore', windowsHide: true });
+    child.unref();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 interface BootstrapBody {
@@ -236,6 +248,7 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
 
   const app = Fastify({ logger: false, bodyLimit: 45 * 1024 * 1024 });
   const sessionToken = randomBytes(32).toString('hex');
+  const shareEntries = new Map<string, { yaml: string; expiresAt: number; filePath: string }>();
   const allowedOrigins = new Set([
     `http://127.0.0.1:${SERVER_PORT}`,
     `http://localhost:${SERVER_PORT}`,
@@ -338,6 +351,51 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
     } catch (error) {
       throw new HttpError(500, `无法打开导出目录：${(error as Error).message}`);
     }
+  });
+
+  app.post('/api/exports/import-to-verge', async (request) => {
+    const body = (request.body ?? {}) as { path?: string; open?: boolean };
+    const filePath = typeof body.path === 'string' && body.path
+      ? body.path
+      : getWorkspace().lastExport?.path;
+    if (!filePath || !isPathInside(EXPORTS_DIR, filePath)) {
+      throw new HttpError(400, '导出文件路径无效');
+    }
+    let yaml: string;
+    try {
+      yaml = await fsp.readFile(filePath, 'utf8');
+    } catch {
+      throw new HttpError(404, '导出文件不存在，请重新导出');
+    }
+    const token = randomBytes(18).toString('hex');
+    const expiresAt = Date.now() + 30 * 60_000;
+    for (const [key, entry] of shareEntries) {
+      if (entry.expiresAt <= Date.now()) shareEntries.delete(key);
+    }
+    shareEntries.set(token, { yaml, expiresAt, filePath });
+    const url = `http://127.0.0.1:${SERVER_PORT}/share/clash/${token}.yaml`;
+    const schemeUrl = `clash://install-config?url=${encodeURIComponent(url)}`;
+    return {
+      url,
+      schemeUrl,
+      expiresAt: new Date(expiresAt).toISOString(),
+      opened: body.open === false ? false : openExternalUrl(schemeUrl),
+    };
+  });
+
+  app.get('/share/clash/:file', async (request, reply) => {
+    const { file } = request.params as { file: string };
+    const token = file.endsWith('.yaml') ? file.slice(0, -5) : file;
+    const entry = shareEntries.get(token);
+    if (!entry || entry.expiresAt <= Date.now() || !/^[a-f0-9]{36}$/i.test(token)) {
+      reply.code(404).type('text/plain; charset=utf-8').send('分享链接已失效');
+      return;
+    }
+    reply
+      .header('Content-Type', 'text/yaml; charset=utf-8')
+      .header('Cache-Control', 'no-store')
+      .header('X-Content-Type-Options', 'nosniff')
+      .send(entry.yaml);
   });
 
   app.get('/api/live', async () => aggregator.getSnapshot());

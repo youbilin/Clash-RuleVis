@@ -6,6 +6,7 @@ pub mod kernel;
 pub mod live;
 pub mod probe;
 pub mod rulesets;
+pub mod share;
 pub mod storage;
 pub mod types;
 pub mod validation;

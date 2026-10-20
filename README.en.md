@@ -109,7 +109,7 @@ npm run desktop:check
 
 ## Windows download
 
-Download `Clash.RuleVis_0.3.0_x64-setup.exe` (NSIS, per-user) from [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest). The installer is unsigned, so SmartScreen may warn; the release page includes a SHA256 checksum.
+Download `Clash.RuleVis_0.3.1_x64-setup.exe` (NSIS, per-user) from [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest). The installer is unsigned, so SmartScreen may warn; the release page includes a SHA256 checksum.
 
 Desktop data lives in `%APPDATA%\io.github.youbilin.clash-rulevis` (override with `CRS_DATA_DIR`) and is independent from the web build's `data/`. Import a web workspace JSON backup from the desktop settings drawer to migrate.
 
@@ -123,6 +123,7 @@ The desktop app keeps the same React UI and uses Rust for the local API. It does
 - mihomo controller discovery over TCP and Windows named pipes; connection settings, rediscovery and node/exit latency tests.
 - Live connection aggregation with domains, rule hits, exits/nodes, processes, rates and history.
 - Full YAML preview, diff, real `verge-mihomo -t` validation, safe export and history restore.
+- One-click Clash Verge import: serves the current export on a temporary loopback URL and opens `clash://install-config`; the URL can also be copied manually.
 - Read-only Verge profile discovery for base port/DNS/TUN settings.
 
 ```bash
@@ -170,7 +171,7 @@ Override it with `CRS_DATA_DIR`. `data/`, `.demo-data/` and exported files are e
 
 ## Safety and privacy
 
-- The web build binds `127.0.0.1` with a local session cookie and Origin allowlist; the desktop build uses Tauri IPC with no local port.
+- The web build binds `127.0.0.1` with a local session cookie and Origin allowlist; the desktop build normally uses Tauri IPC only. Importing into Verge temporarily opens a random loopback port with a random token and a 30-minute TTL.
 - No telemetry or third-party analytics.
 - Export YAML excludes subscription source URLs, `external-controller` and `secret`.
 - Node credentials are intentionally present in exported YAML because the kernel needs them; treat exported files as secrets.

@@ -3142,3 +3142,106 @@ body {
   font-family: var(--font-mono);
   font-size: 9px;
 }
+
+/* ---------- live: fill the viewport, compact exit cards ---------- */
+
+@media (min-width: 1081px) {
+  .live-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding-bottom: 16px;
+  }
+
+  .live-page.has-tray {
+    padding-bottom: 210px;
+  }
+
+  .live-page > .stat-strip,
+  .live-page > .offline-inline {
+    flex: 0 0 auto;
+  }
+
+  .live-page > .live-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  .live-page .live-main {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .live-page .live-toolbar,
+  .live-page .selection-bar,
+  .live-page .live-foot {
+    flex: 0 0 auto;
+  }
+
+  .live-page .conn-table {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .live-page .conn-head {
+    flex: 0 0 auto;
+  }
+
+  .live-page .conn-body {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 220px;
+    max-height: none;
+  }
+
+  .live-page .exit-rail {
+    position: static;
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+  }
+}
+
+.live-page .exit-list {
+  gap: 4px;
+}
+
+.live-page .exit-drop {
+  padding: 6px 8px 5px;
+}
+
+.live-page .exit-drop-name {
+  margin-top: 1px;
+}
+
+.live-page .exit-drop-meta {
+  margin-top: 1px;
+}
+
+.live-page .exit-top-right {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.live-page .exit-tool {
+  width: 18px;
+  height: 18px;
+  opacity: 0.35;
+}
+
+.live-page .exit-drop:hover .exit-tool,
+.live-page .exit-drop:focus-within .exit-tool {
+  opacity: 1;
+}
+
+.live-page .exit-drop-meta .exit-hits {
+  margin-left: auto;
+}

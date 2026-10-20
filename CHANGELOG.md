@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.1 — 2026-10-21
+
+### Added
+
+- One-click **Import to Clash Verge**: after a safe export, the app serves the
+  YAML from a random loopback URL with a 36-character token, 30-minute TTL and
+  opens `clash://install-config`; the URL can also be copied manually.
+
+### Fixed
+
+- Export completion no longer renders the file path as dark-on-dark; it is now
+  a readable light surface with a copy button.
+- The live page fills the available viewport instead of leaving a large blank
+  area below the connection table.
+- Live exit cards are denser: test/edit actions moved into the header, hit count
+  merged into the meta row, and padding reduced.
+
 ## 0.3.0 — 2026-10-21
 
 ### Added

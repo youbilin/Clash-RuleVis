@@ -425,12 +425,36 @@ function ExitDropCard({
             </button>
           ) : null}
           <span className={cx('exit-delay', tone)}>{formatDelay(delay)}</span>
+          {!exit.builtin ? (
+            <button
+              className="icon-btn exit-tool"
+              title={group ? '测速' : '该出口尚未进入内核'}
+              onClick={(event) => {
+                event.stopPropagation();
+                onTest();
+              }}
+              disabled={!group || testing}
+            >
+              {testing ? <Spinner /> : <Zap size={12} />}
+            </button>
+          ) : null}
+          <button
+            className="icon-btn exit-tool"
+            title="在出口页编辑"
+            onClick={(event) => {
+              event.stopPropagation();
+              onManage();
+            }}
+          >
+            <Settings2 size={12} />
+          </button>
         </span>
       </div>
       <div className="exit-drop-name">
         <span className={cx('dot', empty ? 'red' : exit.builtin ? 'blue' : 'green')} />
         <strong className="truncate">{exit.name}</strong>
         {isOver ? <span className="drop-ready">释放创建</span> : null}
+        {empty ? <span className="exit-warning">无可用成员</span> : missing ? <span className="exit-warning amber">{missing} 个失效</span> : null}
       </div>
       <div className="exit-drop-meta">
         {exit.builtin ? (
@@ -444,36 +468,9 @@ function ExitDropCard({
             <span className="truncate">{group.now}</span>
           </>
         ) : null}
-      </div>
-      <div className="exit-drop-foot">
         <span className="exit-hits mono" title="内核启动以来的命中次数">
           <Zap size={10} /> {formatCompact(hits)}
         </span>
-        {empty ? <span className="exit-warning">无可用成员</span> : missing ? <span className="exit-warning amber">{missing} 个失效</span> : null}
-        <span className="spacer" />
-        {!exit.builtin ? (
-          <button
-            className="icon-btn"
-            title={group ? '测速' : '该出口尚未进入内核'}
-            onClick={(event) => {
-              event.stopPropagation();
-              onTest();
-            }}
-            disabled={!group || testing}
-          >
-            {testing ? <Spinner /> : <Zap size={12} />}
-          </button>
-        ) : null}
-        <button
-          className="icon-btn"
-          title="在出口页编辑"
-          onClick={(event) => {
-            event.stopPropagation();
-            onManage();
-          }}
-        >
-          <Settings2 size={12} />
-        </button>
       </div>
     </div>
   );

@@ -168,7 +168,7 @@ GitHub Actions 会运行 Rust 核心与桌面 API 测试，并在 Windows runner
 
 ## 下载安装（Windows）
 
-从 [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest) 下载 `Clash.RuleVis_0.3.0_x64-setup.exe`（NSIS，当前用户安装）。安装包未签名，SmartScreen 可能提示未知发布者；Release 页面会提供 SHA256，可自行校验。
+从 [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest) 下载 `Clash.RuleVis_0.3.1_x64-setup.exe`（NSIS，当前用户安装）。安装包未签名，SmartScreen 可能提示未知发布者；Release 页面会提供 SHA256，可自行校验。
 
 桌面数据保存在 `%APPDATA%\io.github.youbilin.clash-rulevis`（可用 `CRS_DATA_DIR` 覆盖），与 Web 版的 `data/` 相互独立。首次使用可在设置中导入 Web 版工作区 JSON 备份。
 
@@ -182,6 +182,7 @@ GitHub Actions 会运行 Rust 核心与桌面 API 测试，并在 Windows runner
 - mihomo 控制器自动发现：TCP controller 与 Windows 命名管道；连接设置、重新探测、节点/出口测速。
 - 实时连接聚合：域名、规则命中、出口/节点、进程、速率与历史曲线。
 - 完整 YAML 预览、diff、真实 `verge-mihomo -t` 校验、安全导出与历史恢复。
+- 一键导入 Clash Verge：导出后生成本机临时订阅地址，并调用 `clash://install-config` 触发 Verge 导入；也可复制地址手动添加。
 - 只读读取 Verge 当前 profile 的端口 / DNS / TUN 等基础设置。
 
 ```bash
@@ -192,7 +193,7 @@ npm run desktop:build  # 构建 release + NSIS 安装包
 
 Windows 构建前置：Rust stable、MSVC Build Tools 的 C++ 工作负载、Windows SDK 10、WebView2 Runtime；运行实时功能需要 Clash Verge Rev / mihomo。
 
-安全边界与 Web 版一致：不写入 Verge 配置、不重载内核；订阅信息和控制器密钥不会出现在导出 YAML；桌面版只使用 Tauri IPC，不开放本地端口。当前安装包未签名，自动更新与代码签名属于下一阶段。
+安全边界与 Web 版一致：不直接写入 Verge 配置文件、不重载内核；订阅信息和控制器密钥不会出现在导出 YAML。桌面版平时只使用 Tauri IPC；点击「导入到 Clash Verge」时才会在 `127.0.0.1` 随机端口临时提供当前导出的 YAML，使用随机 token、30 分钟过期，随后点击/复制地址由 Verge 完成导入。当前安装包未签名，自动更新与代码签名属于下一阶段。
 
 ## 快速开始
 
@@ -323,7 +324,8 @@ fixtures/              # TypeScript ↔ Rust 的 parity 契约
 ## 数据与隐私
 
 - 所有数据、订阅地址、节点信息与控制器密钥都只保存在本机。
-- Web 服务仅监听 `127.0.0.1`，并使用本地会话 Cookie 与 Origin 白名单；桌面版只使用 Tauri IPC，不开放本地端口。
+- Web 服务仅监听 `127.0.0.1`，并使用本地会话 Cookie 与 Origin 白名单；桌面版平时只用 Tauri IPC，导入 Verge 时才临时监听随机回环端口。
+- 临时分享链接使用随机 token，30 分钟有效，仅提供当前导出的 YAML。
 - 不发送遥测，不接入第三方分析服务。
 - 导出的 YAML 不包含 `external-controller` 与 `secret`。
 - 桌面版工作区、历史、导出和密钥设置保存在应用数据目录，请按敏感数据保管。
