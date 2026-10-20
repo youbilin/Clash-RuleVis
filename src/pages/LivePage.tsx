@@ -45,7 +45,7 @@ import { api, copyToClipboard } from '../api';
 import { useLive } from '../store/live';
 import { useWorkspace } from '../store/workspace';
 import { toast, useUi } from '../store/ui';
-import { PageHeader, EmptyState, Spinner } from '../components/Common';
+import { EmptyState, Spinner } from '../components/Common';
 import { Sparkline } from '../components/Sparkline';
 import { RuleComposer } from '../components/RuleComposer';
 import { RuleTargetSelect } from '../components/RuleTargetSelect';
@@ -912,23 +912,7 @@ export function LivePage() {
 
   return (
     <div className={cx('page live-page', pendingRoutes.length > 0 && 'has-tray')}>
-      <PageHeader
-        kicker="LIVE TRAFFIC"
-        title="实时连接"
-        subtitle={
-          paused
-            ? `已暂停 · ${pausedUpdates} 条新数据`
-            : `${entries.length} 个目标 · ${workspace.settings.retentionMinutes} 分钟窗口`
-        }
-        actions={
-          <>
-            <button className="btn btn-outline" onClick={() => setPaused(!paused)}>
-              {paused ? <Play size={13} /> : <Pause size={13} />}
-              {paused ? '继续' : '暂停'}
-            </button>
-          </>
-        }
-      />
+      <h1 className="visually-hidden">实时连接</h1>
 
       <div className="stat-strip live-stats">
         <div className="stat-block">
@@ -958,6 +942,14 @@ export function LivePage() {
             ) : (
               <span className="danger">重连中</span>
             )}
+            <button
+              className={cx('stream-pause', paused && 'active')}
+              onClick={() => setPaused(!paused)}
+              title={paused ? '继续实时数据' : '暂停实时数据'}
+              aria-label={paused ? '继续实时数据' : '暂停实时数据'}
+            >
+              {paused ? <Play size={11} /> : <Pause size={11} />}
+            </button>
           </div>
         </div>
       </div>

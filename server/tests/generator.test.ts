@@ -253,6 +253,41 @@ test('chain nodes export as independent proxies with dialer-proxy', () => {
   assert.equal(chainNode.raw['dialer-proxy'], 'X-日本 01');
 });
 
+test('manual link sources are merged into one 节点链接 source', () => {
+  const workspace = makeWorkspace();
+  workspace.sources.push(
+    { id: 'm1', type: 'manual', name: 'Relay-A', prefix: '', keepRules: false },
+    { id: 'm2', type: 'manual', name: 'Landing-B', prefix: '', keepRules: false },
+  );
+  workspace.nodes.push(
+    {
+      id: 'mn1',
+      sourceId: 'm1',
+      name: 'Relay-A',
+      raw: { name: 'Relay-A', type: 'ss', server: 'relay.example.com', port: 8388 },
+      tags: [],
+      enabled: true,
+      addedAt: NOW,
+    },
+    {
+      id: 'mn2',
+      sourceId: 'm2',
+      name: 'Landing-B',
+      raw: { name: 'Landing-B', type: 'ss', server: 'landing.example.com', port: 8389 },
+      tags: [],
+      enabled: true,
+      addedAt: NOW,
+    },
+  );
+  ensureWorkspaceShape(workspace);
+  const manualSources = workspace.sources.filter((source) => source.type === 'manual');
+  assert.equal(manualSources.length, 1);
+  assert.equal(manualSources[0]!.name, '节点链接');
+  assert.ok(manualSources[0]!.note);
+  const manualNodes = workspace.nodes.filter((node) => node.id === 'mn1' || node.id === 'mn2');
+  assert.ok(manualNodes.every((node) => node.sourceId === manualSources[0]!.id));
+});
+
 test('disabling a node prunes its direct exit membership', () => {
   const workspace = makeWorkspace();
   const home = workspace.exits.find((exit) => exit.name === '家宽')!;

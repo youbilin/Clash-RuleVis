@@ -12,6 +12,7 @@ import {
   Pencil,
   Plus,
   Star,
+  Trash2,
   Waypoints,
   Zap,
 } from 'lucide-react';
@@ -60,6 +61,7 @@ interface ExitRowProps {
   onToggleFavorite: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
+  onDelete: () => void;
   onTest: () => void;
 }
 
@@ -73,6 +75,7 @@ function ExitRow({
   onToggleFavorite,
   onEdit,
   onDuplicate,
+  onDelete,
   onTest,
 }: ExitRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: exit.id });
@@ -126,6 +129,9 @@ function ExitRow({
       <span className={cx('exit-row-delay', tone)}>{formatDelay(group?.delay)}</span>
       <span className="exit-row-hits"><Zap size={10} /> {formatCompact(hits)}</span>
       <div className="exit-row-actions" onClick={(event) => event.stopPropagation()}>
+        <button className="icon-btn danger" title="删除出口" onClick={onDelete}>
+          <Trash2 size={12} />
+        </button>
         <button
           className="icon-btn"
           title={group ? '测速' : '尚未进入内核'}
@@ -276,6 +282,43 @@ export function ExitsPage() {
     toast('success', '已复制出口', name);
   };
 
+  const deleteExit = async (exit: Exit) => {
+    const referencedRules = workspace.routes.filter((route) => route.exitId === exit.id).length;
+    const nestedExits = workspace.exits.filter(
+      (item) =>
+        item.id !== exit.id &&
+        item.members.some((member) => member.by === 'exit' && member.value === exit.id),
+    ).length;
+    const confirmed = await confirm({
+      title: '删除出口',
+      message: [
+        `将删除出口「${exit.name}」。`,
+        referencedRules ? `引用它的 ${referencedRules} 条规则会一起删除。` : '',
+        nestedExits ? `另有 ${nestedExits} 个出口会移除这个嵌套成员。` : '',
+        '删除前会自动创建工作区快照，可从历史恢复。',
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+      confirmLabel: '删除出口',
+      danger: true,
+    });
+    if (!confirmed) return;
+    const undo = await createUndoPoint('删除出口 · ' + exit.name);
+    update((draft) => {
+      draft.routes = draft.routes.filter((route) => route.exitId !== exit.id);
+      draft.exits = draft.exits.filter((item) => item.id !== exit.id);
+      for (const item of draft.exits) {
+        item.members = item.members.filter(
+          (member) => !(member.by === 'exit' && member.value === exit.id),
+        );
+      }
+      draft.settings.favoriteExitIds = (draft.settings.favoriteExitIds ?? []).filter(
+        (id) => id !== exit.id,
+      );
+    });
+    offerUndo(undo, '出口已删除', exit.name);
+  };
+
   const testExit = async (exit: Exit) => {
     const group = groups[exit.name];
     if (!group) {
@@ -416,6 +459,7 @@ export function ExitsPage() {
                     testing={testingExit === exit.id}
                     onEdit={() => setEditing({ mode: 'edit', exitId: exit.id })}
                     onDuplicate={() => duplicateExit(exit)}
+                    onDelete={() => void deleteExit(exit)}
                     onTest={() => void testExit(exit)}
                     favorite={(workspace.settings.favoriteExitIds ?? []).includes(exit.id)}
                     onToggleFavorite={() =>

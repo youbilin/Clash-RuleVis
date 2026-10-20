@@ -1500,7 +1500,7 @@ body {
 
 .node-head,
 .node-row {
-  grid-template-columns: 26px 34px minmax(170px, 1.45fr) 56px minmax(130px, 1.1fr) minmax(130px, 0.95fr) 70px 28px;
+  grid-template-columns: 26px 34px minmax(170px, 1.45fr) 56px minmax(130px, 1.1fr) minmax(130px, 0.95fr) 70px 52px;
 }
 
 .node-delay {
@@ -1557,7 +1557,7 @@ body {
 @media (max-width: 900px) {
   .node-head,
   .node-row {
-    grid-template-columns: 24px 32px minmax(150px, 1.4fr) 64px 26px;
+    grid-template-columns: 24px 32px minmax(150px, 1.4fr) 64px 48px;
   }
 
   .node-head > :nth-child(4),
@@ -1573,7 +1573,7 @@ body {
 @media (max-width: 680px) {
   .node-head,
   .node-row {
-    grid-template-columns: 24px 32px minmax(130px, 1.4fr) 26px;
+    grid-template-columns: 24px 32px minmax(130px, 1.4fr) 48px;
   }
 
   .node-head > :nth-child(7),
@@ -1970,6 +1970,33 @@ body {
 
 .stat-block:last-child {
   padding-right: 2px;
+}
+
+.stat-stream .stream-pause {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+.stat-stream .stream-pause:hover {
+  border-color: var(--line-strong);
+  background: #ffffff;
+  color: var(--text);
+}
+
+.stat-stream .stream-pause.active {
+  border-color: var(--amber-line);
+  background: var(--amber-dim);
+  color: var(--amber);
 }
 
 /* ---------- compact page headers ---------- */

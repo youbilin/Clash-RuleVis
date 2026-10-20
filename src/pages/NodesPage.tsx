@@ -37,7 +37,7 @@ const TYPE_META: Record<SourceType, { label: string; icon: typeof Link2 }> = {
   subscription: { label: '订阅链接', icon: Link2 },
   file: { label: '本地 YAML', icon: FileText },
   paste: { label: '粘贴内容', icon: ClipboardPaste },
-  manual: { label: '手动节点', icon: Plug },
+  manual: { label: '节点链接', icon: Plug },
   verge: { label: 'Clash Verge', icon: DownloadCloud },
   chain: { label: '链式代理', icon: GitBranch },
 };
@@ -212,6 +212,49 @@ export function NodesPage() {
       else for (const node of nodes) next.add(node.id);
       return next;
     });
+  };
+
+  const deleteNode = async (node: Workspace['nodes'][number]) => {
+    const source = sourcesById.get(node.sourceId);
+    const display = nodeDisplayName(node, source);
+    const chainRefs = workspace.nodes.filter(
+      (item) =>
+        item.chain &&
+        (item.chain.relayNodeId === node.id || item.chain.landingNodeId === node.id),
+    );
+    if (chainRefs.length) {
+      toast('warn', '该节点被链路引用', `请先在链路页删除 ${chainRefs.length} 条相关链路`);
+      return;
+    }
+    const targetRules = workspace.routes.filter(
+      (route) => route.kind === 'rule' && route.targetNodeId === node.id,
+    ).length;
+    const confirmed = await confirm({
+      title: '删除节点',
+      message: [
+        `将删除节点「${display}」，并自动从出口的直接成员中移除。`,
+        targetRules ? `引用它的 ${targetRules} 条规则会一起删除。` : '',
+        '删除前会自动创建工作区快照。',
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+      confirmLabel: '删除节点',
+      danger: true,
+    });
+    if (!confirmed) return;
+    const undo = await createUndoPoint('删除节点 · ' + display);
+    update((draft) => {
+      draft.nodes = draft.nodes.filter((item) => item.id !== node.id);
+      draft.routes = draft.routes.filter(
+        (route) => !(route.kind === 'rule' && route.targetNodeId === node.id),
+      );
+      if (!draft.nodes.some((item) => item.sourceId === node.sourceId)) {
+        draft.sources = draft.sources.filter(
+          (item) => item.id !== node.sourceId || (item.type !== 'manual' && item.type !== 'chain'),
+        );
+      }
+    });
+    offerUndo(undo, '节点已删除', display);
   };
 
   const setNodesEnabled = (enabled: boolean) => {
@@ -634,7 +677,7 @@ export function NodesPage() {
           {selected.size > 0 ? (
             <div className="bulk-bar">
               <span className="selection-count mono">{selected.size}</span>
-              <span>个节点已选择</span>
+              <span>个节点已勾选</span>
               <button className="btn btn-sm btn-outline" onClick={() => setNodesEnabled(true)}>启用</button>
               <button className="btn btn-sm btn-outline" onClick={() => setNodesEnabled(false)}>禁用</button>
               <button className="btn btn-sm btn-outline" onClick={() => setBulkTagOpen(true)}>添加标签</button>
@@ -688,7 +731,14 @@ export function NodesPage() {
                   <div
                     key={node.id}
                     className={cx('node-row', !node.enabled && 'disabled', selected.has(node.id) && 'selected')}
-                    onClick={() => setEditingNodeId(node.id)}
+                    onClick={() =>
+                      setSelected((current) => {
+                        const next = new Set(current);
+                        if (next.has(node.id)) next.delete(node.id);
+                        else next.add(node.id);
+                        return next;
+                      })
+                    }
                   >
                     <div className="node-check" data-control onClick={(event) => event.stopPropagation()}>
                       <input
@@ -775,6 +825,9 @@ export function NodesPage() {
                     <div className="node-row-actions" data-control onClick={(event) => event.stopPropagation()}>
                       <button className="icon-btn" title="编辑节点" onClick={() => setEditingNodeId(node.id)}>
                         <Pencil size={12} />
+                      </button>
+                      <button className="icon-btn danger" title="删除节点" onClick={() => void deleteNode(node)}>
+                        <Trash2 size={12} />
                       </button>
                     </div>
                   </div>

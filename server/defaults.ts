@@ -65,6 +65,28 @@ export function createDefaultWorkspace(): Workspace {
   };
 }
 
+export const MANUAL_SOURCE_NAME = '节点链接';
+export const MANUAL_SOURCE_NOTE = 'manual-link';
+
+export function normalizeManualSources(workspace: Workspace): void {
+  const manualSources = workspace.sources.filter((source) => source.type === 'manual');
+  if (!manualSources.length) return;
+  const canonical =
+    manualSources.find((source) => source.note === MANUAL_SOURCE_NOTE) ?? manualSources[0];
+  const others = manualSources.filter((source) => source.id !== canonical.id);
+  if (!others.length && canonical.note === MANUAL_SOURCE_NOTE) return;
+  canonical.name = MANUAL_SOURCE_NAME;
+  canonical.note = MANUAL_SOURCE_NOTE;
+  canonical.keepRules = false;
+  const mergedIds = new Set(others.map((source) => source.id));
+  for (const node of workspace.nodes) {
+    if (mergedIds.has(node.sourceId)) node.sourceId = canonical.id;
+  }
+  if (mergedIds.size) {
+    workspace.sources = workspace.sources.filter((source) => !mergedIds.has(source.id));
+  }
+}
+
 export function findMatchRoute(workspace: Workspace): RuleRoute | undefined {
   return workspace.routes.find((r): r is RuleRoute => r.kind === 'rule' && r.type === 'MATCH');
 }
@@ -76,6 +98,7 @@ export function ensureWorkspaceShape(workspace: Workspace): Workspace {
   if (!Array.isArray(workspace.routes)) workspace.routes = [];
   workspace.settings = { ...DEFAULT_SETTINGS, ...(workspace.settings ?? {}) };
   workspace.version = WORKSPACE_VERSION;
+  normalizeManualSources(workspace);
 
   const sourcesById = new Map(workspace.sources.map((source) => [source.id, source]));
   for (const node of workspace.nodes) {

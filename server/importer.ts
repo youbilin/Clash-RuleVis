@@ -323,11 +323,13 @@ export function applyParsedConfig(options: ApplyOptions): ApplyResult {
     }
   }
 
-  for (const node of sourceNodes) {
-    const key = dedupeKey(node.raw);
-    if (!seenKeys.has(key)) {
-      workspace.nodes = workspace.nodes.filter((n) => n.id !== node.id);
-      result.removed += 1;
+  if (isRefresh) {
+    for (const node of sourceNodes) {
+      const key = dedupeKey(node.raw);
+      if (!seenKeys.has(key)) {
+        workspace.nodes = workspace.nodes.filter((n) => n.id !== node.id);
+        result.removed += 1;
+      }
     }
   }
 

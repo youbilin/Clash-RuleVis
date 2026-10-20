@@ -348,6 +348,10 @@
   height: 22px;
 }
 
+.node-row.selected .node-row-actions {
+  opacity: 1;
+}
+
 .node-foot {
   display: flex;
   align-items: center;

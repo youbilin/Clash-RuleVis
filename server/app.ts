@@ -25,7 +25,7 @@ import { WORKSPACE_VERSION } from '../shared/types';
 import { nodeDisplayName, insertRouteOrdered, resolveExit } from '../shared/model';
 import { DATA_DIR, DIST_DIR, EXPORTS_DIR, SERVER_PORT, ensureDataDirs } from './paths';
 import { getWorkspace, initStore, listHistory, readHistory, replaceWorkspace, restoreHistory, updateWorkspace, addHistory, RevisionConflictError } from './store';
-import { ensureWorkspaceShape } from './defaults';
+import { ensureWorkspaceShape, MANUAL_SOURCE_NAME, MANUAL_SOURCE_NOTE } from './defaults';
 import { kernel, getActiveProfile, probeKernel } from './kernel';
 import { LiveAggregator } from './aggregator';
 import { fetchUrl, parseSubscriptionUserinfo, type FetchOptions } from './fetcher';
@@ -199,11 +199,17 @@ async function importParsed(
   historyLabel: string,
 ): Promise<ImportSummary> {
   const { value, workspace } = await updateWorkspace((draft) => {
-    draft.sources.push(source);
-    source.updatedAt = new Date().toISOString();
+    let targetSource = draft.sources.find((item) => item.id === source.id);
+    if (targetSource) {
+      targetSource.updatedAt = new Date().toISOString();
+    } else {
+      source.updatedAt = new Date().toISOString();
+      draft.sources.push(source);
+      targetSource = source;
+    }
     return applyParsedConfig({
       workspace: draft,
-      source,
+      source: targetSource,
       parsed,
       isRefresh: false,
       keepRules,
@@ -577,14 +583,18 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
       providers: {},
       warnings: [],
     };
-    const source: Source = {
-      id: randomUUID(),
-      type: 'manual',
-      name: normalizeSourceName(body.name, '手动节点'),
-      prefix: normalizePrefix(body.prefix, ''),
-      keepRules: false,
-      updatedAt: new Date().toISOString(),
-    };
+    const existing = getWorkspace().sources.find((item) => item.type === 'manual');
+    const source: Source = existing
+      ? { ...existing }
+      : {
+          id: randomUUID(),
+          type: 'manual',
+          name: MANUAL_SOURCE_NAME,
+          prefix: '',
+          keepRules: false,
+          updatedAt: new Date().toISOString(),
+          note: MANUAL_SOURCE_NOTE,
+        };
     return importParsed(source, parsed, false, '添加手动节点');
   });
 
