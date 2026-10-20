@@ -15,24 +15,14 @@ import { useWorkspace } from './store/workspace';
 import { useLive } from './store/live';
 import { Spinner } from './components/Common';
 
-function BrandGlyph() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M5 18V10a4 4 0 0 1 4-4h9.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <circle cx="19.5" cy="6" r="2.1" fill="currentColor" />
-      <circle cx="5" cy="19" r="1.6" fill="currentColor" opacity="0.5" />
-    </svg>
-  );
-}
-
 function BootScreen() {
   return (
     <div className="boot-screen">
       <div className="boot-card">
-        <div className="boot-mark"><BrandGlyph /></div>
-        <div className="boot-name">路由台</div>
-        <div className="boot-sub">CLASH ROUTE DESK</div>
-        <div className="boot-loading"><Spinner /> 正在连接本地工作区</div>
+        <div className="boot-mark logo"><img src="/logo.svg" alt="" /></div>
+        <div className="boot-name">Clash RuleVis</div>
+        <div className="boot-sub">本地路由工作台</div>
+        <div className="boot-loading"><Spinner /> 正在加载工作区</div>
       </div>
     </div>
   );

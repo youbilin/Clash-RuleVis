@@ -8,7 +8,7 @@ const { app, aggregator } = await buildServer();
 try {
   await app.listen({ host: SERVER_HOST, port: SERVER_PORT });
   const status = kernel.getStatus();
-  console.log(`\n  路由台 · Clash Route Desk`);
+  console.log(`\n  Clash RuleVis · 本地路由工作台`);
   console.log(`  http://${SERVER_HOST}:${SERVER_PORT}`);
   console.log(
     status.connected

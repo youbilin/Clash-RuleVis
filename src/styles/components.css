@@ -81,6 +81,7 @@
 
 .modal-foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
@@ -875,6 +876,31 @@
   gap: 8px;
   padding: 20px 8px;
   text-align: center;
+}
+
+.export-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 2px;
+}
+
+.export-confirm .field {
+  margin: 0;
+}
+
+.export-confirm .input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.export-confirm-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .export-success-icon {

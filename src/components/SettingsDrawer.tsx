@@ -139,13 +139,13 @@ function SettingsContent() {
     if (!workspace) return;
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backup = {
-      app: 'Clash Route Desk',
+      app: 'Clash RuleVis',
       backupVersion: 1,
       workspaceVersion: workspace.version,
       exportedAt: new Date().toISOString(),
       workspace,
     };
-    downloadText(`clash-routedesk-backup-${stamp}.json`, JSON.stringify(backup, null, 2));
+    downloadText(`clash-rulevis-backup-${stamp}.json`, JSON.stringify(backup, null, 2));
     toast('success', '工作区备份已导出', '备份包含订阅地址与节点凭据，请只保存在本机');
   };
 

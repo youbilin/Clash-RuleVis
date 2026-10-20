@@ -773,14 +773,20 @@ pub fn handle_request(
             let validation = validate_config(&store.data_dir, &preview.yaml);
             Ok(json!({ "validation": validation }))
         }),
-        ("POST", "/api/export") => with_store(state, |store| match export_config(store) {
-            Ok(result) => serialize(result),
-            Err(ExportError::Validation(preview)) => {
-                Err(ApiFailure::new(422, "配置校验未通过")
-                    .with_value("preview", serialize(*preview)?))
-            }
-            Err(ExportError::Message(message)) => Err(ApiFailure::internal(message)),
-        }),
+        ("POST", "/api/export") => {
+            let body = body_object(body.as_ref());
+            let requested_name = optional_string(&body, "fileName");
+            with_store(state, |store| {
+                match export_config(store, requested_name.as_deref()) {
+                    Ok(result) => serialize(result),
+                    Err(ExportError::Validation(preview)) => {
+                        Err(ApiFailure::new(422, "配置校验未通过")
+                            .with_value("preview", serialize(*preview)?))
+                    }
+                    Err(ExportError::Message(message)) => Err(ApiFailure::internal(message)),
+                }
+            })
+        }
         ("GET", "/api/history") => with_store(state, |store| {
             Ok(json!({ "entries": store.list_history() }))
         }),

@@ -35,6 +35,23 @@
   color: var(--accent);
 }
 
+.boot-mark.logo {
+  overflow: hidden;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  box-shadow: 0 6px 16px rgba(40, 42, 35, 0.12);
+}
+
+.boot-mark.logo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .boot-mark.error {
   color: var(--red);
   border-color: var(--red-line);

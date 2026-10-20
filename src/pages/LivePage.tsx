@@ -931,21 +931,23 @@ export function LivePage() {
         <div className="stat-block stats-state">
           <div className="stat-label">STREAM</div>
           <div className="stat-stream">
-            <span className={cx('dot', socketConnected ? 'green pulse' : 'red')} />
-            {paused ? (
-              <span className="amber">已暂停 +{pausedUpdates}</span>
-            ) : socketConnected ? (
-              <span>1s 实时</span>
-            ) : (
-              <span className="danger">重连中</span>
-            )}
+            <span className="stream-status">
+              <span className={cx('dot', socketConnected ? 'green pulse' : 'red')} />
+              {paused ? (
+                <span className="amber">已暂停 +{pausedUpdates}</span>
+              ) : socketConnected ? (
+                <span>1s 实时</span>
+              ) : (
+                <span className="danger">重连中</span>
+              )}
+            </span>
             <button
               className={cx('stream-pause', paused && 'active')}
               onClick={() => setPaused(!paused)}
               title={paused ? '继续实时数据' : '暂停实时数据'}
               aria-label={paused ? '继续实时数据' : '暂停实时数据'}
             >
-              {paused ? <Play size={11} /> : <Pause size={11} />}
+              {paused ? <Play size={14} /> : <Pause size={14} />}
             </button>
           </div>
         </div>
@@ -954,7 +956,7 @@ export function LivePage() {
       {!connected ? (
         <div className="offline-inline">
           <WifiOff size={14} />
-          <span>内核未连接，当前显示的是最近一次数据。编辑功能仍然可用。</span>
+          <span>Clash Verge 未连接，仍可编辑工作区；启动 Verge 后再重新探测。</span>
           <button className="inline-link" onClick={() => setSettingsOpen(true)}>打开连接设置</button>
           <button className="inline-link" onClick={rediscover}>{rediscovering ? '探测中…' : '重新探测'}</button>
         </div>
@@ -1159,10 +1161,6 @@ export function LivePage() {
               <span>{filtered.length} / {entries.length} 个目标</span>
               <span className="meta-sep">·</span>
               <span>拖域名到出口或节点生成规则</span>
-              <span className="spacer" />
-              <button className="inline-link" onClick={() => navigate('/rulesets')}>
-                管理规则集
-              </button>
             </div>
           </div>
 

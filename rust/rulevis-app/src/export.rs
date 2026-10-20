@@ -26,11 +26,49 @@ fn empty_base_info() -> BaseTemplateInfo {
 }
 
 fn file_name_for(stamp: &str) -> String {
-    format!("clash-routedesk-{}.yaml", stamp)
+    format!("clash-rulevis-{}.yaml", stamp)
 }
 
-fn unique_export_path(store: &Store) -> (String, PathBuf) {
-    let base = format!("clash-routedesk-{}", stamp_local());
+fn sanitize_export_name(requested: Option<&str>) -> Option<String> {
+    let raw = requested?.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let lower = raw.to_ascii_lowercase();
+    let without_ext = if lower.ends_with(".yaml") {
+        &raw[..raw.len() - 5]
+    } else if lower.ends_with(".yml") {
+        &raw[..raw.len() - 4]
+    } else {
+        raw
+    };
+    let mut stem = String::new();
+    for ch in without_ext.chars().take(80) {
+        if ch.is_alphanumeric() || matches!(ch, '-' | '_' | '.' | ' ') {
+            stem.push(ch);
+        } else {
+            stem.push('-');
+        }
+    }
+    let stem = stem
+        .trim_matches(|ch: char| ch.is_whitespace() || ch == '.')
+        .to_string();
+    if stem.is_empty() {
+        return None;
+    }
+    let upper = stem.to_ascii_uppercase();
+    let numbered_device = upper.len() == 4
+        && (upper.starts_with("COM") || upper.starts_with("LPT"))
+        && upper.as_bytes()[3].is_ascii_digit();
+    if matches!(upper.as_str(), "CON" | "PRN" | "AUX" | "NUL") || numbered_device {
+        return Some(format!("export-{}", stem));
+    }
+    Some(stem)
+}
+
+fn unique_export_path(store: &Store, requested: Option<&str>) -> (String, PathBuf) {
+    let base = sanitize_export_name(requested)
+        .unwrap_or_else(|| format!("clash-rulevis-{}", stamp_local()));
     let mut name = format!("{}.yaml", base);
     let mut path = store.exports_dir.join(&name);
     let mut index = 2;
@@ -157,7 +195,10 @@ fn apply_export_state(
     record
 }
 
-pub fn export_config(store: &mut Store) -> Result<ExportResult, ExportError> {
+pub fn export_config(
+    store: &mut Store,
+    requested_name: Option<&str>,
+) -> Result<ExportResult, ExportError> {
     let mut preview = build_preview(store).map_err(ExportError::Message)?;
     if preview
         .issues
@@ -189,7 +230,7 @@ pub fn export_config(store: &mut Store) -> Result<ExportResult, ExportError> {
         return Err(ExportError::Validation(Box::new(preview)));
     }
 
-    let (file_name, path) = unique_export_path(store);
+    let (file_name, path) = unique_export_path(store, requested_name);
     let yaml = preview.yaml.clone();
     fs::create_dir_all(&store.exports_dir)
         .map_err(|error| ExportError::Message(format!("无法创建导出目录：{}", error)))?;

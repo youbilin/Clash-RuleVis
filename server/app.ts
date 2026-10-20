@@ -1193,7 +1193,10 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
     return { validation: await validateConfig(preview.yaml) };
   });
 
-  app.post('/api/export', async () => exportConfig());
+  app.post('/api/export', async (request) => {
+    const body = (request.body ?? {}) as { fileName?: unknown };
+    return exportConfig(typeof body.fileName === 'string' ? body.fileName : undefined);
+  });
 
   app.get('/api/history', async () => ({ entries: await listHistory() }));
 

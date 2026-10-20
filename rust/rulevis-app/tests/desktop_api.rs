@@ -197,8 +197,15 @@ fn manual_nodes_chain_export_history_and_restore_work_end_to_end() {
         .unwrap()
         .contains("dialer-proxy: 东京 01"));
 
-    let exported = call(&state, "POST", "/api/export", None).unwrap();
+    let exported = call(
+        &state,
+        "POST",
+        "/api/export",
+        Some(json!({ "fileName": "我的 路由配置.yaml" })),
+    )
+    .unwrap();
     let export_path = exported["path"].as_str().unwrap().to_string();
+    assert!(export_path.ends_with("我的 路由配置.yaml"));
     assert!(PathBuf::from(&export_path).is_file());
     assert!(export_path.ends_with(".yaml"));
     let yaml = fs::read_to_string(&export_path).unwrap();

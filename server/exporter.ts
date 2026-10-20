@@ -31,8 +31,9 @@ function stamp(date = new Date()): string {
   return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
 
-async function uniqueFileName(date: Date): Promise<string> {
-  const base = `clash-routedesk-${stamp(date)}`;
+async function uniqueFileName(date: Date, requestedName?: string): Promise<string> {
+  const requested = sanitizeExportName(requestedName);
+  const base = requested ? requested.replace(/\.yaml$/i, '') : `clash-rulevis-${stamp(date)}`;
   let candidate = `${base}.yaml`;
   let index = 2;
   while (await fileExists(path.join(EXPORTS_DIR, candidate))) {
@@ -40,6 +41,20 @@ async function uniqueFileName(date: Date): Promise<string> {
     index += 1;
   }
   return candidate;
+}
+
+function sanitizeExportName(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const raw = value.trim();
+  if (!raw) return null;
+  const stem = raw
+    .replace(/\.ya?ml$/i, '')
+    .replace(/[^\p{L}\p{N}._ -]+/gu, '-')
+    .replace(/^[\s.]+|[\s.]+$/g, '')
+    .slice(0, 80);
+  if (!stem) return null;
+  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(stem)) return `export-${stem}`;
+  return stem;
 }
 
 export async function buildPreview(workspace: Workspace): Promise<ExportPreview> {
@@ -81,7 +96,7 @@ export async function buildPreview(workspace: Workspace): Promise<ExportPreview>
     issues,
     counts: generated.counts,
     generatedAt: new Date().toISOString(),
-    fileName: `clash-routedesk-${stamp()}.yaml`,
+    fileName: `clash-rulevis-${stamp()}.yaml`,
     diff,
     previousExportAt,
     baseSettings: includeBase
@@ -90,7 +105,7 @@ export async function buildPreview(workspace: Workspace): Promise<ExportPreview>
   };
 }
 
-export async function exportConfig(): Promise<ExportResult> {
+export async function exportConfig(requestedName?: string): Promise<ExportResult> {
   let validation: KernelValidation | undefined;
   const { value, workspace } = await updateWorkspace(async (draft) => {
     const preview = await buildPreview(draft);
@@ -118,7 +133,7 @@ export async function exportConfig(): Promise<ExportResult> {
       ];
       throw new ExportValidationError(preview, validation);
     }
-    const fileName = await uniqueFileName(new Date());
+    const fileName = await uniqueFileName(new Date(), requestedName);
     const filePath = path.join(EXPORTS_DIR, fileName);
     await atomicWriteFile(filePath, preview.yaml);
     const at = new Date().toISOString();

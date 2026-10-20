@@ -11,14 +11,27 @@
 - `POST /api/open-url` on both the desktop and web backends (http/https only) so
   external links open in the system browser instead of inside the app.
 - Repository URL derivation for raw GitHub, GitHub, jsDelivr and Gitee sources.
+- Export confirmation dialog with an editable file name; no file is written
+  until “确认导出” or “导入到 Clash Verge” is pressed.
 
 ### Changed
 
 - Readability pass across every page: all sub-11px text tokens were raised
   (small labels now at least 10px), badges auto-size instead of clipping, and
   dense rows keep their layout.
-- The live page exit rail now hugs its content instead of stretching into an
-  empty panel, and live exit cards keep the compact three-row layout.
+- The app opens and the workspace stays editable even when Clash Verge is not
+  running; kernel status is refreshed in the background instead of blocking the
+  boot screen.
+- Branding is now Clash RuleVis throughout: boot screen and logo, page title,
+  generated YAML header and default export/backup file names.
+- The live page exit rail fills the available height instead of leaving a gap,
+  the stream pause control is larger and has its own column, and the redundant
+  “管理规则集” footer link was removed.
+
+### Fixed
+
+- Export completion no longer overflows its footer; the instructional callout
+  and extra actions were removed, leaving the confirmation and import actions.
 
 ## 0.3.1 — 2026-10-21
 

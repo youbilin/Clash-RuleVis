@@ -122,21 +122,18 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   load: async () => {
     set({ loading: true, error: null });
     try {
-      const [workspaceResult, status] = await Promise.all([
-        api<{ workspace: Workspace }>('/api/workspace'),
-        api<AppStatus>('/api/status'),
-      ]);
+      const workspaceResult = await api<{ workspace: Workspace }>('/api/workspace');
       changeCounter = 0;
       lastSavedCounter = 0;
       baseRevision = workspaceResult.workspace.revision;
       pausedForConflict = false;
       set({
         workspace: workspaceResult.workspace,
-        status,
         loading: false,
         saveState: 'saved',
         lastSavedAt: Date.now(),
       });
+      void get().refreshStatus();
     } catch (error) {
       set({ loading: false, error: (error as Error).message });
     }

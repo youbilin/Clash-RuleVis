@@ -237,7 +237,12 @@ async function main() {
       return button && !button.disabled;
     });
     await page.getByRole('button', { name: '导出配置', exact: true }).click();
+    await page.locator('.modal-title', { hasText: '导出配置' }).waitFor();
+    await page.locator('.export-confirm input').fill('e2e-renamed.yaml');
+    await page.getByRole('button', { name: '确认导出', exact: true }).click();
     await page.locator('.modal-title', { hasText: '导出完成' }).waitFor({ timeout: 30_000 });
+    const exportedPath = await page.locator('.export-success-path code').textContent();
+    assert.ok(exportedPath?.endsWith('e2e-renamed.yaml'), '导出应使用确认弹窗中的文件名');
 
     const exported = await page.evaluate(async () => {
       const response = await fetch('/api/export/preview', {

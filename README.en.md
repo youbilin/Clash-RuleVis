@@ -47,7 +47,7 @@ Clash RuleVis is a local workbench (web and Windows desktop) that connects to a 
 - **Node health**: single/all latency tests, persisted results, failed/disabled/duplicate filters, duplicate merge.
 - **Visual chain proxy**: left relay + right landing generates a new independent node using `dialer-proxy`; original nodes are untouched.
 - **Safe export**: full YAML, diff against previous export, real `verge-mihomo -t` validation, history dropdown with diff-aware restore.
-- **Local data tools**: workspace JSON backup/restore, open export directory, copy Verge import steps.
+- **Local data tools**: workspace JSON backup/restore, export confirmation with a custom file name, open export directory, one-click Clash Verge import.
 - **Desktop-first layout**: dense lists, internally scrolling tables and no page-level scroll on long lists.
 
 ## Screenshots
@@ -109,7 +109,7 @@ npm run desktop:check
 
 ## Windows download
 
-Download `Clash.RuleVis_0.3.2_x64-setup.exe` (NSIS, per-user) from [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest). The installer is unsigned, so SmartScreen may warn; the release page includes a SHA256 checksum.
+Download the latest `Clash.RuleVis_x.x.x_x64-setup.exe` (NSIS, per-user) from [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest). The installer is unsigned, so SmartScreen may warn; the release page includes a SHA256 checksum.
 
 Desktop data lives in `%APPDATA%\io.github.youbilin.clash-rulevis` (override with `CRS_DATA_DIR`) and is independent from the web build's `data/`. Import a web workspace JSON backup from the desktop settings drawer to migrate.
 

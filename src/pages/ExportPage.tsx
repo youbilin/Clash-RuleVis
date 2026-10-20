@@ -10,7 +10,6 @@ import {
   ClipboardCopy,
   Download,
   FileOutput,
-  FolderOpen,
   GitCompare,
   History,
   RefreshCw,
@@ -66,10 +65,10 @@ export function ExportPage() {
   const [success, setSuccess] = useState<{
     path: string;
     counts: ExportCounts;
-    baseIncluded: boolean;
-    validation?: KernelValidation;
   } | null>(null);
-  const [importingVerge, setImportingVerge] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [exportName, setExportName] = useState('');
+  const [exportIntent, setExportIntent] = useState<'export' | 'verge'>('export');
   const [shareInfo, setShareInfo] = useState<{
     url: string;
     schemeUrl: string;
@@ -161,7 +160,32 @@ export function ExportPage() {
   const counts = preview?.counts;
   const selectedHistory = history.find((entry) => entry.id === selectedHistoryId) ?? null;
 
-  const exportNow = async () => {
+  const openExportConfirm = () => {
+    const now = new Date();
+    const pad = (value: number) => String(value).padStart(2, '0');
+    setExportName(
+      `clash-rulevis-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.yaml`,
+    );
+    setConfirmOpen(true);
+  };
+
+  const normalizeExportName = (value: string) => {
+    const stem = value
+      .trim()
+      .replace(/\.ya?ml$/i, '')
+      .replace(/[\\/:*?"<>|]+/g, '-')
+      .replace(/^[\s.]+|[\s.]+$/g, '')
+      .slice(0, 80);
+    return stem ? `${stem}.yaml` : '';
+  };
+
+  const exportNow = async (intent: 'export' | 'verge') => {
+    const fileName = normalizeExportName(exportName);
+    if (!fileName) {
+      toast('error', '文件名无效', '请输入至少一个字符');
+      return;
+    }
+    setExportIntent(intent);
     setExporting(true);
     try {
       await saveNow();
@@ -170,18 +194,22 @@ export function ExportPage() {
       }
       const result = await api<ExportResult>('/api/export', {
         method: 'POST',
+        body: { fileName },
       });
       applyServerWorkspace(result.workspace);
       setValidation(result.validation ?? null);
       setShareInfo(null);
+      setConfirmOpen(false);
       setSuccess({
         path: result.path,
         counts: result.counts,
-        baseIncluded: Boolean(result.baseSettings?.included),
-        validation: result.validation,
       });
       await Promise.all([loadPreview(false), loadHistory(), refreshStatus()]);
-      toast('success', 'YAML 已导出', result.path);
+      if (intent === 'verge') {
+        await importToVerge(result.path);
+      } else {
+        toast('success', 'YAML 已导出', result.path);
+      }
     } catch (error) {
       if (error instanceof ApiError) {
         const payload = error.payload as { preview?: ExportPreview; validation?: KernelValidation };
@@ -194,18 +222,7 @@ export function ExportPage() {
     }
   };
 
-  const openExportsDir = async () => {
-    try {
-      await api('/api/exports/open', { method: 'POST' });
-      toast('success', '已打开导出目录');
-    } catch (error) {
-      toast('error', '打开目录失败', (error as Error).message);
-    }
-  };
-
-  const importToVerge = async () => {
-    if (!success) return;
-    setImportingVerge(true);
+  const importToVerge = async (path: string) => {
     try {
       const result = await api<{
         url: string;
@@ -214,7 +231,7 @@ export function ExportPage() {
         opened: boolean;
       }>('/api/exports/import-to-verge', {
         method: 'POST',
-        body: { path: success.path },
+        body: { path },
       });
       setShareInfo(result);
       if (result.opened) {
@@ -224,8 +241,6 @@ export function ExportPage() {
       }
     } catch (error) {
       toast('error', '导入 Clash Verge 失败', (error as Error).message);
-    } finally {
-      setImportingVerge(false);
     }
   };
 
@@ -472,7 +487,7 @@ export function ExportPage() {
               <SlidersHorizontal size={13} /> 导出详情
               {errors.length ? <span className="export-error-count">{errors.length}</span> : null}
             </button>
-            <button className="btn btn-primary" onClick={() => void exportNow()} disabled={exporting || Boolean(errors.length) || loadingPreview}>
+            <button className="btn btn-primary" onClick={openExportConfirm} disabled={exporting || Boolean(errors.length) || loadingPreview}>
               {exporting ? <Spinner onAccent /> : <FileOutput size={13} />} 导出配置
             </button>
           </>
@@ -707,6 +722,59 @@ export function ExportPage() {
           )
         : null}
 
+      {confirmOpen ? (
+        <Modal
+          title="导出配置"
+          subtitle="写入工具目录，不会修改 Clash Verge 配置"
+          size="sm"
+          closeOnBackdrop={!exporting}
+          hideClose={exporting}
+          onClose={() => {
+            if (!exporting) setConfirmOpen(false);
+          }}
+          footer={
+            <>
+              <button
+                className="btn btn-outline"
+                onClick={() => void exportNow('export')}
+                disabled={exporting}
+              >
+                {exporting && exportIntent === 'export' ? <Spinner /> : <FileOutput size={13} />} 确认导出
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => void exportNow('verge')}
+                disabled={exporting}
+              >
+                {exporting && exportIntent === 'verge' ? <Spinner onAccent /> : <Download size={13} />} 导入到 Clash Verge
+              </button>
+            </>
+          }
+        >
+          <div className="export-confirm">
+            <label className="field">
+              <span className="field-label">文件名</span>
+              <input
+                className="input"
+                value={exportName}
+                spellCheck={false}
+                autoFocus
+                onChange={(event) => setExportName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void exportNow('export');
+                }}
+              />
+            </label>
+            <div className="export-confirm-meta">
+              <span>节点 {preview?.counts.nodes ?? '—'}</span>
+              <span>出口 {preview?.counts.exits ?? '—'}</span>
+              <span>规则集 {preview?.counts.providers ?? '—'}</span>
+              <span>规则 {preview?.counts.rules ?? '—'}</span>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
+
       {success ? (
         <Modal
           title="导出完成"
@@ -714,31 +782,9 @@ export function ExportPage() {
           size="sm"
           onClose={() => setSuccess(null)}
           footer={
-            <>
-              <button className="btn btn-outline" onClick={() => void openExportsDir()}>
-                <FolderOpen size={13} /> 打开目录
-              </button>
-              <button
-                className="btn btn-outline"
-                onClick={() =>
-                  copyToClipboard(
-                    [
-                      '在 Clash Verge 中导入本工具生成的配置：',
-                      '1. 配置 → 新建 / 导入本地文件',
-                      `2. 选择：${success.path}`,
-                      '3. 切换前备份当前 Verge 配置；本工具不会写入 Verge，也不会自动重载内核',
-                      '4. 切换后确认端口、DNS、TUN 是否与你的预期一致',
-                    ].join('\n'),
-                  )
-                }
-              >
-                <ClipboardCopy size={13} /> 复制步骤
-              </button>
-              <button className="btn btn-primary" onClick={() => void importToVerge()} disabled={importingVerge}>
-                {importingVerge ? <Spinner onAccent /> : <Download size={13} />} 导入到 Clash Verge
-              </button>
-              <button className="btn btn-ghost" onClick={() => setSuccess(null)}>完成</button>
-            </>
+            <button className="btn btn-primary" onClick={() => setSuccess(null)}>
+              完成
+            </button>
           }
         >
           <div className="export-success-panel">
@@ -775,23 +821,8 @@ export function ExportPage() {
                     <ClipboardCopy size={12} /> 复制
                   </button>
                 </div>
-                <div className="hint">仅在应用运行期间有效，供 Clash Verge 本次导入使用。</div>
               </div>
             ) : null}
-            <div className="callout info">
-              <FileOutput size={14} />
-              <span>
-                在 Clash Verge 中：配置 → 导入本地文件 → 选择此文件。
-                {success.baseIncluded
-                  ? ' 已包含端口 / DNS / TUN 等基础设置；切换前仍建议备份 Verge 当前配置。'
-                  : ' 此 YAML 不含端口 / DNS / TUN，切换前请备份并确认 Verge 会沿用自身网络设置；'}
-                {success.validation?.available && success.validation.ok
-                  ? ` 内核校验通过（${success.validation.binary ?? 'mihomo'} · ${success.validation.durationMs ?? 0}ms）。`
-                  : success.validation && !success.validation.available
-                    ? ' 未找到 mihomo，已跳过内核校验。'
-                    : ''}
-              </span>
-            </div>
           </div>
         </Modal>
       ) : null}

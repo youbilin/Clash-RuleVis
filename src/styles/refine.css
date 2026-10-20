@@ -1690,6 +1690,7 @@ body {
 
 .command-chip {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 6px;
   height: 30px;
@@ -1699,6 +1700,7 @@ body {
   background: transparent;
   color: var(--muted);
   font-size: 10.5px;
+  white-space: nowrap;
   transition: border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
 
@@ -1945,7 +1947,7 @@ body {
   }
 
   .live-page:not(.has-tray) .exit-rail {
-    max-height: calc(100vh - 300px);
+    max-height: 100%;
   }
 }
 
@@ -1976,12 +1978,11 @@ body {
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 22px;
-  height: 22px;
-  margin-left: 2px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 7px;
   background: transparent;
   color: var(--muted);
   transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
@@ -3202,8 +3203,8 @@ body {
 
   .live-page .exit-rail {
     position: static;
-    align-self: start;
-    height: auto;
+    align-self: stretch;
+    height: 100%;
     max-height: 100%;
     min-height: 0;
   }
