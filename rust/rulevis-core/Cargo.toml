@@ -1,0 +1,21 @@
+[package]
+name = "rulevis-core"
+version = "0.1.0"
+edition = "2021"
+description = "Rust core for Clash Route Desk: workspace normalization, config generation and share-link parsing."
+license = "MIT"
+publish = false
+
+[dependencies]
+base64 = "0.22"
+percent-encoding = "2"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+serde_yaml = "0.9"
+url = "2"
+uuid = { version = "1", features = ["v4"] }
+
+[[bin]]
+name = "rulevis-core"
+path = "src/bin/rulevis-core.rs"

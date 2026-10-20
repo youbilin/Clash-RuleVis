@@ -28,7 +28,7 @@
 
 ---
 
-> 当前是本地 Web 工作台（Node.js 运行）。Tauri + Rust 轻量桌面版正在迁移中，安装包会在 Tauri 阶段发布，不用 Electron/Node 临时包冒充正式桌面版。
+> 当前是本地 Web 工作台（Node.js 运行）。Rust 核心已完成 fixture 语义对齐，Tauri 2 轻量壳与 Windows 安装包属于下一阶段；不用 Electron 或 Node sidecar 冒充正式桌面版。
 
 ## 这是什么
 
@@ -145,6 +145,27 @@ flowchart LR
 - 数据：本机 JSON 工作区 + 文件系统历史快照，不依赖数据库
 - 内核：Windows 下自动枚举 mihomo 命名管道，也支持手动 TCP controller
 
+## Rust 核心（迁移中）
+
+`rust/rulevis-core` 是桌面版的内核地基，目前已经完成：
+
+- Workspace v2 的 serde 模型与工作区规范化（手动来源合并、链路 `dialer-proxy` 同步、禁用节点成员清理、内置出口与 MATCH 修复）。
+- YAML 生成器：节点、出口、规则集 provider、规则优先级、同名/空出口/嵌套环/覆盖规则等校验，issues 与 counts 和 TypeScript 版一致。
+- 8 种分享链接解析：SS / SSR / VMess / VLESS / Trojan / Hysteria2 / TUIC / SOCKS5，包含 percent-encoded SS、Reality、ws/grpc、obfs 等参数。
+- CLI：`check`、`generate`、`normalize`、`parse-link`。
+
+它还没有接入 Web 运行时；Tauri 2 壳、导入解析和内核适配会在后续阶段逐步替换 Node 实现。parity 测试以 [fixtures](fixtures/README.md) 为语言无关契约，YAML 比较的是解析后的语义结构而非缩进。
+
+```bash
+cd rust
+cargo fmt --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+cargo run -p rulevis-core -- check ../demo/workspace.json
+```
+
+GitHub Actions 会独立运行 `Rust core parity`。Windows 安装包的前置条件是 MSVC Build Tools、Windows SDK 和 WebView2；当前仓库没有发布任何桌面安装包。
+
 ## 快速开始
 
 ### 环境
@@ -215,6 +236,8 @@ npm test           # 40 项单元测试
 npm run test:e2e   # 构建后用临时数据目录跑 Playwright 冒烟
 npm run build      # 类型检查 + 生产构建
 npm start          # 运行生产服务
+npm run rust:test  # Rust 核心 parity 测试
+npm run rust:lint  # Rust fmt + clippy
 ```
 
 `test:e2e` 会使用系统临时数据目录和本机 Chrome 跑一次完整冒烟，不触碰当前 `data/`；如果 Chrome 不在默认位置，可设置 `CHROME_PATH`。
@@ -242,12 +265,15 @@ demo/                  # 无敏感数据的演示工作区
 docs/assets/           # README 截图与演示 GIF
 shared/                # 前后端共享类型与解析模型
 scripts/               # 规则目录、演示与截图脚本
+rust/rulevis-core/     # 工作区规范化、YAML 生成、链接解析（迁移中）
+fixtures/              # TypeScript ↔ Rust 的 parity 契约
 ```
 
 ## Roadmap
 
 - **v0.2（当前）**：本地 Web 工作台、完整规则/出口/链路/导出闭环、自动刷新与备份。
-- **下一步**：Tauri 2 壳 + 保留 React UI；先把内核适配、导入解析、导出生成迁到 Rust，用 fixture 对齐导出结果，再发布 Windows 安装包。不会用 Electron 或 Node sidecar 冒充正式桌面版。
+- **Rust 地基（已完成）**：`rulevis-core` 覆盖规范化、导出生成和链接解析，13 项测试与 fixture 语义对齐，CI 已接入。
+- **下一步**：Tauri 2 壳 + 保留 React UI；接入 Rust 工作区存储与导出，再把内核适配、订阅导入迁到 Rust，最后发布 Windows 安装包。不会用 Electron 或 Node sidecar 冒充正式桌面版。
 - **之后**：更多协议与 Proxy Provider、桌面托盘、签名安装包、增量更新。
 - **再评估**：只有在 WebView 被证明是瓶颈时，才考虑用 Rust 重写 UI；纯 Rust UI 不是当前目标。
 

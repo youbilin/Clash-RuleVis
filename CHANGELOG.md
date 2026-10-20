@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `rust/rulevis-core`: Workspace v2 models, normalization, the full YAML
+  generator and eight share-link parsers, with a `check` / `generate` /
+  `normalize` / `parse-link` CLI.
+- Language-independent parity tests against the demo export and link fixtures:
+  13 Rust tests now cover export semantics, counts/issues, percent-encoded SS,
+  chain relays, disabled members, manual-source merging and privacy regressions.
+- CI job `Rust core parity` running `cargo fmt`, `clippy -D warnings` and
+  `cargo test`.
+
+### Notes
+
+- The Rust core is not wired into the web runtime yet. The Tauri 2 shell, Rust
+  workspace storage and Windows installers are the next milestone; no Electron
+  or Node sidecar is used as a stand-in desktop build.
+
 ## 0.2.0 — 2026-10-20
 
 ### Added

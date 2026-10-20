@@ -25,7 +25,9 @@
     "start": "tsx server/index.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
     "test": "node --import tsx --test server/tests/model.test.ts server/tests/importer.test.ts server/tests/generator.test.ts server/tests/rulesets.test.ts server/tests/node-link.test.ts",
-    "test:e2e": "npm run build && node tests/e2e/smoke.mjs"
+    "test:e2e": "npm run build && node tests/e2e/smoke.mjs",
+    "rust:test": "cargo test --manifest-path rust/Cargo.toml --workspace",
+    "rust:lint": "cargo fmt --manifest-path rust/Cargo.toml --check && cargo clippy --manifest-path rust/Cargo.toml --workspace --all-targets -- -D warnings"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

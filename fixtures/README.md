@@ -13,7 +13,8 @@ npm run fixtures:generate
 - `links/parsed.json` — representative SS, SSR, VMess, VLESS, Trojan, Hysteria2,
   TUIC and SOCKS5 share-link parse results.
 
-The Rust port should match the semantic output. For YAML, compare parsed data
+The Rust port matches the semantic output and consumes these fixtures directly
+in `rust/rulevis-core/tests/parity.rs`. For YAML, the test compares parsed data
 (`proxies`, `proxy-groups`, `rule-providers`, `rules`) rather than whitespace or
 key order. Never replace these fixtures with real subscriptions or node
 credentials.

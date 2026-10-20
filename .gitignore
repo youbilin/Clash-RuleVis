@@ -1,5 +1,6 @@
 node_modules/
 dist/
+rust/target/
 /data/
 .demo-data/
 .env
