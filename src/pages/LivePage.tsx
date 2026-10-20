@@ -26,10 +26,9 @@ import {
   Copy,
   GripVertical,
   MousePointerClick,
-  Pause,
-  Play,
   Plus,
   Radar,
+  RadioTower,
   RefreshCw,
   Search,
   Settings2,
@@ -942,12 +941,18 @@ export function LivePage() {
               )}
             </span>
             <button
-              className={cx('stream-pause', paused && 'active')}
+              type="button"
+              role="switch"
+              aria-checked={!paused}
+              className={cx('stream-toggle', paused && 'paused')}
               onClick={() => setPaused(!paused)}
               title={paused ? '继续实时数据' : '暂停实时数据'}
               aria-label={paused ? '继续实时数据' : '暂停实时数据'}
             >
-              {paused ? <Play size={14} /> : <Pause size={14} />}
+              <RadioTower size={16} />
+              <span className="stream-track">
+                <span className="stream-knob" />
+              </span>
             </button>
           </div>
         </div>

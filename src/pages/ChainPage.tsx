@@ -18,7 +18,7 @@ import { useUi, toast } from '../store/ui';
 import { PageHeader, Spinner } from '../components/Common';
 import { Select } from '../components/Select';
 import { cx } from '../lib/misc';
-import { offerUndo } from '../lib/undo';
+import { notifyRemoved } from '../lib/undo';
 
 type PickSide = 'relay' | 'landing';
 
@@ -201,7 +201,7 @@ export function ChainPage() {
       });
       applyServerWorkspace(result.workspace);
       await refreshStatus();
-      offerUndo(undo, '链路已删除', displayName);
+      notifyRemoved(undo, '链路已删除', displayName);
       if (selectedContains(node.id)) {
         setRelayId(null);
         setLandingId(null);

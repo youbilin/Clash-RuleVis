@@ -192,13 +192,15 @@
 
 .toast-stack {
   position: fixed;
-  top: 96px;
-  right: 18px;
-  z-index: 90;
+  top: 16px;
+  left: 50%;
+  z-index: 400;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
-  width: 340px;
+  width: min(420px, calc(100vw - 32px));
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
@@ -206,13 +208,14 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
+  width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--line-strong);
   border-left-width: 2px;
   border-radius: 7px;
   background: rgba(15, 22, 30, 0.98);
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
-  pointer-events: auto;
+  pointer-events: none;
   animation: toast-in 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
@@ -274,11 +277,6 @@
   font-size: 11px;
   line-height: 1.5;
   overflow-wrap: anywhere;
-}
-
-.toast-close {
-  margin: -2px -2px 0 0;
-  color: var(--faint);
 }
 
 @keyframes toast-in {
@@ -787,9 +785,8 @@
   }
 
   .toast-stack {
-    left: 12px;
-    right: 12px;
-    width: auto;
+    top: 12px;
+    width: calc(100vw - 24px);
   }
 
   .modal-foot {
@@ -1012,17 +1009,4 @@
   max-width: 520px;
   margin-top: 6px;
   text-align: left;
-}
-
-.toast-action {
-  margin-top: 6px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
 }

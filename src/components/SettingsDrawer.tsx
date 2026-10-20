@@ -10,7 +10,7 @@ import { useWorkspace } from '../store/workspace';
 import { useLive } from '../store/live';
 import { cx } from '../lib/misc';
 import { formatRelative } from '../lib/format';
-import { offerUndo } from '../lib/undo';
+import { notifyRemoved } from '../lib/undo';
 
 export function SettingsDrawer() {
   const open = useUi((state) => state.settingsOpen);
@@ -179,7 +179,7 @@ function SettingsContent() {
       });
       applyServerWorkspace(result.workspace);
       await refreshStatus();
-      offerUndo(result.undoEntry, '备份已导入', '可通过历史恢复导入前的状态');
+      notifyRemoved(result.undoEntry, '备份已导入', '可通过历史恢复导入前的状态');
       toast('success', '工作区备份已导入', file.name);
     } catch (error) {
       toast('error', '导入备份失败', (error as Error).message);

@@ -31,7 +31,7 @@ import { Modal } from '../components/Overlay';
 import { Select } from '../components/Select';
 import { delayTone, expiresIn, formatDateTime, formatDelay, formatRelative, formatTrafficAmount } from '../lib/format';
 import { cx } from '../lib/misc';
-import { offerUndo } from '../lib/undo';
+import { notifyRemoved } from '../lib/undo';
 
 const TYPE_META: Record<SourceType, { label: string; icon: typeof Link2 }> = {
   subscription: { label: '订阅链接', icon: Link2 },
@@ -254,7 +254,7 @@ export function NodesPage() {
         );
       }
     });
-    offerUndo(undo, '节点已删除', display);
+    notifyRemoved(undo, '节点已删除', display);
   };
 
   const setNodesEnabled = (enabled: boolean) => {
@@ -325,7 +325,7 @@ export function NodesPage() {
       }
       draft.nodes = draft.nodes.filter((node) => !idMap.has(node.id));
     });
-    offerUndo(undo, '重复节点已合并', `移除 ${removeCount} 个副本`);
+    notifyRemoved(undo, '重复节点已合并', `移除 ${removeCount} 个副本`);
   };
 
   const refreshAllSources = async () => {
@@ -425,7 +425,7 @@ export function NodesPage() {
       const result = await api<{ workspace: Workspace }>(`/api/sources/${source.id}`, { method: 'DELETE' });
       if (result.workspace) applyServerWorkspace(result.workspace);
       if (sourceFilter === source.id) setSourceFilter('');
-      offerUndo(undo, '来源已删除', source.name);
+      notifyRemoved(undo, '来源已删除', source.name);
     } catch (error) {
       toast('error', '删除失败', (error as Error).message);
     }

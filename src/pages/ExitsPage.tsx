@@ -27,7 +27,7 @@ import { ExitEditor } from '../components/ExitEditor';
 import { formatCompact, formatDelay, delayTone } from '../lib/format';
 import { exitTypeLabel } from '../lib/labels';
 import { cx } from '../lib/misc';
-import { offerUndo } from '../lib/undo';
+import { notifyRemoved } from '../lib/undo';
 
 interface ExitTemplate {
   id: string;
@@ -316,7 +316,7 @@ export function ExitsPage() {
         (id) => id !== exit.id,
       );
     });
-    offerUndo(undo, '出口已删除', exit.name);
+    notifyRemoved(undo, '出口已删除', exit.name);
   };
 
   const testExit = async (exit: Exit) => {
@@ -389,7 +389,7 @@ export function ExitsPage() {
     update((draft) => {
       draft.exits = draft.exits.filter((exit) => !ids.has(exit.id));
     });
-    offerUndo(undo, `已删除 ${unused.length} 个出口`, '可在历史中恢复');
+    notifyRemoved(undo, `已删除 ${unused.length} 个出口`, '可在历史中恢复');
   };
 
   return (

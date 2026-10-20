@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   Activity,
   FileOutput,
@@ -14,6 +14,7 @@ import { useLive } from '../store/live';
 import { useUi, toast } from '../store/ui';
 import { formatRelative } from '../lib/format';
 import { cx } from '../lib/misc';
+import { openExternal } from '../api';
 
 function GitHubMark() {
   return (
@@ -41,6 +42,8 @@ export function Topbar() {
   const snapshot = useLive((state) => state.snapshot);
   const setSettingsOpen = useUi((state) => state.setSettingsOpen);
   const setCommandOpen = useUi((state) => state.setCommandOpen);
+  const location = useLocation();
+  const currentPage = NAV_ITEMS.find((item) => location.pathname.startsWith(item.to))?.label ?? '';
 
   const kernel = snapshot?.kernel ?? status?.kernel;
   const pending = workspace?.routes.filter((route) => route.pending).length ?? 0;
@@ -66,7 +69,6 @@ export function Topbar() {
               className={({ isActive }) => cx('topnav-item', isActive && 'active')}
             >
               <Icon size={15} strokeWidth={1.7} />
-              <span className="topnav-label">{item.label}</span>
               {item.to === '/live' && pending > 0 ? <span className="nav-count">{pending}</span> : null}
             </NavLink>
           );
@@ -74,9 +76,9 @@ export function Topbar() {
       </nav>
 
       <div className="topbar-status">
+        <span className="topbar-current" aria-live="polite">{currentPage}</span>
         <button className="command-chip" onClick={() => setCommandOpen(true)} title="全局搜索 (Ctrl+K)" aria-label="全局搜索">
-          <Search size={13} />
-          <span className="mono">Ctrl K</span>
+          <Search size={15} />
         </button>
         <button
           className={cx('save-state', saveState === 'error' && 'error', saveState === 'saving' && 'saving')}
@@ -103,16 +105,19 @@ export function Topbar() {
           ) : null}
           <Settings size={13} />
         </button>
-        <a
+        <button
+          type="button"
           className="topbar-github"
-          href="https://github.com/youbilin/Clash-RuleVis"
-          target="_blank"
-          rel="noreferrer"
           title="GitHub 仓库"
           aria-label="打开 GitHub 仓库"
+          onClick={() => {
+            void openExternal('https://github.com/youbilin/Clash-RuleVis').catch((error) => {
+              toast('error', '打开 GitHub 失败', (error as Error).message);
+            });
+          }}
         >
           <GitHubMark />
-        </a>
+        </button>
       </div>
     </header>
   );

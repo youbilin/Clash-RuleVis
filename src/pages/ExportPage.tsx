@@ -38,7 +38,7 @@ import { Modal, useDialogFocus } from '../components/Overlay';
 import { formatBytes, formatDateTime, formatRelative } from '../lib/format';
 import { useBodyLock, useEscape } from '../lib/hooks';
 import { baseName, cx } from '../lib/misc';
-import { offerUndo } from '../lib/undo';
+import { notifyRemoved } from '../lib/undo';
 
 type ExportTab = 'yaml' | 'diff';
 
@@ -334,7 +334,7 @@ export function ExportPage() {
       await Promise.all([loadPreview(false), loadHistory()]);
       setHistoryMenuOpen(false);
       setSelectedHistoryId(null);
-      offerUndo(result.undoEntry, '工作区已恢复', entry.label);
+      notifyRemoved(result.undoEntry, '工作区已恢复', entry.label);
     } catch (error) {
       toast('error', '恢复失败', (error as Error).message);
     }

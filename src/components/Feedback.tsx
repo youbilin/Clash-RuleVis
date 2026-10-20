@@ -1,5 +1,6 @@
 import { useRef } from 'react';
-import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
 import { useEscape } from '../lib/hooks';
 import { useUi, type ToastTone } from '../store/ui';
 import { useDialogFocus } from './Overlay';
@@ -13,9 +14,8 @@ const ICONS: Record<ToastTone, typeof Info> = {
 
 export function ToastStack() {
   const toasts = useUi((state) => state.toasts);
-  const dismiss = useUi((state) => state.dismissToast);
   if (!toasts.length) return null;
-  return (
+  return createPortal(
     <div className="toast-stack" aria-live="polite">
       {toasts.map((item) => {
         const Icon = ICONS[item.tone];
@@ -27,25 +27,12 @@ export function ToastStack() {
             <div className="toast-copy">
               <div className="toast-title">{item.title}</div>
               {item.message ? <div className="toast-msg">{item.message}</div> : null}
-              {item.action ? (
-                <button
-                  className="toast-action"
-                  onClick={() => {
-                    item.action?.onClick();
-                    dismiss(item.id);
-                  }}
-                >
-                  {item.action.label}
-                </button>
-              ) : null}
             </div>
-            <button className="icon-btn toast-close" onClick={() => dismiss(item.id)} aria-label="关闭提示">
-              <X size={13} />
-            </button>
           </div>
         );
       })}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

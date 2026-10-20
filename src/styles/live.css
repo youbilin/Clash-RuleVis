@@ -9,7 +9,7 @@
 }
 
 .stats-state {
-  flex: 0 0 172px;
+  flex: 0 0 210px;
 }
 
 .stat-stream {
@@ -1149,7 +1149,7 @@
   }
 
   .stats-state {
-    flex: 0 0 140px;
+    flex: 0 0 160px;
   }
 }
 

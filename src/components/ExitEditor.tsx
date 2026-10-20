@@ -7,7 +7,7 @@ import { toast, useUi } from '../store/ui';
 import { Drawer } from './Overlay';
 import { Select } from './Select';
 import { cx } from '../lib/misc';
-import { offerUndo } from '../lib/undo';
+import { notifyRemoved } from '../lib/undo';
 import { exitTypeLabel } from '../lib/labels';
 
 interface DraftMember extends ExitMember {
@@ -227,7 +227,7 @@ export function ExitEditor({ exit, onClose }: ExitEditorProps) {
         }
       }
     });
-    offerUndo(undo, '出口已删除', exit.name);
+    notifyRemoved(undo, '出口已删除', exit.name);
     onClose();
   };
 

@@ -19,6 +19,13 @@
 - Readability pass across every page: all sub-11px text tokens were raised
   (small labels now at least 10px), badges auto-size instead of clipping, and
   dense rows keep their layout.
+- Topbar navigation is now icon-only and left-aligned; the active page name is
+  shown next to the search button.
+- Live stream pause/resume is a dedicated switch control instead of a small
+  square button.
+- Notifications are centered above the app (including dialogs), have no close
+  or undo controls, and dismiss automatically after a few seconds.
+- The GitHub button now opens the repository in the system browser on desktop.
 - The app opens and the workspace stays editable even when Clash Verge is not
   running; kernel status is refreshed in the background instead of blocking the
   boot screen.

@@ -2,18 +2,11 @@ import { create } from 'zustand';
 
 export type ToastTone = 'success' | 'error' | 'info' | 'warn';
 
-export interface ToastAction {
-  label: string;
-  onClick: () => void;
-}
-
 export interface Toast {
   id: number;
   tone: ToastTone;
   title: string;
   message?: string;
-  action?: ToastAction;
-  duration?: number;
 }
 
 export interface ConfirmOptions {
@@ -52,7 +45,7 @@ export const useUi = create<UiState>((set, get) => ({
   addToast: (toast) => {
     const id = nextToastId++;
     set((state) => ({ toasts: [...state.toasts.slice(-4), { ...toast, id }] }));
-    const duration = toast.duration ?? (toast.tone === 'error' ? 8000 : 4200);
+    const duration = toast.tone === 'error' ? 6000 : 3600;
     window.setTimeout(() => get().dismissToast(id), duration);
     return id;
   },
@@ -75,7 +68,6 @@ export function toast(
   tone: ToastTone,
   title: string,
   message?: string,
-  options?: { action?: ToastAction; duration?: number },
 ): number {
-  return useUi.getState().addToast({ tone, title, message, ...options });
+  return useUi.getState().addToast({ tone, title, message });
 }

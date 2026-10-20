@@ -57,7 +57,7 @@ import { EmptyState, PageHeader, Spinner, Switch } from '../components/Common';
 import { Modal } from '../components/Overlay';
 import { formatCompact, formatRelative } from '../lib/format';
 import { cx, repositoryUrl } from '../lib/misc';
-import { offerUndo } from '../lib/undo';
+import { notifyRemoved } from '../lib/undo';
 import { RuleTargetSelect } from '../components/RuleTargetSelect';
 import { Select } from '../components/Select';
 const RuleCatalogDialog = lazy(() =>
@@ -551,7 +551,7 @@ export function RulesPage() {
     update((draft) => {
       draft.routes = draft.routes.filter((route) => !selectedIds.has(route.id));
     });
-    offerUndo(undo, `已删除 ${selectedIds.size} 项`, '可在历史中恢复');
+    notifyRemoved(undo, `已删除 ${selectedIds.size} 项`, '可在历史中恢复');
     exitSelectMode();
   };
 
@@ -706,7 +706,7 @@ export function RulesPage() {
     });
     setOnlyInvalid(false);
     if (selectMode) exitSelectMode();
-    offerUndo(undo, '失效规则已清理', `${ids.size} 条`);
+    notifyRemoved(undo, '失效规则已清理', `${ids.size} 条`);
   };
 
   const deleteRoute = async (route: Route) => {
@@ -728,7 +728,7 @@ export function RulesPage() {
     update((draft) => {
       draft.routes = draft.routes.filter((item) => item.id !== route.id);
     });
-    offerUndo(undo, isRuleSet ? '规则集已删除' : '规则已删除', label);
+    notifyRemoved(undo, isRuleSet ? '规则集已删除' : '规则已删除', label);
   };
 
   return (

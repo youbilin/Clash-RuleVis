@@ -697,10 +697,6 @@ body {
   color: var(--muted);
 }
 
-.toast-action {
-  color: var(--accent);
-}
-
 /* ---------- callouts ---------- */
 
 .callout {

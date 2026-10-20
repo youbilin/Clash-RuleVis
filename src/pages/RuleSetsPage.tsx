@@ -27,7 +27,7 @@ import { Select } from '../components/Select';
 import { Modal } from '../components/Overlay';
 import { formatCompact, formatDateTime, formatRelative } from '../lib/format';
 import { baseName, cx, hostFromUrl, repositoryUrl, urlTail } from '../lib/misc';
-import { offerUndo } from '../lib/undo';
+import { notifyRemoved } from '../lib/undo';
 import { exitTypeLabel } from '../lib/labels';
 import { useEscape } from '../lib/hooks';
 
@@ -117,7 +117,7 @@ export function RuleSetsPage() {
     try {
       const result = await api<{ workspace: Workspace }>(`/api/rule-sets/${route.id}`, { method: 'DELETE' });
       applyServerWorkspace(result.workspace);
-      offerUndo(undo, '规则集已删除', route.name);
+      notifyRemoved(undo, '规则集已删除', route.name);
     } catch (error) {
       toast('error', '删除失败', (error as Error).message);
     }
