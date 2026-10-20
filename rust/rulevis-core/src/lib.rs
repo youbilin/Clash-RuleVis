@@ -2,6 +2,7 @@ pub mod defaults;
 pub mod generator;
 pub mod links;
 pub mod model;
+pub mod regions;
 pub mod resolve;
 
 pub use defaults::{
@@ -14,6 +15,7 @@ pub use links::{
     parse_share_link, share_node_display_name, share_node_to_proxy, NodeLinkError, ParsedShareNode,
 };
 pub use model::*;
+pub use regions::detect_region;
 pub use resolve::{
     node_display_name, provider_slug, resolve_exit, ExitResolution, MissingRef, ResolveContext,
 };

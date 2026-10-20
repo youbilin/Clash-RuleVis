@@ -7,10 +7,16 @@ license = "MIT"
 publish = false
 
 [dependencies]
+base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+percent-encoding = "2"
+regex = "1"
 rulevis-core = { path = "../rulevis-core" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 serde_yaml = "0.9"
 similar = "2"
+ureq = { version = "2.12", features = ["gzip"] }
+url = "2"
 uuid = { version = "1", features = ["v4"] }
+wait-timeout = "0.2"

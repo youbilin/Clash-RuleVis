@@ -45,7 +45,7 @@ async function pollDesktop(): Promise<void> {
 function startDesktopPolling(): void {
   if (desktopPollTimer !== null) return;
   void pollDesktop();
-  desktopPollTimer = window.setInterval(() => void pollDesktop(), 3000);
+  desktopPollTimer = window.setInterval(() => void pollDesktop(), 1000);
 }
 
 function openSocket(): void {

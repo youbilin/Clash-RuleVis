@@ -39,7 +39,7 @@ output changes and make sure `cargo test` still passes.
 ```bash
 npm run desktop:dev    # Tauri window + Vite
 npm run desktop:check  # Rust compile check
-npm run desktop:build  # Binary only; bundle is disabled for now
+npm run desktop:build  # Release build + NSIS installer
 ```
 
 `rust/rulevis-app` contains the testable desktop storage/export/API layer;

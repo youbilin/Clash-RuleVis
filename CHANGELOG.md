@@ -1,35 +1,39 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-10-21
 
 ### Added
 
-- `rust/rulevis-core`: Workspace v2 models, normalization, the full YAML
-  generator and eight share-link parsers, with a `check` / `generate` /
-  `normalize` / `parse-link` CLI.
-- Language-independent parity tests against the demo export and link fixtures:
-  14 core tests cover export semantics, counts/issues, percent-encoded SS,
-  chain relays, disabled members, manual-source merging and privacy regressions.
-- `rust/rulevis-app`: testable desktop storage, history, export, Verge base
-  template reader and JSON API, independent of the Tauri shell.
-- Tauri 2 desktop preview: workspace load/save with revision conflicts, manual
-  node import, chains, rule-catalog batch add, YAML preview/diff/export,
-  history restore and open-export-directory.
-- Frontend runtime bridge: browser builds keep using Fastify, desktop builds use
-  a single Tauri IPC command; live status falls back to an empty-state poll.
-- Six desktop API tests covering save conflicts, manual nodes, chains, export,
-  history restore, source deletion, unavailable endpoints and frontend error
-  serialization.
-- CI runs `cargo fmt`, `clippy -D warnings` and `cargo test` for both Rust
-  crates, plus a Windows job that checks the Tauri shell.
+- Windows desktop release (Tauri 2 + Rust) with an NSIS x64 installer.
+- Rust subscription/YAML importer: subscription fetch, base64 payloads, dedupe,
+  source refresh, groups, rules, rule providers, Verge profile import and
+  traffic/expiry metadata.
+- Rust mihomo controller: TCP and Windows named-pipe transports, auto discovery,
+  persisted connection settings, rediscovery, node/group latency tests and
+  HTTP CONNECT probing.
+- Rust live connection aggregator: domains, rule hits, exits/nodes, processes,
+  smoothed rates, 40-point history and retention cleanup.
+- Rust ruleset support: URL/file inspection, inline expansion, file storage,
+  create and refresh.
+- Real `mihomo -t` validation in the desktop export flow, with automatic binary
+  and geo-file discovery.
+- Verge base-template reading for ports, DNS and TUN settings.
+- 25 Rust tests including fixture parity, a local HTTP subscription import,
+  desktop API end-to-end cases and an ignored real-controller smoke test.
+- CI checks the Tauri shell on a Windows runner.
 
-### Notes
+### Changed
 
-- Desktop subscription/YAML import, source refresh, kernel connection/live
-  stream, latency tests, ruleset refresh and `verge-mihomo -t` validation are
-  still being migrated and return `DESKTOP_UNAVAILABLE` explicitly.
-- No Windows installer is published yet. The desktop shell uses Rust IPC only;
-  no Electron or Node sidecar is used as a stand-in desktop build.
+- Desktop app no longer returns `DESKTOP_UNAVAILABLE` for core routing features.
+- Live updates in the desktop app poll the Rust snapshot at 1s; the web build
+  keeps its WebSocket stream.
+- Version bumped to 0.3.0.
+
+### Security
+
+- Desktop uses Tauri IPC only; no local HTTP listener and no Node sidecar.
+- The installer is currently unsigned; SmartScreen may warn. Code signing and
+  auto-update are the next milestone.
 
 ## 0.2.0 — 2026-10-20
 

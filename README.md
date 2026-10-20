@@ -28,7 +28,7 @@
 
 ---
 
-> 本地 Web 工作台已稳定。Tauri 2 桌面预览已接入 Rust 工作区、导出与历史，但订阅/YAML 导入和内核适配仍在迁移中，暂不发布 Windows 安装包；不用 Electron 或 Node sidecar 冒充正式桌面版。
+> 本地 Web 工作台与 Windows 桌面版均已可用。桌面版由 Tauri 2 + Rust 驱动，不启动 Node 服务，不使用 Electron 或 Node sidecar。当前安装包未做代码签名，Windows SmartScreen 可能提示未知发布者。
 
 ## 这是什么
 
@@ -164,29 +164,35 @@ cargo test --workspace
 cargo run -p rulevis-core -- check ../demo/workspace.json
 ```
 
-GitHub Actions 会运行 Rust 核心与桌面 API 测试，并在 Windows runner 上检查 Tauri 壳编译。Windows 安装包的前置条件是 MSVC Build Tools、Windows SDK 和 WebView2；当前仓库没有发布任何桌面安装包。
+GitHub Actions 会运行 Rust 核心与桌面 API 测试，并在 Windows runner 上检查 Tauri 壳编译。`npm run desktop:build` 会生成 release 二进制与 NSIS 安装包。Windows 构建前置条件是 MSVC Build Tools、Windows SDK 和 WebView2。
 
-## 桌面预览（Tauri 2）
+## 下载安装（Windows）
 
-桌面端已经可以启动，工作区保存在系统应用数据目录（默认 `%APPDATA%\io.github.youbilin.clash-rulevis`，可用 `CRS_DATA_DIR` 覆盖），与 Web 版的 `data/` 相互独立。Windows 构建前置：Rust stable、MSVC Build Tools 的 C++ 工作负载、Windows SDK 10、WebView2 Runtime。
+从 [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest) 下载 `Clash RuleVis_0.3.0_x64-setup.exe`（NSIS，当前用户安装）。安装包未签名，SmartScreen 可能提示未知发布者；Release 页面会提供 SHA256，可自行校验。
+
+桌面数据保存在 `%APPDATA%\io.github.youbilin.clash-rulevis`（可用 `CRS_DATA_DIR` 覆盖），与 Web 版的 `data/` 相互独立。首次使用可在设置中导入 Web 版工作区 JSON 备份。
+
+## 桌面版（Tauri 2）
+
+桌面版保留同一套 React UI，由 Rust 负责本地 API：
+
+- 独立工作区存储、版本冲突、历史快照/恢复与工作区备份导入。
+- 订阅链接、YAML 粘贴、本地文件和 Verge 当前 profile 导入；来源刷新、流量/到期信息。
+- 手动节点链接、节点与出口编辑、链式代理、规则库批量添加、规则集文件/URL 检查与刷新。
+- mihomo 控制器自动发现：TCP controller 与 Windows 命名管道；连接设置、重新探测、节点/出口测速。
+- 实时连接聚合：域名、规则命中、出口/节点、进程、速率与历史曲线。
+- 完整 YAML 预览、diff、真实 `verge-mihomo -t` 校验、安全导出与历史恢复。
+- 只读读取 Verge 当前 profile 的端口 / DNS / TUN 等基础设置。
 
 ```bash
 npm run desktop:dev    # 启动 Tauri 窗口 + Vite
-npm run desktop:check  # 只做 Rust 编译检查
-npm run desktop:build  # 构建桌面二进制（当前不生成安装包）
+npm run desktop:check  # Rust 编译检查
+npm run desktop:build  # 构建 release + NSIS 安装包
 ```
 
-首次使用可以在设置中导入 Web 版导出的工作区 JSON 备份，完成数据迁移。当前桌面预览已经接入：
+Windows 构建前置：Rust stable、MSVC Build Tools 的 C++ 工作负载、Windows SDK 10、WebView2 Runtime；运行实时功能需要 Clash Verge Rev / mihomo。
 
-- 工作区加载 / 保存 / 版本冲突、JSON 备份导入、历史快照与恢复。
-- 手动节点链接导入、节点与出口编辑、链路生成/删除、从规则库批量添加规则集。
-- 完整 YAML 预览、diff、导出到应用数据目录、打开导出目录。
-- 读取 Clash Verge 当前 profile 的端口 / DNS / TUN 等基础设置（只读，不写入）。
-- 桌面端实时页改为空状态轮询，不再依赖 WebSocket 服务。
-
-仍待迁移：订阅/YAML 导入、来源刷新、内核连接与实时流、测速/探测、规则集在线刷新、`verge-mihomo -t` 校验。调用这些能力会返回明确的 `DESKTOP_UNAVAILABLE` 错误，不会静默失败。
-
-安全边界与 Web 版一致：控制器密钥和订阅信息不会被导出，应用只监听系统 IPC，不开放本地端口。
+安全边界与 Web 版一致：不写入 Verge 配置、不重载内核；订阅信息和控制器密钥不会出现在导出 YAML；桌面版只使用 Tauri IPC，不开放本地端口。当前安装包未签名，自动更新与代码签名属于下一阶段。
 
 ## 快速开始
 
@@ -260,8 +266,9 @@ npm run build      # 类型检查 + 生产构建
 npm start          # 运行生产服务
 npm run rust:test  # Rust 核心 + 桌面 API 测试
 npm run rust:lint  # Rust fmt + clippy
-npm run desktop:dev   # Tauri 2 桌面预览
+npm run desktop:dev   # Tauri 2 桌面版
 npm run desktop:check # 桌面壳编译检查
+npm run desktop:build # release + NSIS 安装包
 ```
 
 `test:e2e` 会使用系统临时数据目录和本机 Chrome 跑一次完整冒烟，不触碰当前 `data/`；如果 Chrome 不在默认位置，可设置 `CHROME_PATH`。
@@ -297,11 +304,11 @@ fixtures/              # TypeScript ↔ Rust 的 parity 契约
 
 ## Roadmap
 
-- **v0.2（当前）**：本地 Web 工作台、完整规则/出口/链路/导出闭环、自动刷新与备份。
-- **Rust 地基（已完成）**：`rulevis-core` 覆盖规范化、导出生成和链接解析，20 项 Rust 测试包含 fixture 语义对齐与桌面 API 端到端，CI 已接入。
-- **桌面预览（当前）**：Tauri 2 壳 + React UI；Rust 已接管工作区存储、历史、导出、手动节点、链路和规则库批量添加。
-- **下一步**：订阅/YAML 导入、内核控制器与实时流、测速和内核校验迁到 Rust，随后发布签名 Windows 安装包。不会用 Electron 或 Node sidecar 冒充正式桌面版。
-- **之后**：更多协议与 Proxy Provider、桌面托盘、增量更新。
+- **v0.2**：本地 Web 工作台、完整规则/出口/链路/导出闭环、自动刷新与备份。
+- **v0.3（当前）**：Tauri 2 + Rust 桌面版；订阅/YAML 导入、内核 TCP/命名管道、实时连接、测速、规则集、mihomo 校验与 NSIS 安装包全部落地。
+- **Rust 地基**：`rulevis-core` 与 `rulevis-app` 共 25 项测试，包含 fixture 语义对齐、订阅抓取、桌面 API 与真实控制器冒烟。
+- **下一步**：代码签名、自动更新、桌面托盘、多跳链路与 Proxy Provider。
+- **边界**：安装包目前只提供 Windows x64；不会用 Electron 或 Node sidecar 冒充桌面版。
 - **再评估**：只有在 WebView 被证明是瓶颈时，才考虑用 Rust 重写 UI；纯 Rust UI 不是当前目标。
 
 ## 已知边界
@@ -311,13 +318,15 @@ fixtures/              # TypeScript ↔ Rust 的 parity 契约
 - 链路编辑器当前生成单跳链式节点，不支持把链式节点再次作为中转或落地。
 - Windows 命名管道自动发现优先支持 Clash Verge Rev；其他内核可通过 TCP controller 手动连接。
 - 规则目录来自 MetaCubeX，冷门条目可能保留上游英文名。
+- Windows 安装包目前未签名，且只提供 x64；实时连接、测速需要本机运行 Clash Verge Rev / mihomo。
 
 ## 数据与隐私
 
 - 所有数据、订阅地址、节点信息与控制器密钥都只保存在本机。
-- 服务仅监听 `127.0.0.1`，并使用本地会话 Cookie 与 Origin 白名单。
+- Web 服务仅监听 `127.0.0.1`，并使用本地会话 Cookie 与 Origin 白名单；桌面版只使用 Tauri IPC，不开放本地端口。
 - 不发送遥测，不接入第三方分析服务。
 - 导出的 YAML 不包含 `external-controller` 与 `secret`。
+- 桌面版工作区、历史、导出和密钥设置保存在应用数据目录，请按敏感数据保管。
 
 ## 许可证与参与
 

@@ -5,7 +5,7 @@ use tauri::Manager;
 
 use rulevis_app::{handle_request, AppState, ApiFailure};
 
-#[tauri::command]
+#[tauri::command(async)]
 fn api_request(
     method: String,
     path: String,
@@ -23,6 +23,7 @@ pub fn run() {
                 None => app.path().app_data_dir()?,
             };
             let state = AppState::load(data_dir).map_err(std::io::Error::other)?;
+            state.start_background();
             app.manage(state);
             Ok(())
         })

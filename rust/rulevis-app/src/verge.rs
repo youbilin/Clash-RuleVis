@@ -42,6 +42,19 @@ struct VergeInfo {
     runtime: Option<Map<String, Value>>,
     profile_name: Option<String>,
     profile: Option<Map<String, Value>>,
+    profile_path: Option<PathBuf>,
+    controller: Option<String>,
+    pipe: Option<String>,
+    secret: String,
+}
+
+pub struct VergeKernelInfo {
+    pub dir: PathBuf,
+    pub controller: Option<String>,
+    pub pipe: Option<String>,
+    pub secret: String,
+    pub active_profile_name: Option<String>,
+    pub active_profile_file: Option<PathBuf>,
 }
 
 fn verge_dirs() -> Vec<PathBuf> {
@@ -77,8 +90,25 @@ fn read_verge_info() -> Option<VergeInfo> {
             continue;
         }
         let runtime = parse_yaml_file(&config_path);
+        let controller = runtime
+            .as_ref()
+            .and_then(|config| config.get("external-controller"))
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        let pipe = runtime
+            .as_ref()
+            .and_then(|config| config.get("external-controller-pipe"))
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        let secret = runtime
+            .as_ref()
+            .and_then(|config| config.get("secret"))
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
         let mut profile_name = None;
         let mut profile = None;
+        let mut profile_path = None;
 
         if let Some(profiles) = parse_yaml_file(&dir.join("profiles.yaml")) {
             let current = profiles.get("current").and_then(Value::as_str);
@@ -94,7 +124,11 @@ fn read_verge_info() -> Option<VergeInfo> {
                         .map(str::to_string);
                     if let Some(file) = active.get("file").and_then(Value::as_str) {
                         if let Some(file_name) = Path::new(file).file_name() {
-                            profile = parse_yaml_file(&dir.join("profiles").join(file_name));
+                            let path = dir.join("profiles").join(file_name);
+                            profile = parse_yaml_file(&path);
+                            if path.is_file() {
+                                profile_path = Some(path);
+                            }
                         }
                     }
                 }
@@ -106,6 +140,10 @@ fn read_verge_info() -> Option<VergeInfo> {
             runtime,
             profile_name,
             profile,
+            profile_path,
+            controller,
+            pipe,
+            secret,
         });
     }
     None
@@ -176,4 +214,33 @@ pub fn read_base_template() -> BaseTemplate {
 
 pub fn active_profile_name() -> Option<String> {
     read_verge_info().and_then(|verge| verge.profile_name)
+}
+
+pub fn kernel_info() -> Option<VergeKernelInfo> {
+    read_verge_info().map(|verge| VergeKernelInfo {
+        dir: verge.dir,
+        controller: verge.controller,
+        pipe: verge.pipe,
+        secret: verge.secret,
+        active_profile_name: verge.profile_name,
+        active_profile_file: verge.profile_path,
+    })
+}
+
+pub fn verge_dir() -> Option<PathBuf> {
+    read_verge_info().map(|verge| verge.dir)
+}
+
+pub fn active_profile() -> Option<(String, PathBuf)> {
+    let verge = read_verge_info()?;
+    let path = verge.profile_path?;
+    if !path.is_file() {
+        return None;
+    }
+    Some((
+        verge
+            .profile_name
+            .unwrap_or_else(|| "Clash Verge 当前配置".to_string()),
+        path,
+    ))
 }

@@ -1,8 +1,10 @@
 use std::collections::HashSet;
 use std::path::Path;
 use std::process::Command;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
+use base64::Engine as _;
 use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
@@ -13,21 +15,56 @@ use rulevis_core::model::{
 use rulevis_core::resolve::{resolve_exit, ResolveContext};
 
 use crate::export::{build_preview, export_config, ExportError};
-use crate::storage::{now_iso, now_millis, NewHistory, Store, StoreError};
-use crate::types::{
-    ApiFailure, AppStatus, KernelStatus, KernelValidation, StatusCounts, StatusWorkspace,
+use crate::fetcher::{fetch_url, parse_subscription_userinfo};
+use crate::importer::{
+    apply_parsed_config, dedupe_key, parse_config_text, suggest_prefix, ParsedConfig,
 };
+use crate::kernel::{test_node_with, Kernel, KernelSettings};
+use crate::live::LiveAggregator;
+use crate::probe::probe_through_proxy;
+use crate::rulesets::{expand_ruleset, inspect_buffer, is_path_inside, store_ruleset_file};
+use crate::storage::{now_iso, NewHistory, Store, StoreError};
+use crate::types::{ApiFailure, AppStatus, KernelStatus, StatusCounts, StatusWorkspace};
+use crate::validation::validate_config;
 use crate::verge;
 
 pub struct AppState {
-    store: Mutex<Store>,
+    store: Arc<Mutex<Store>>,
+    kernel: Arc<Mutex<Kernel>>,
+    live: Arc<Mutex<LiveAggregator>>,
 }
 
 impl AppState {
     pub fn load(data_dir: std::path::PathBuf) -> Result<Self, String> {
+        let store = Store::load(data_dir)?;
+        let kernel = Kernel::load(&store.data_dir);
+        let live = LiveAggregator::new(kernel.status());
         Ok(Self {
-            store: Mutex::new(Store::load(data_dir)?),
+            store: Arc::new(Mutex::new(store)),
+            kernel: Arc::new(Mutex::new(kernel)),
+            live: Arc::new(Mutex::new(live)),
         })
+    }
+
+    pub fn start_background(&self) {
+        let store = self.store.clone();
+        let kernel = self.kernel.clone();
+        let live = self.live.clone();
+        let _ = std::thread::Builder::new()
+            .name("rulevis-live".to_string())
+            .spawn(move || loop {
+                let retention = store
+                    .lock()
+                    .map(|store| store.workspace().settings.retention_minutes)
+                    .unwrap_or(5);
+                if let Ok(mut kernel) = kernel.lock() {
+                    kernel.ensure_connected();
+                    if let Ok(mut live) = live.lock() {
+                        live.poll(&mut kernel, retention);
+                    }
+                }
+                std::thread::sleep(Duration::from_secs(1));
+            });
     }
 }
 
@@ -59,6 +96,28 @@ fn with_store<T>(
     handle(&mut store)
 }
 
+fn with_kernel<T>(
+    state: &AppState,
+    handle: impl FnOnce(&mut Kernel) -> Result<T, ApiFailure>,
+) -> Result<T, ApiFailure> {
+    let mut kernel = state
+        .kernel
+        .lock()
+        .map_err(|_| ApiFailure::internal("内核状态锁不可用，请重启应用"))?;
+    handle(&mut kernel)
+}
+
+fn with_live<T>(
+    state: &AppState,
+    handle: impl FnOnce(&LiveAggregator) -> Result<T, ApiFailure>,
+) -> Result<T, ApiFailure> {
+    let live = state
+        .live
+        .lock()
+        .map_err(|_| ApiFailure::internal("实时数据锁不可用，请重启应用"))?;
+    handle(&live)
+}
+
 fn workspace_counts(workspace: &Workspace) -> crate::types::WorkspaceCounts {
     crate::types::WorkspaceCounts {
         sources: workspace.sources.len(),
@@ -72,14 +131,10 @@ fn workspace_counts(workspace: &Workspace) -> crate::types::WorkspaceCounts {
     }
 }
 
-fn kernel_status() -> KernelStatus {
-    KernelStatus::desktop_unavailable()
-}
-
-fn status_value(store: &Store) -> Result<Value, ApiFailure> {
+fn status_value(store: &Store, kernel: KernelStatus) -> Result<Value, ApiFailure> {
     let workspace = store.workspace();
     let status = AppStatus {
-        kernel: kernel_status(),
+        kernel,
         version: env!("CARGO_PKG_VERSION").to_string(),
         data_dir: store.data_dir.to_string_lossy().to_string(),
         exports_dir: store.exports_dir.to_string_lossy().to_string(),
@@ -151,11 +206,472 @@ fn path_tail<'a>(path: &'a str, prefix: &str, suffix: &str) -> Option<&'a str> {
     Some(rest)
 }
 
-fn error_unavailable(feature: &str) -> ApiFailure {
-    ApiFailure::unavailable(format!(
-        "桌面版尚未接入{}，请先在 Web 版完成，或使用已支持的工作区/导出功能",
-        feature
-    ))
+fn validate_http_url(raw: &str) -> Result<String, ApiFailure> {
+    let url = url::Url::parse(raw.trim()).map_err(|_| ApiFailure::bad_request("地址格式无效"))?;
+    if !matches!(url.scheme(), "http" | "https") {
+        return Err(ApiFailure::bad_request("只支持 http / https 地址"));
+    }
+    Ok(url.to_string())
+}
+
+fn normalize_source_name(value: Option<&Value>, fallback: &str) -> String {
+    value
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| value.chars().take(60).collect())
+        .unwrap_or_else(|| fallback.to_string())
+}
+
+fn normalize_prefix(value: Option<&Value>, fallback: &str) -> Result<String, ApiFailure> {
+    let Some(value) = value else {
+        return Ok(fallback.to_string());
+    };
+    let Some(value) = value.as_str() else {
+        return Err(ApiFailure::bad_request("节点前缀格式无效"));
+    };
+    let trimmed = value.trim();
+    if trimmed.chars().count() > 24 {
+        return Err(ApiFailure::bad_request("节点前缀不能超过 24 个字符"));
+    }
+    if trimmed.contains(',') || trimmed.contains('\n') || trimmed.contains('\r') {
+        return Err(ApiFailure::bad_request("节点前缀不能包含逗号或换行"));
+    }
+    Ok(trimmed.to_string())
+}
+
+fn save_kernel_settings(state: &AppState, body: Option<Value>) -> Result<Value, ApiFailure> {
+    let body = body_object(body.as_ref());
+    let mode = match body.get("mode").and_then(Value::as_str) {
+        Some("pipe") => "pipe",
+        Some("tcp") => "tcp",
+        _ => "auto",
+    };
+    let endpoint = optional_string(&body, "endpoint");
+    if mode != "auto" && endpoint.is_none() {
+        return Err(ApiFailure::bad_request("手动模式需要填写控制器地址"));
+    }
+    with_kernel(state, |kernel| {
+        let secret = match body.get("secret").and_then(Value::as_str) {
+            Some(secret) => {
+                let secret = secret.trim();
+                if secret.is_empty() {
+                    None
+                } else {
+                    Some(secret.to_string())
+                }
+            }
+            None => kernel.settings.secret.clone(),
+        };
+        let next = KernelSettings {
+            mode: mode.to_string(),
+            endpoint,
+            secret,
+        };
+        kernel
+            .save_settings(next)
+            .map_err(ApiFailure::bad_request)?;
+        Ok(json!({
+            "status": kernel.status(),
+            "settings": kernel.settings_view()
+        }))
+    })
+}
+
+fn source_fetch_context(state: &AppState) -> (String, Option<u16>) {
+    let (user_agent, use_proxy) = with_store(state, |store| {
+        Ok((
+            store.workspace().settings.subscription_user_agent.clone(),
+            store.workspace().settings.use_proxy_for_fetch,
+        ))
+    })
+    .unwrap_or_else(|_| ("clash-verge/v2.5.8".to_string(), false));
+    let proxy_port = if use_proxy {
+        with_kernel(state, |kernel| Ok(kernel.mixed_port())).unwrap_or(None)
+    } else {
+        None
+    };
+    (user_agent, proxy_port)
+}
+
+fn test_url_for(state: &AppState) -> String {
+    with_store(state, |store| {
+        Ok(store.workspace().settings.test_url.clone())
+    })
+    .unwrap_or_else(|_| "https://www.gstatic.com/generate_204".to_string())
+}
+
+fn import_subscription(state: &AppState, body: Option<Value>) -> Result<Value, ApiFailure> {
+    let body = body_object(body.as_ref());
+    let url = validate_http_url(
+        body.get("url")
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiFailure::bad_request("订阅地址不能为空"))?,
+    )?;
+    let fallback_name = url::Url::parse(&url)
+        .ok()
+        .and_then(|parsed| parsed.host_str().map(str::to_string))
+        .unwrap_or_else(|| "订阅".to_string());
+    let name = normalize_source_name(body.get("name"), &fallback_name);
+    let prefix = normalize_prefix(body.get("prefix"), &suggest_prefix(&name))?;
+    let keep_rules = body.get("keepRules").and_then(Value::as_bool) == Some(true);
+    let (user_agent, proxy_port) = source_fetch_context(state);
+    let fetched = fetch_url(&url, &user_agent, proxy_port, 30_000)
+        .map_err(|error| ApiFailure::new(502, error))?;
+    let parsed = parse_config_text(&fetched.text).map_err(|error| ApiFailure::new(422, error))?;
+    let userinfo = parse_subscription_userinfo(
+        fetched
+            .headers
+            .get("subscription-userinfo")
+            .map(String::as_str),
+    );
+    let source = Source {
+        id: Uuid::new_v4().to_string(),
+        kind: "subscription".to_string(),
+        name: name.clone(),
+        url: Some(url),
+        prefix,
+        keep_rules,
+        updated_at: Some(now_iso()),
+        userinfo: userinfo.clone(),
+        note: None,
+    };
+    apply_source_import(
+        state,
+        source,
+        parsed,
+        keep_rules,
+        false,
+        userinfo,
+        format!("导入订阅 · {}", name),
+    )
+}
+
+fn import_content(state: &AppState, body: Option<Value>, kind: &str) -> Result<Value, ApiFailure> {
+    let body = body_object(body.as_ref());
+    let content = body.get("content").and_then(Value::as_str).unwrap_or("");
+    if content.trim().is_empty() {
+        return Err(ApiFailure::bad_request(if kind == "file" {
+            "文件内容为空"
+        } else {
+            "粘贴内容为空"
+        }));
+    }
+    if content.len() > 20 * 1024 * 1024 {
+        return Err(ApiFailure::new(413, "内容过大（上限 20MB）"));
+    }
+    let fallback_name = if kind == "file" {
+        "本地配置"
+    } else {
+        "粘贴配置"
+    };
+    let name = normalize_source_name(body.get("name"), fallback_name);
+    let prefix = normalize_prefix(body.get("prefix"), "")?;
+    let keep_rules = body.get("keepRules").and_then(Value::as_bool) == Some(true);
+    let parsed = parse_config_text(content).map_err(|error| ApiFailure::new(422, error))?;
+    let source = Source {
+        id: Uuid::new_v4().to_string(),
+        kind: kind.to_string(),
+        name: name.clone(),
+        url: None,
+        prefix,
+        keep_rules,
+        updated_at: Some(now_iso()),
+        userinfo: None,
+        note: None,
+    };
+    let label = if kind == "file" {
+        format!("导入文件 · {}", name)
+    } else {
+        format!("粘贴导入 · {}", name)
+    };
+    apply_source_import(state, source, parsed, keep_rules, false, None, label)
+}
+
+fn import_verge(state: &AppState, body: Option<Value>) -> Result<Value, ApiFailure> {
+    let body = body_object(body.as_ref());
+    let Some((profile_name, profile_path)) = verge::active_profile() else {
+        return Err(ApiFailure::not_found(
+            "未找到 Clash Verge 当前生效的配置文件",
+        ));
+    };
+    let content = std::fs::read_to_string(&profile_path)
+        .map_err(|error| ApiFailure::internal(format!("读取 Verge 配置失败：{}", error)))?;
+    let parsed = parse_config_text(&content).map_err(|error| ApiFailure::new(422, error))?;
+    let existing = with_store(state, |store| {
+        Ok(store
+            .workspace()
+            .sources
+            .iter()
+            .find(|source| source.kind == "verge")
+            .cloned())
+    })?;
+    let keep_rules = body
+        .get("keepRules")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
+    if let Some(mut source) = existing.clone() {
+        source.keep_rules = keep_rules;
+        if body.get("prefix").is_some() {
+            source.prefix = normalize_prefix(body.get("prefix"), &source.prefix)?;
+        }
+        source.updated_at = Some(now_iso());
+        source.note = Some(profile_path.to_string_lossy().to_string());
+        return apply_source_import(
+            state,
+            source,
+            parsed,
+            keep_rules,
+            true,
+            None,
+            "从 Verge 重新导入".to_string(),
+        );
+    }
+    let prefix = normalize_prefix(body.get("prefix"), "")?;
+    let source = Source {
+        id: Uuid::new_v4().to_string(),
+        kind: "verge".to_string(),
+        name: normalize_source_name(body.get("name"), &profile_name),
+        url: None,
+        prefix,
+        keep_rules,
+        updated_at: Some(now_iso()),
+        userinfo: None,
+        note: Some(profile_path.to_string_lossy().to_string()),
+    };
+    apply_source_import(
+        state,
+        source,
+        parsed,
+        keep_rules,
+        false,
+        None,
+        "从 Verge 当前配置导入".to_string(),
+    )
+}
+
+fn refresh_source(state: &AppState, id: &str, _body: Option<Value>) -> Result<Value, ApiFailure> {
+    let source = with_store(state, |store| {
+        store
+            .workspace()
+            .sources
+            .iter()
+            .find(|source| source.id == id)
+            .cloned()
+            .ok_or_else(|| ApiFailure::not_found("来源不存在"))
+    })?;
+    let mut updated = source.clone();
+    let parsed = match source.kind.as_str() {
+        "subscription" => {
+            let url = source
+                .url
+                .clone()
+                .ok_or_else(|| ApiFailure::bad_request("该订阅没有可刷新的地址"))?;
+            let (user_agent, proxy_port) = source_fetch_context(state);
+            let fetched = fetch_url(&url, &user_agent, proxy_port, 30_000)
+                .map_err(|error| ApiFailure::new(502, error))?;
+            updated.userinfo = parse_subscription_userinfo(
+                fetched
+                    .headers
+                    .get("subscription-userinfo")
+                    .map(String::as_str),
+            );
+            parse_config_text(&fetched.text).map_err(|error| ApiFailure::new(422, error))?
+        }
+        "verge" => {
+            let Some((_name, path)) = verge::active_profile() else {
+                return Err(ApiFailure::not_found("未找到 Clash Verge 当前配置文件"));
+            };
+            let content = std::fs::read_to_string(&path)
+                .map_err(|error| ApiFailure::internal(format!("读取 Verge 配置失败：{}", error)))?;
+            parse_config_text(&content).map_err(|error| ApiFailure::new(422, error))?
+        }
+        _ => return Err(ApiFailure::bad_request("该来源不支持刷新，请重新导入")),
+    };
+    updated.updated_at = Some(now_iso());
+    apply_source_import(
+        state,
+        updated,
+        parsed,
+        source.keep_rules,
+        true,
+        source.userinfo.clone(),
+        format!("刷新来源 · {}", source.name),
+    )
+}
+
+fn apply_source_import(
+    state: &AppState,
+    source: Source,
+    parsed: ParsedConfig,
+    keep_rules: bool,
+    is_refresh: bool,
+    userinfo: Option<rulevis_core::model::SubscriptionUserinfo>,
+    history_label: String,
+) -> Result<Value, ApiFailure> {
+    let name = source.name.clone();
+    with_store(state, |store| {
+        let (result, workspace) = store
+            .mutate(|workspace| {
+                let target = if let Some(existing) = workspace
+                    .sources
+                    .iter_mut()
+                    .find(|item| item.id == source.id)
+                {
+                    existing.updated_at = Some(now_iso());
+                    existing.keep_rules = keep_rules;
+                    if is_refresh {
+                        existing.name = source.name.clone();
+                        existing.prefix = source.prefix.clone();
+                        existing.note = source.note.clone();
+                        existing.url = source.url.clone();
+                    }
+                    if userinfo.is_some() {
+                        existing.userinfo = userinfo.clone();
+                    }
+                    existing.clone()
+                } else {
+                    workspace.sources.push(source.clone());
+                    source.clone()
+                };
+                let result =
+                    apply_parsed_config(workspace, &target, &parsed, is_refresh, keep_rules);
+                Ok(result)
+            })
+            .map_err(store_failure)?;
+        let note = if is_refresh {
+            format!(
+                "新增 {}，消失 {}，变化 {}",
+                result.added, result.removed, result.changed
+            )
+        } else {
+            format!(
+                "导入 {} 个节点 / {} 个策略组 / {} 条规则",
+                result.added, result.groups, result.rules
+            )
+        };
+        let _ = store.add_history(
+            NewHistory {
+                label: history_label,
+                kind: "manual".to_string(),
+                note: Some(note),
+                export_path: None,
+                file_name: None,
+                counts: None,
+                at: None,
+            },
+            &workspace,
+        );
+        Ok(json!({
+            "workspace": workspace,
+            "added": result.added,
+            "deduped": result.deduped,
+            "groups": result.groups,
+            "rules": result.rules,
+            "skippedRules": result.skipped_rules,
+            "warnings": result.warnings,
+            "removed": result.removed,
+            "changed": result.changed,
+            "sourceName": name
+        }))
+    })
+}
+
+fn test_delays(state: &AppState, body: Option<Value>) -> Result<Value, ApiFailure> {
+    let body = body_object(body.as_ref());
+    let names: Vec<String> = body
+        .get("names")
+        .and_then(Value::as_array)
+        .map(|items| {
+            let mut seen = HashSet::new();
+            items
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::trim)
+                .filter(|name| !name.is_empty())
+                .filter(|name| seen.insert(name.to_string()))
+                .take(40)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default();
+    if names.is_empty() {
+        return Err(ApiFailure::bad_request("请选择要测速的节点"));
+    }
+    let url = match body.get("url").and_then(Value::as_str) {
+        Some(url) if !url.is_empty() => validate_http_url(url)?,
+        _ => validate_http_url(&test_url_for(state))?,
+    };
+    let connection = with_kernel(state, |kernel| {
+        kernel
+            .connection_snapshot()
+            .ok_or_else(|| ApiFailure::new(409, "内核未连接，无法测速"))
+    })?;
+    let results = Mutex::new(vec![Value::Null; names.len()]);
+    let cursor = std::sync::atomic::AtomicUsize::new(0);
+    std::thread::scope(|scope| {
+        for _ in 0..names.len().min(4) {
+            let connection = connection.clone();
+            let names = &names;
+            let url = &url;
+            let results = &results;
+            let cursor = &cursor;
+            scope.spawn(move || loop {
+                let index = cursor.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                if index >= names.len() {
+                    break;
+                }
+                let name = &names[index];
+                let value = match test_node_with(&connection, name, url, 4000) {
+                    Ok(Some(delay)) => json!({ "name": name, "delay": delay }),
+                    Ok(None) => json!({ "name": name }),
+                    Err(error) => json!({ "name": name, "error": error.message }),
+                };
+                if let Ok(mut results) = results.lock() {
+                    results[index] = value;
+                }
+            });
+        }
+    });
+    let results = results.into_inner().unwrap_or_default();
+    Ok(json!({ "results": results }))
+}
+
+fn test_group_delay(state: &AppState, body: Option<Value>) -> Result<Value, ApiFailure> {
+    let body = body_object(body.as_ref());
+    let name = required_string(&body, "name", "出口名称", 200)?;
+    let url = match body.get("url").and_then(Value::as_str) {
+        Some(url) if !url.is_empty() => validate_http_url(url)?,
+        _ => validate_http_url(&test_url_for(state))?,
+    };
+    let connection = with_kernel(state, |kernel| {
+        kernel
+            .connection_snapshot()
+            .ok_or_else(|| ApiFailure::new(409, "内核未连接，无法测速"))
+    })?;
+    let delays = crate::kernel::test_group_with(&connection, &name, &url, 4000)
+        .map_err(|error| ApiFailure::new(502, error.message))?;
+    Ok(json!({ "delays": delays }))
+}
+
+fn probe_host(state: &AppState, body: Option<Value>) -> Result<Value, ApiFailure> {
+    let body = body_object(body.as_ref());
+    let host = required_string(&body, "host", "域名", 253)?;
+    let port = body.get("port").and_then(Value::as_u64).unwrap_or(443);
+    if !(1..=65535).contains(&port) {
+        return Err(ApiFailure::bad_request("端口无效"));
+    }
+    let mixed_port = with_kernel(state, |kernel| {
+        kernel
+            .mixed_port()
+            .ok_or_else(|| ApiFailure::new(409, "尚未取得内核混合端口，无法探测"))
+    })?;
+    probe_through_proxy(&host, port as u16, mixed_port, Duration::from_secs(5))
+        .map_err(|error| ApiFailure::new(502, format!("探测失败：{}", error)))?;
+    Ok(json!({
+        "ok": true,
+        "message": "探测连接已发起，请稍后查看连接流"
+    }))
 }
 
 pub fn handle_request(
@@ -189,33 +705,45 @@ pub fn handle_request(
             })
         }
         ("POST", "/api/workspace/import") => import_workspace(state, body),
-        ("GET", "/api/status") => with_store(state, |store| status_value(store)),
-        ("GET", "/api/live") => Ok(json!({
-            "generatedAt": now_millis(),
-            "connections": [],
-            "stats": {
-                "activeConnections": 0,
-                "domains": 0,
-                "downRate": 0,
-                "upRate": 0,
-                "totalDown": 0,
-                "totalUp": 0
-            },
-            "kernel": kernel_status(),
-            "groups": {},
-            "providers": {},
-            "ruleHits": {},
-            "proxyHits": {}
-        })),
-        ("GET", "/api/kernel/settings") => Ok(json!({
-            "mode": "auto",
-            "endpoint": "",
-            "hasSecret": false,
-            "status": kernel_status()
-        })),
-        ("PUT", "/api/kernel/settings")
-        | ("POST", "/api/kernel/test")
-        | ("POST", "/api/kernel/rediscover") => Err(error_unavailable("内核适配")),
+        ("GET", "/api/status") => {
+            let status = with_kernel(state, |kernel| Ok(kernel.status()))?;
+            with_store(state, |store| status_value(store, status))
+        }
+        ("GET", "/api/live") => with_live(state, |live| serialize(live.snapshot())),
+        ("GET", "/api/kernel/settings") => with_kernel(state, |kernel| {
+            let mut view = kernel.settings_view();
+            if let Some(object) = view.as_object_mut() {
+                object.insert("status".to_string(), serialize(kernel.status())?);
+            }
+            Ok(view)
+        }),
+        ("PUT", "/api/kernel/settings") => save_kernel_settings(state, body),
+        ("POST", "/api/kernel/test") => {
+            let body = body_object(body.as_ref());
+            let mode = match body.get("mode").and_then(Value::as_str) {
+                Some("pipe") => "pipe",
+                Some("tcp") => "tcp",
+                _ => "auto",
+            };
+            let endpoint = optional_string(&body, "endpoint");
+            let provided_secret = body
+                .get("secret")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|secret| !secret.is_empty())
+                .map(str::to_string);
+            let stored_secret = with_kernel(state, |kernel| Ok(kernel.settings.secret.clone()))?;
+            let settings = KernelSettings {
+                mode: mode.to_string(),
+                endpoint,
+                secret: provided_secret.or(stored_secret),
+            };
+            Ok(Kernel::probe_settings(&settings))
+        }
+        ("POST", "/api/kernel/rediscover") => with_kernel(state, |kernel| {
+            kernel.discover(true);
+            Ok(json!({ "status": kernel.status() }))
+        }),
         ("POST", "/api/exports/open") => {
             let exports_dir = with_store(state, |store| Ok(store.exports_dir.clone()))?;
             open_directory(&exports_dir)?;
@@ -225,9 +753,11 @@ pub fn handle_request(
             let preview = build_preview(store).map_err(ApiFailure::internal)?;
             serialize(preview)
         }),
-        ("POST", "/api/export/validate") => Ok(json!({
-            "validation": KernelValidation::unavailable("桌面版内核适配尚未接入，暂不能运行 mihomo 校验")
-        })),
+        ("POST", "/api/export/validate") => with_store(state, |store| {
+            let preview = build_preview(store).map_err(ApiFailure::internal)?;
+            let validation = validate_config(&store.data_dir, &preview.yaml);
+            Ok(json!({ "validation": validation }))
+        }),
         ("POST", "/api/export") => with_store(state, |store| match export_config(store) {
             Ok(result) => serialize(result),
             Err(ExportError::Validation(preview)) => {
@@ -269,7 +799,7 @@ pub fn handle_request(
             }
             if let Some(id) = path_tail(clean, "/api/sources/", "/refresh") {
                 if method == "POST" {
-                    return Err(error_unavailable(&format!("来源刷新（{}）", id)));
+                    return refresh_source(state, id, body);
                 }
             }
             if let Some(id) = path_tail(clean, "/api/sources/", "") {
@@ -291,7 +821,7 @@ pub fn handle_request(
             }
             if let Some(id) = path_tail(clean, "/api/rule-sets/", "/refresh") {
                 if method == "POST" {
-                    return Err(error_unavailable(&format!("规则集刷新（{}）", id)));
+                    return refresh_ruleset(state, id);
                 }
             }
             if let Some(id) = path_tail(clean, "/api/rule-sets/", "") {
@@ -300,20 +830,19 @@ pub fn handle_request(
                 }
             }
             match (method.as_str(), clean) {
-                ("POST", "/api/sources/subscription")
-                | ("POST", "/api/sources/file")
-                | ("POST", "/api/sources/paste")
-                | ("POST", "/api/sources/verge") => Err(error_unavailable("订阅 / YAML 导入")),
+                ("POST", "/api/sources/subscription") => import_subscription(state, body),
+                ("POST", "/api/sources/file") => import_content(state, body, "file"),
+                ("POST", "/api/sources/paste") => import_content(state, body, "paste"),
+                ("POST", "/api/sources/verge") => import_verge(state, body),
                 ("POST", "/api/sources/manual") => import_manual_node(state, body),
                 ("POST", "/api/chains") => create_chain(state, body),
                 ("POST", "/api/nodes/bulk") => bulk_nodes(state, body),
                 ("POST", "/api/rule-sets/create-batch") => create_rulesets(state, body),
-                ("POST", "/api/rule-sets/inspect") | ("POST", "/api/rule-sets/create") => {
-                    Err(error_unavailable("手动规则集导入"))
-                }
-                ("POST", "/api/delay") | ("POST", "/api/delay/group") | ("POST", "/api/probe") => {
-                    Err(error_unavailable("内核测速 / 探测"))
-                }
+                ("POST", "/api/rule-sets/inspect") => inspect_ruleset(state, body),
+                ("POST", "/api/rule-sets/create") => create_ruleset(state, body),
+                ("POST", "/api/delay") => test_delays(state, body),
+                ("POST", "/api/delay/group") => test_group_delay(state, body),
+                ("POST", "/api/probe") => probe_host(state, body),
                 _ => Err(ApiFailure::not_found(format!(
                     "桌面版暂未实现该接口：{} {}",
                     method, clean
@@ -554,38 +1083,6 @@ fn delete_source(state: &AppState, id: &str) -> Result<Value, ApiFailure> {
         );
         Ok(json!({ "workspace": workspace }))
     })
-}
-
-fn dedupe_key(raw: &Map<String, Value>) -> String {
-    let fields = [
-        "type",
-        "server",
-        "port",
-        "uuid",
-        "password",
-        "private-key",
-        "psk",
-        "auth",
-        "cipher",
-        "username",
-    ];
-    let parts: Vec<String> = fields
-        .iter()
-        .map(|field| match raw.get(*field) {
-            Some(Value::String(value)) => value.trim().to_lowercase(),
-            Some(Value::Number(value)) => value.to_string(),
-            _ => String::new(),
-        })
-        .collect();
-    let key = parts.join("|");
-    if key == "|||||||||" {
-        format!(
-            "name:{}",
-            raw.get("name").and_then(Value::as_str).unwrap_or("")
-        )
-    } else {
-        key
-    }
 }
 
 fn unique_node_name(base: &str, prefix: &str, used: &HashSet<String>) -> String {
@@ -1214,6 +1711,297 @@ fn create_rulesets(state: &AppState, body: Option<Value>) -> Result<Value, ApiFa
         }
         Ok(json!({ "workspace": workspace, "added": added, "skipped": skipped }))
     })
+}
+
+fn inspect_ruleset(state: &AppState, body: Option<Value>) -> Result<Value, ApiFailure> {
+    let body = body_object(body.as_ref());
+    let data_dir = with_store(state, |store| Ok(store.data_dir.clone()))?;
+    if let Some(url) = body.get("url").and_then(Value::as_str) {
+        let url = validate_http_url(url)?;
+        let (user_agent, proxy_port) = source_fetch_context(state);
+        let fetched = fetch_url(&url, &user_agent, proxy_port, 20_000)
+            .map_err(|error| ApiFailure::new(502, error))?;
+        if fetched.bytes.len() > 20 * 1024 * 1024 {
+            return Err(ApiFailure::new(413, "规则集文件过大"));
+        }
+        let inspect = inspect_buffer(&fetched.bytes, None, Some(&url));
+        return serialize(inspect);
+    }
+    if let Some(data_base64) = body.get("dataBase64").and_then(Value::as_str) {
+        let payload = data_base64
+            .split_once(',')
+            .map(|(_, rest)| rest)
+            .unwrap_or(data_base64);
+        let buffer = base64::engine::general_purpose::STANDARD
+            .decode(payload)
+            .map_err(|_| ApiFailure::bad_request("规则集文件内容无法解析"))?;
+        if buffer.is_empty() {
+            return Err(ApiFailure::bad_request("文件内容为空"));
+        }
+        if buffer.len() > 10 * 1024 * 1024 {
+            return Err(ApiFailure::new(413, "文件过大（上限 10MB）"));
+        }
+        let file_name = crate::rulesets::sanitize_file_name(
+            body.get("fileName")
+                .and_then(Value::as_str)
+                .unwrap_or("ruleset.txt"),
+        );
+        let stored_path =
+            store_ruleset_file(&data_dir, &buffer, &file_name).map_err(ApiFailure::internal)?;
+        let mut inspect = inspect_buffer(&buffer, Some(&file_name), None);
+        inspect.file_name = Some(file_name);
+        inspect.stored_path = Some(stored_path.to_string_lossy().to_string());
+        inspect.source_value = stored_path.to_string_lossy().to_string();
+        return serialize(inspect);
+    }
+    Err(ApiFailure::bad_request("请提供规则集地址或文件"))
+}
+
+fn ruleset_source(
+    state: &AppState,
+    body: &Map<String, Value>,
+) -> Result<(Vec<u8>, String, Option<String>, String), ApiFailure> {
+    let source_type = body
+        .get("sourceType")
+        .and_then(Value::as_str)
+        .unwrap_or("url");
+    if source_type == "url" {
+        let url = validate_http_url(body.get("url").and_then(Value::as_str).unwrap_or(""))?;
+        let (user_agent, proxy_port) = source_fetch_context(state);
+        let fetched = fetch_url(&url, &user_agent, proxy_port, 20_000)
+            .map_err(|error| ApiFailure::new(502, error))?;
+        if fetched.bytes.len() > 20 * 1024 * 1024 {
+            return Err(ApiFailure::new(413, "规则集文件过大"));
+        }
+        return Ok((fetched.bytes, url, None, "url".to_string()));
+    }
+    let file_path = required_string(body, "filePath", "规则集文件", 512)?;
+    let data_dir = with_store(state, |store| Ok(store.data_dir.clone()))?;
+    let path = std::path::PathBuf::from(&file_path);
+    if !is_path_inside(&data_dir.join("rule-sets"), &path) {
+        return Err(ApiFailure::bad_request("规则集文件路径无效"));
+    }
+    let buffer = std::fs::read(&path).map_err(|_| ApiFailure::not_found("规则集文件不存在"))?;
+    if buffer.len() > 20 * 1024 * 1024 {
+        return Err(ApiFailure::new(413, "规则集文件过大"));
+    }
+    let file_name = body
+        .get("fileName")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .or_else(|| {
+            path.file_name()
+                .map(|name| name.to_string_lossy().to_string())
+        });
+    Ok((
+        buffer,
+        path.to_string_lossy().to_string(),
+        file_name,
+        "file".to_string(),
+    ))
+}
+
+fn create_ruleset(state: &AppState, body: Option<Value>) -> Result<Value, ApiFailure> {
+    let body = body_object(body.as_ref());
+    let name = required_string(&body, "name", "规则集名称", 80)?;
+    let behavior = body
+        .get("behavior")
+        .and_then(Value::as_str)
+        .unwrap_or("domain")
+        .to_string();
+    let format = body
+        .get("format")
+        .and_then(Value::as_str)
+        .unwrap_or("text")
+        .to_string();
+    if !matches!(behavior.as_str(), "domain" | "ipcidr" | "classical") {
+        return Err(ApiFailure::bad_request("behavior 无效"));
+    }
+    if !matches!(format.as_str(), "yaml" | "text" | "mrs") {
+        return Err(ApiFailure::bad_request("format 无效"));
+    }
+    let exit_id = required_string(&body, "exitId", "出口", 80)?;
+    if !with_store(state, |store| {
+        Ok(store
+            .workspace()
+            .exits
+            .iter()
+            .any(|exit| exit.id == exit_id))
+    })? {
+        return Err(ApiFailure::bad_request("目标出口不存在"));
+    }
+    let inline = body.get("inline").and_then(Value::as_bool) == Some(true);
+    let interval = body
+        .get("interval")
+        .and_then(Value::as_i64)
+        .unwrap_or(86400)
+        .max(60);
+    let (buffer, source_value, source_file_name, source_type) = ruleset_source(state, &body)?;
+    let mut inline_rules = None;
+    if inline {
+        if format == "mrs" {
+            return Err(ApiFailure::bad_request("MRS 是二进制格式，不能内联展开"));
+        }
+        let expanded = expand_ruleset(&buffer, &behavior, &format)
+            .map_err(|error| ApiFailure::new(422, error))?;
+        if expanded.is_empty() {
+            return Err(ApiFailure::new(422, "规则集内容为空或格式无法识别"));
+        }
+        if expanded.len() > 500 {
+            return Err(ApiFailure::new(
+                422,
+                format!("内联规则过多（{} 条），请改用 provider", expanded.len()),
+            ));
+        }
+        inline_rules = Some(expanded);
+    }
+    let inspect = inspect_buffer(&buffer, source_file_name.as_deref(), Some(&source_value));
+    let route = RuleSetRoute {
+        id: Uuid::new_v4().to_string(),
+        name: name.clone(),
+        provider_name: None,
+        behavior,
+        format,
+        source: RuleSetSource {
+            kind: source_type,
+            value: source_value,
+            file_name: source_file_name,
+            size: Some(buffer.len() as u64),
+        },
+        inline,
+        inline_rules: inline_rules.clone(),
+        rule_count: inspect
+            .rule_count
+            .or(inline_rules.map(|rules| rules.len() as u64)),
+        exit_id,
+        no_resolve: None,
+        enabled: true,
+        interval: Some(interval),
+        updated_at: Some(now_iso()),
+        origin: Some("manual".to_string()),
+        source_id: None,
+        pending: None,
+        applied_at: None,
+    };
+    let route_value = serde_json::to_value(Route::Ruleset(route.clone()))
+        .map_err(|error| ApiFailure::internal(error.to_string()))?;
+    let workspace = with_store(state, |store| {
+        let (_, workspace) = store
+            .mutate(|workspace| {
+                let index = workspace
+                    .routes
+                    .iter()
+                    .position(|item| item.is_match())
+                    .unwrap_or(workspace.routes.len());
+                workspace
+                    .routes
+                    .insert(index, Route::Ruleset(route.clone()));
+                Ok(())
+            })
+            .map_err(store_failure)?;
+        let _ = store.add_history(
+            NewHistory {
+                label: format!("添加规则集 · {}", name),
+                kind: "manual".to_string(),
+                note: Some(match inspect.rule_count {
+                    Some(count) => format!("{} 条规则", count),
+                    None => "二进制规则集".to_string(),
+                }),
+                export_path: None,
+                file_name: None,
+                counts: None,
+                at: None,
+            },
+            &workspace,
+        );
+        Ok(workspace)
+    })?;
+    Ok(json!({ "workspace": workspace, "route": route_value }))
+}
+
+fn refresh_ruleset(state: &AppState, id: &str) -> Result<Value, ApiFailure> {
+    let route = with_store(state, |store| {
+        store
+            .workspace()
+            .routes
+            .iter()
+            .find_map(|route| match route {
+                Route::Ruleset(ruleset) if ruleset.id == id => Some(ruleset.clone()),
+                _ => None,
+            })
+            .ok_or_else(|| ApiFailure::not_found("规则集不存在"))
+    })?;
+    let buffer = if route.source.kind == "url" {
+        let url = validate_http_url(&route.source.value)?;
+        let (user_agent, proxy_port) = source_fetch_context(state);
+        fetch_url(&url, &user_agent, proxy_port, 20_000)
+            .map_err(|error| ApiFailure::new(502, error))?
+            .bytes
+    } else {
+        let data_dir = with_store(state, |store| Ok(store.data_dir.clone()))?;
+        let path = std::path::PathBuf::from(&route.source.value);
+        if !is_path_inside(&data_dir.join("rule-sets"), &path) {
+            return Err(ApiFailure::bad_request("规则集文件路径无效"));
+        }
+        std::fs::read(&path).map_err(|_| ApiFailure::not_found("规则集文件不存在"))?
+    };
+    let inspect = inspect_buffer(
+        &buffer,
+        route.source.file_name.as_deref(),
+        Some(&route.source.value),
+    );
+    let mut inline_rules = None;
+    if route.inline {
+        let expanded = expand_ruleset(&buffer, &route.behavior, &route.format)
+            .map_err(|error| ApiFailure::new(422, error))?;
+        if expanded.is_empty() {
+            return Err(ApiFailure::new(422, "规则集内容为空或格式无法识别"));
+        }
+        if expanded.len() > 500 {
+            return Err(ApiFailure::new(422, "内联规则过多"));
+        }
+        inline_rules = Some(expanded);
+    }
+    let (workspace, updated) = with_store(state, |store| {
+        let (route, workspace) = store
+            .mutate(|workspace| {
+                let route = workspace
+                    .routes
+                    .iter_mut()
+                    .find_map(|item| match item {
+                        Route::Ruleset(ruleset) if ruleset.id == id => Some(ruleset),
+                        _ => None,
+                    })
+                    .ok_or_else(|| StoreError::message("规则集不存在"))?;
+                route.rule_count = inspect
+                    .rule_count
+                    .or(inline_rules.as_ref().map(|rules| rules.len() as u64));
+                route.inline_rules = inline_rules.clone();
+                route.updated_at = Some(now_iso());
+                route.source.size = Some(buffer.len() as u64);
+                Ok(route.clone())
+            })
+            .map_err(store_failure)?;
+        let _ = store.add_history(
+            NewHistory {
+                label: format!("刷新规则集 · {}", route.name),
+                kind: "manual".to_string(),
+                note: Some(match inspect.rule_count {
+                    Some(count) => format!("{} 条规则", count),
+                    None => "已更新".to_string(),
+                }),
+                export_path: None,
+                file_name: None,
+                counts: None,
+                at: None,
+            },
+            &workspace,
+        );
+        Ok((workspace, route))
+    })?;
+    let route_value = serde_json::to_value(Route::Ruleset(updated))
+        .map_err(|error| ApiFailure::internal(error.to_string()))?;
+    Ok(json!({ "workspace": workspace, "route": route_value }))
 }
 
 fn open_directory(path: &Path) -> Result<(), ApiFailure> {

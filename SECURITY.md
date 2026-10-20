@@ -21,9 +21,12 @@ redacted examples.
 ## Security boundaries
 
 - The web build binds `127.0.0.1` and uses a session cookie plus an Origin allowlist.
-- The desktop preview does not start an HTTP listener. It uses Tauri IPC, a
+- The desktop app does not start an HTTP listener. It uses Tauri IPC, a
   restricted CSP and a minimal capability set; it does not ship Node or an
   Electron/Node sidecar.
+- The current Windows installer is unsigned. Verify the SHA256 published in the
+  GitHub release before running it; SmartScreen may warn about an unknown
+  publisher.
 - Desktop data (workspace, history snapshots, exports and rule-set files) lives
   in the platform app-data directory. Treat that directory as secret.
 - Imports and exports are local. The tool does not modify Clash Verge profiles

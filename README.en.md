@@ -24,13 +24,13 @@ See every request as **domain → rule → policy group → node**, then edit, r
 
 ---
 
-> The local web workbench is stable. A Tauri 2 desktop preview now uses Rust for workspace storage, export and history, but subscription/YAML import and kernel integration are still being migrated. No Windows installer is published yet, and no Electron/Node sidecar is used as a stand-in.
+> The web workbench and the Windows desktop app are both available. The desktop build is powered by Tauri 2 and Rust with no Node process, Electron or Node sidecar. The current installer is unsigned, so SmartScreen may warn about an unknown publisher.
 
 ## What it is
 
 Clash routing is spread across subscriptions, policy groups, `rule-providers` and several YAML files. A rule edit often means guessing whether it matches, which policy group it uses, and which node actually carries the traffic.
 
-Clash RuleVis is a local web workbench that connects to a running mihomo controller, shows the live path, lets you drag domains into rules, manage policy groups, and export a complete validated YAML.
+Clash RuleVis is a local workbench (web and Windows desktop) that connects to a running mihomo controller, shows the live path, lets you drag domains into rules, manage policy groups, and export a complete validated YAML.
 
 **Safe mode is a product constraint, not a setting:**
 
@@ -105,27 +105,33 @@ npm run rust:test
 npm run desktop:check
 ```
 
-40 unit tests plus a Playwright smoke flow that imports nodes, merges duplicates, creates an exit, creates a chain node, cleans invalid rules, exports, restores history and round-trips a workspace backup. E2E uses a temporary data directory and local Chrome; set `CHROME_PATH` if needed.
+40 web unit tests plus 25 Rust tests, a Playwright smoke flow and a hardware-gated real-controller test. The E2E flow imports nodes, merges duplicates, creates an exit and a chain node, cleans invalid rules, exports, restores history and round-trips a workspace backup.
 
-## Desktop preview (Tauri 2)
+## Windows download
 
-The desktop shell runs the same React UI and talks to Rust over Tauri IPC; it does not start a local HTTP server or a Node sidecar. Its data lives in the platform app-data directory (`%APPDATA%\io.github.youbilin.clash-rulevis` on Windows, override with `CRS_DATA_DIR`) and is independent from the web build's `data/`. Windows builds need Rust stable, MSVC Build Tools with the C++ workload, Windows SDK 10 and the WebView2 runtime.
+Download `Clash RuleVis_0.3.0_x64-setup.exe` (NSIS, per-user) from [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest). The installer is unsigned, so SmartScreen may warn; the release page includes a SHA256 checksum.
+
+Desktop data lives in `%APPDATA%\io.github.youbilin.clash-rulevis` (override with `CRS_DATA_DIR`) and is independent from the web build's `data/`. Import a web workspace JSON backup from the desktop settings drawer to migrate.
+
+## Desktop app (Tauri 2)
+
+The desktop app keeps the same React UI and uses Rust for the local API. It does not start an HTTP server or a Node sidecar.
+
+- Independent workspace storage, revision conflicts, history restore and backup import.
+- Subscription URL, YAML paste, local file and active Verge profile import; source refresh with traffic and expiry metadata.
+- Manual share links, node/exit editing, chains, rule-catalog batch add, ruleset file/URL inspect and refresh.
+- mihomo controller discovery over TCP and Windows named pipes; connection settings, rediscovery and node/exit latency tests.
+- Live connection aggregation with domains, rule hits, exits/nodes, processes, rates and history.
+- Full YAML preview, diff, real `verge-mihomo -t` validation, safe export and history restore.
+- Read-only Verge profile discovery for base port/DNS/TUN settings.
 
 ```bash
 npm run desktop:dev    # Tauri window + Vite
 npm run desktop:check  # Rust compile check for the shell
-npm run desktop:build  # Desktop binary, no installer bundle yet
+npm run desktop:build  # Release build + NSIS installer
 ```
 
-To migrate an existing web workspace, import its JSON backup from the desktop settings drawer. Implemented in the preview:
-
-- Workspace load/save with revision conflicts, JSON backup import, history snapshots and restore.
-- Manual share-link import, node/exit editing, chain creation/deletion, rule-catalog batch add.
-- Full YAML preview, diff, safe export and open-export-directory.
-- Read-only Clash Verge profile discovery for base port/DNS/TUN settings.
-- Empty-state live polling without a WebSocket service.
-
-Still to migrate: subscription/YAML import, source refresh, kernel controller and live stream, latency tests, ruleset refresh and `verge-mihomo -t` validation. These return an explicit `DESKTOP_UNAVAILABLE` error instead of failing silently.
+Windows builds need Rust stable, MSVC Build Tools with the C++ workload, Windows SDK 10 and the WebView2 runtime. Live features require Clash Verge Rev / mihomo.
 
 ## Rust core
 
@@ -146,7 +152,7 @@ cargo test --workspace
 cargo run -p rulevis-core -- check ../demo/workspace.json
 ```
 
-CI runs the Rust workspace tests, including the desktop API end-to-end cases. Building Windows installers later requires MSVC Build Tools, the Windows SDK and WebView2; no desktop installer is published yet.
+CI runs the Rust workspace tests, the desktop API tests and a Windows Tauri shell check. The installer is built with `npm run desktop:build` and signed releases are the next step.
 
 ## Data
 
@@ -164,21 +170,20 @@ Override it with `CRS_DATA_DIR`. `data/`, `.demo-data/` and exported files are e
 
 ## Safety and privacy
 
-- Binds `127.0.0.1` only, with a local session cookie and Origin allowlist.
+- The web build binds `127.0.0.1` with a local session cookie and Origin allowlist; the desktop build uses Tauri IPC with no local port.
 - No telemetry or third-party analytics.
 - Export YAML excludes subscription source URLs, `external-controller` and `secret`.
 - Node credentials are intentionally present in exported YAML because the kernel needs them; treat exported files as secrets.
-- Workspace backups contain subscription URLs and node credentials; keep them local.
+- Workspace backups and the desktop app-data directory contain subscription URLs and node credentials; keep them local.
 
 See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 
 ## Roadmap
 
-- **v0.2**: current local web workbench and complete import/rules/chain/export loop.
-- **Rust foundation (done)**: `rulevis-core` covers normalization, config generation and link parsing; 20 Rust tests include fixture parity and desktop API end-to-end cases.
-- **Desktop preview (current)**: Tauri 2 shell with the React UI; Rust now owns workspace storage, history, export, manual nodes, chains and rule-catalog batch add.
-- **Next**: migrate subscription/YAML import, the kernel controller and live stream, latency tests and kernel validation, then publish signed Windows installers.
-- **Later**: more protocols, proxy providers, tray, auto-update.
+- **v0.3 (current)**: Tauri 2 + Rust desktop app with subscription/YAML import, TCP/named-pipe controller, live connections, latency tests, rulesets, mihomo validation and an NSIS installer.
+- **Rust foundation**: `rulevis-core` + `rulevis-app` ship 25 tests covering fixture parity, subscription fetch, desktop API and a real-controller smoke test.
+- **Next**: code signing, auto-update, tray, multi-hop chains and Proxy Provider support.
+- **Platform**: Windows x64 installer today; the web build runs on any Node.js 22+ host. The installer is unsigned, and live features require Clash Verge Rev / mihomo.
 - A pure Rust UI rewrite is not a goal unless the WebView is proven to be the bottleneck.
 
 ## Contributing

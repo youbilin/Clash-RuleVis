@@ -1,4 +1,6 @@
 use std::fs;
+use std::io::{Read, Write};
+use std::net::TcpListener;
 use std::path::PathBuf;
 
 use rulevis_app::types::ApiFailure;
@@ -201,7 +203,9 @@ fn manual_nodes_chain_export_history_and_restore_work_end_to_end() {
     assert!(export_path.ends_with(".yaml"));
     let yaml = fs::read_to_string(&export_path).unwrap();
     assert!(yaml.contains("东京 → 洛杉矶"));
-    assert_eq!(exported["validation"]["available"], json!(false));
+    if exported["validation"]["available"] == json!(true) {
+        assert_eq!(exported["validation"]["ok"], json!(true));
+    }
     assert_eq!(exported["workspace"]["lastExport"]["nodeCount"], json!(3));
     let history_id = exported["historyId"].as_str().unwrap().to_string();
 
@@ -370,15 +374,19 @@ fn source_patch_delete_and_unsupported_endpoints_are_explicit() {
     assert_eq!(deleted["workspace"]["sources"].as_array().unwrap().len(), 0);
     assert_eq!(deleted["workspace"]["nodes"].as_array().unwrap().len(), 0);
 
-    let subscription = call(
+    let pasted = call(
         &state,
         "POST",
-        "/api/sources/subscription",
-        Some(json!({ "url": "https://example.com/sub" })),
+        "/api/sources/paste",
+        Some(json!({
+            "name": "粘贴配置",
+            "content": "proxies:\n  - name: 新加坡 01\n    type: ss\n    server: sg.example.com\n    port: 8388\n    cipher: aes-256-gcm\n    password: secret\n"
+        })),
     )
-    .unwrap_err();
-    assert_eq!(subscription.status, 501);
-    assert_eq!(subscription.code.as_deref(), Some("DESKTOP_UNAVAILABLE"));
+    .unwrap();
+    assert_eq!(pasted["added"], json!(1));
+    assert_eq!(pasted["workspace"]["sources"].as_array().unwrap().len(), 1);
+    assert_eq!(pasted["workspace"]["nodes"][0]["region"], json!("新加坡"));
 
     let delay = call(
         &state,
@@ -387,11 +395,142 @@ fn source_patch_delete_and_unsupported_endpoints_are_explicit() {
         Some(json!({ "names": ["x"] })),
     )
     .unwrap_err();
-    assert_eq!(delay.status, 501);
+    assert_eq!(delay.status, 409);
 
     let live = call(&state, "GET", "/api/live", None).unwrap();
     assert_eq!(live["kernel"]["connected"], json!(false));
     assert_eq!(live["connections"], json!([]));
+}
+
+#[test]
+fn ruleset_file_inspect_create_and_refresh_work() {
+    use base64::Engine as _;
+
+    let dir = TempDir::new("ruleset-file");
+    let state = AppState::load(dir.path()).unwrap();
+    let workspace = disable_base_template(&state);
+    let exit_id = workspace["exits"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|exit| exit["name"] == "自动选择")
+        .unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let content = "example.com\n+.openai.com\n# comment\n";
+    let data = base64::engine::general_purpose::STANDARD.encode(content.as_bytes());
+    let inspected = call(
+        &state,
+        "POST",
+        "/api/rule-sets/inspect",
+        Some(json!({ "fileName": "rules.txt", "dataBase64": data })),
+    )
+    .unwrap();
+    assert_eq!(inspected["format"], json!("text"));
+    assert_eq!(inspected["behavior"], json!("domain"));
+    assert_eq!(inspected["ruleCount"], json!(2));
+    let stored_path = inspected["storedPath"].as_str().unwrap().to_string();
+
+    let created = call(
+        &state,
+        "POST",
+        "/api/rule-sets/create",
+        Some(json!({
+            "name": "测试规则集",
+            "sourceType": "file",
+            "filePath": stored_path,
+            "fileName": "rules.txt",
+            "behavior": "domain",
+            "format": "text",
+            "exitId": exit_id,
+            "inline": false,
+            "interval": 86400
+        })),
+    )
+    .unwrap();
+    let route_id = created["route"]["id"].as_str().unwrap().to_string();
+    assert_eq!(created["route"]["kind"], json!("ruleset"));
+    assert_eq!(created["route"]["ruleCount"], json!(2));
+
+    let refreshed = call(
+        &state,
+        "POST",
+        &format!("/api/rule-sets/{}/refresh", route_id),
+        None,
+    )
+    .unwrap();
+    assert_eq!(refreshed["route"]["ruleCount"], json!(2));
+    assert_eq!(
+        refreshed["workspace"]["routes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|route| route["kind"] == "ruleset")
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn subscription_import_and_refresh_fetch_real_http() {
+    let dir = TempDir::new("subscription");
+    let state = AppState::load(dir.path()).unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let body = "proxies:\n  - name: 东京订阅 01\n    type: ss\n    server: sub.example.com\n    port: 8388\n    cipher: aes-256-gcm\n    password: secret\n";
+    let server = std::thread::spawn(move || {
+        for _ in 0..2 {
+            let Ok((mut stream, _)) = listener.accept() else {
+                break;
+            };
+            let mut request = [0u8; 4096];
+            let _ = stream.read(&mut request);
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/yaml\r\nContent-Length: {}\r\nConnection: close\r\nsubscription-userinfo: upload=10; download=20; total=100; expire=2000000000\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            let _ = stream.write_all(response.as_bytes());
+        }
+    });
+    let imported = call(
+        &state,
+        "POST",
+        "/api/sources/subscription",
+        Some(json!({ "url": format!("http://{}/sub", address) })),
+    )
+    .unwrap();
+    assert_eq!(imported["added"], json!(1));
+    assert_eq!(
+        imported["workspace"]["sources"][0]["type"],
+        json!("subscription")
+    );
+    assert_eq!(
+        imported["workspace"]["sources"][0]["userinfo"]["used"],
+        json!(30)
+    );
+    assert_eq!(
+        imported["workspace"]["sources"][0]["userinfo"]["total"],
+        json!(100)
+    );
+    assert_eq!(imported["workspace"]["nodes"][0]["region"], json!("日本"));
+
+    let source_id = imported["workspace"]["sources"][0]["id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let refreshed = call(
+        &state,
+        "POST",
+        &format!("/api/sources/{}/refresh", source_id),
+        None,
+    )
+    .unwrap();
+    assert_eq!(refreshed["added"], json!(0));
+    assert_eq!(refreshed["removed"], json!(0));
+    assert_eq!(refreshed["workspace"]["nodes"].as_array().unwrap().len(), 1);
+    server.join().unwrap();
 }
 
 #[test]

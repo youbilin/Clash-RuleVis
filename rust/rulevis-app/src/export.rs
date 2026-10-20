@@ -7,7 +7,8 @@ use rulevis_core::model::{ConfigIssue, ExportRecord, IssueSeverity, Route, Works
 use similar::TextDiff;
 
 use crate::storage::{now_iso, stamp_local, Store};
-use crate::types::{BaseTemplateInfo, ExportPreview, ExportResult, KernelValidation};
+use crate::types::{BaseTemplateInfo, ExportPreview, ExportResult};
+use crate::validation::validate_config;
 use crate::verge;
 
 pub enum ExportError {
@@ -165,17 +166,28 @@ pub fn export_config(store: &mut Store) -> Result<ExportResult, ExportError> {
     {
         return Err(ExportError::Validation(Box::new(preview)));
     }
-    let validation = KernelValidation::unavailable("桌面版内核适配尚未接入，已跳过内核校验");
-    preview.issues.push(ConfigIssue {
-        severity: IssueSeverity::Warning,
-        code: "kernel-validation-unavailable".to_string(),
-        message: validation
-            .error
-            .clone()
-            .unwrap_or_else(|| "无法运行内核校验，已跳过".to_string()),
-        route_id: None,
-        exit_id: None,
-    });
+    let validation = validate_config(&store.data_dir, &preview.yaml);
+    if !validation.available {
+        preview.issues.push(ConfigIssue {
+            severity: IssueSeverity::Warning,
+            code: "kernel-validation-unavailable".to_string(),
+            message: validation
+                .error
+                .clone()
+                .unwrap_or_else(|| "无法运行内核校验，已跳过".to_string()),
+            route_id: None,
+            exit_id: None,
+        });
+    } else if !validation.ok {
+        preview.issues.push(ConfigIssue {
+            severity: IssueSeverity::Error,
+            code: "kernel-validation".to_string(),
+            message: "mihomo 内核校验未通过，请查看校验输出".to_string(),
+            route_id: None,
+            exit_id: None,
+        });
+        return Err(ExportError::Validation(Box::new(preview)));
+    }
 
     let (file_name, path) = unique_export_path(store);
     let yaml = preview.yaml.clone();

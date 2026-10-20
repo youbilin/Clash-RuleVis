@@ -53,6 +53,10 @@ pub fn stamp_local() -> String {
     chrono::Local::now().format("%Y%m%d-%H%M%S").to_string()
 }
 
+pub(crate) fn write_private_file(path: &Path, content: &[u8]) -> Result<(), String> {
+    atomic_write(path, content)
+}
+
 fn atomic_write(path: &Path, content: &[u8]) -> Result<(), String> {
     let Some(parent) = path.parent() else {
         return Err("路径无效".to_string());

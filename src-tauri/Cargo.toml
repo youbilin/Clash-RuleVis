@@ -1,6 +1,6 @@
 [package]
 name = "clash-route-desk"
-version = "0.2.0"
+version = "0.3.0"
 description = "Clash RuleVis desktop shell"
 authors = ["youbilin"]
 edition = "2021"
