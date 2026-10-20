@@ -109,7 +109,7 @@ npm run desktop:check
 
 ## Windows download
 
-Download `Clash RuleVis_0.3.0_x64-setup.exe` (NSIS, per-user) from [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest). The installer is unsigned, so SmartScreen may warn; the release page includes a SHA256 checksum.
+Download `Clash.RuleVis_0.3.0_x64-setup.exe` (NSIS, per-user) from [GitHub Releases](https://github.com/youbilin/Clash-RuleVis/releases/latest). The installer is unsigned, so SmartScreen may warn; the release page includes a SHA256 checksum.
 
 Desktop data lives in `%APPDATA%\io.github.youbilin.clash-rulevis` (override with `CRS_DATA_DIR`) and is independent from the web build's `data/`. Import a web workspace JSON backup from the desktop settings drawer to migrate.
 
