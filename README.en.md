@@ -15,7 +15,7 @@ See every request as **domain → rule → policy group → node**, then edit, r
 </div>
 
 <p align="center">
-  <img src="docs/assets/chain-demo.gif" width="900" alt="Selecting a relay and landing node in the chain builder" />
+  <img src="docs/assets/chain-demo-0.3.2.gif" width="900" alt="Selecting a relay and landing node in the chain builder" />
 </p>
 
 <p align="center">
@@ -184,7 +184,7 @@ See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 ## Roadmap
 
 - **v0.3 (current)**: Tauri 2 + Rust desktop app with subscription/YAML import, TCP/named-pipe controller, live connections, latency tests, rulesets, mihomo validation and an NSIS installer.
-- **Rust foundation**: `rulevis-core` + `rulevis-app` ship 25 tests covering fixture parity, subscription fetch, desktop API and a real-controller smoke test.
+- **Rust foundation**: `rulevis-core` + `rulevis-app` ship 27 tests covering fixture parity, subscription fetch, desktop API and a real-controller smoke test.
 - **Next**: code signing, auto-update, tray, multi-hop chains and Proxy Provider support.
 - **Platform**: Windows x64 installer today; the web build runs on any Node.js 22+ host. The installer is unsigned, and live features require Clash Verge Rev / mihomo.
 - A pure Rust UI rewrite is not a goal unless the WebView is proven to be the bottleneck.
@@ -192,6 +192,14 @@ See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Never commit `data/`, real subscription URLs, node credentials or exported YAML.
+
+## Acknowledgements
+
+- [linux.do](https://linux.do/) — Chinese tech community; thanks for the discussion, feedback and launch support.
+- [MetaCubeX/meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat) — geosite / geoip rule data.
+- [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo) — kernel and controller API.
+- [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev) — runtime configuration and usage context.
+- React, Vite, Fastify, dnd-kit, TanStack Virtual and lucide-react.
 
 ## License
 

@@ -19,7 +19,7 @@
 </div>
 
 <p align="center">
-  <img src="docs/assets/chain-demo.gif" width="900" alt="在链路编辑器中选中转和落地节点，生成独立的链式节点" />
+  <img src="docs/assets/chain-demo-0.3.2.gif" width="900" alt="在链路编辑器中选中转和落地节点，生成独立的链式节点" />
 </p>
 
 <p align="center">
@@ -339,6 +339,7 @@ fixtures/              # TypeScript ↔ Rust 的 parity 契约
 
 ## 致谢
 
+- [linux.do](https://linux.do/) — 中文技术社区，感谢社区提供的交流、反馈与推广支持
 - [MetaCubeX/meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat) — geosite / geoip 规则数据
 - [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo) — 内核与控制器 API
 - [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev) — 运行时配置与使用场景
