@@ -382,7 +382,7 @@ impl LiveAggregator {
             }
             if let Some(by_agg) = variants.get(&agg.key) {
                 let mut entries: Vec<(LiveVariant, u64)> = by_agg.values().cloned().collect();
-                entries.sort_by(|left, right| right.1.cmp(&left.1));
+                entries.sort_by_key(|left| std::cmp::Reverse(left.1));
                 agg.variants = entries
                     .into_iter()
                     .take(6)
