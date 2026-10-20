@@ -1,0 +1,340 @@
+import { useEffect, useState } from 'react';
+import { Check, Copy, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
+import type { KernelStatus } from '../../shared/types';
+import { api, copyToClipboard } from '../api';
+import { Drawer } from './Overlay';
+import { Spinner } from './Common';
+import { Select } from './Select';
+import { useUi, toast } from '../store/ui';
+import { useWorkspace } from '../store/workspace';
+import { useLive } from '../store/live';
+import { cx } from '../lib/misc';
+import { formatRelative } from '../lib/format';
+
+export function SettingsDrawer() {
+  const open = useUi((state) => state.settingsOpen);
+  if (!open) return null;
+  return <SettingsContent />;
+}
+
+function SettingsContent() {
+  const setOpen = useUi((state) => state.setSettingsOpen);
+  const workspace = useWorkspace((state) => state.workspace);
+  const status = useWorkspace((state) => state.status);
+  const update = useWorkspace((state) => state.update);
+  const refreshStatus = useWorkspace((state) => state.refreshStatus);
+  const liveKernel = useLive((state) => state.snapshot?.kernel);
+  const kernel: KernelStatus | undefined = liveKernel ?? status?.kernel;
+
+  const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<'auto' | 'pipe' | 'tcp'>('auto');
+  const [endpoint, setEndpoint] = useState('');
+  const [secret, setSecret] = useState('');
+  const [hasSecret, setHasSecret] = useState(false);
+  const [savingKernel, setSavingKernel] = useState(false);
+  const [rediscovering, setRediscovering] = useState(false);
+  const [testState, setTestState] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const [testUrl, setTestUrl] = useState(workspace?.settings.testUrl ?? '');
+  const [retention, setRetention] = useState(String(workspace?.settings.retentionMinutes ?? 5));
+  const [defaultRuleType, setDefaultRuleType] = useState(workspace?.settings.defaultRuleType ?? 'DOMAIN-SUFFIX');
+  const [useProxy, setUseProxy] = useState(workspace?.settings.useProxyForFetch ?? true);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api<{ mode: 'auto' | 'pipe' | 'tcp'; endpoint: string; hasSecret: boolean; status: KernelStatus }>(
+      '/api/kernel/settings',
+    )
+      .then((data) => {
+        if (cancelled) return;
+        setMode(data.mode);
+        setEndpoint(data.endpoint);
+        setHasSecret(data.hasSecret);
+      })
+      .catch((error) => {
+        toast('error', '读取内核设置失败', (error as Error).message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!workspace) return;
+    setTestUrl(workspace.settings.testUrl);
+    setRetention(String(workspace.settings.retentionMinutes));
+    setDefaultRuleType(workspace.settings.defaultRuleType);
+    setUseProxy(workspace.settings.useProxyForFetch);
+  }, [workspace?.settings.testUrl, workspace?.settings.retentionMinutes, workspace?.settings.defaultRuleType, workspace?.settings.useProxyForFetch]);
+
+  const copy = async (label: string, value: string) => {
+    await copyToClipboard(value);
+    setCopied(label);
+    window.setTimeout(() => setCopied((current) => (current === label ? null : current)), 1600);
+  };
+
+  const saveKernel = async () => {
+    setSavingKernel(true);
+    setTestState(null);
+    try {
+      const payload: Record<string, unknown> = { mode, endpoint };
+      if (secret.trim()) payload.secret = secret.trim();
+      await api('/api/kernel/settings', { method: 'PUT', body: payload });
+      setSecret('');
+      setHasSecret((current) => current || Boolean(secret.trim()));
+      await refreshStatus();
+      toast('success', '内核连接设置已更新');
+    } catch (error) {
+      toast('error', '保存连接设置失败', (error as Error).message);
+    } finally {
+      setSavingKernel(false);
+    }
+  };
+
+  const testConnection = async () => {
+    setTestState(null);
+    try {
+      const result = await api<{ ok: boolean; version?: string; connection?: string; error?: string }>(
+        '/api/kernel/test',
+        {
+          method: 'POST',
+          body: { mode, endpoint, secret: secret.trim() || undefined },
+        },
+      );
+      setTestState({
+        ok: result.ok,
+        message: result.ok
+          ? `连接成功 · ${result.version ?? ''} · ${result.connection ?? ''}`
+          : result.error ?? '连接失败',
+      });
+    } catch (error) {
+      setTestState({ ok: false, message: (error as Error).message });
+    }
+  };
+
+  const rediscover = async () => {
+    setRediscovering(true);
+    setTestState(null);
+    try {
+      await api('/api/kernel/rediscover', { method: 'POST' });
+      await refreshStatus();
+      toast('success', '已重新探测内核');
+    } catch (error) {
+      toast('error', '重新探测失败', (error as Error).message);
+    } finally {
+      setRediscovering(false);
+    }
+  };
+
+  const savePreferences = () => {
+    const minutes = Math.min(60, Math.max(1, Number(retention) || 5));
+    update((draft) => {
+      draft.settings.testUrl = testUrl.trim() || 'https://www.gstatic.com/generate_204';
+      draft.settings.retentionMinutes = minutes;
+      draft.settings.defaultRuleType = defaultRuleType as typeof draft.settings.defaultRuleType;
+      draft.settings.useProxyForFetch = useProxy;
+    });
+    setRetention(String(minutes));
+    toast('success', '偏好设置已保存');
+  };
+
+  return (
+    <Drawer
+      title="设置"
+      subtitle="内核连接、数据位置与工作台偏好"
+      onClose={() => setOpen(false)}
+      footer={
+        <>
+          <span className="foot-note">所有设置只保存在本机</span>
+          <button className="btn btn-primary" onClick={() => setOpen(false)}>
+            完成
+          </button>
+        </>
+      }
+    >
+      <section className="settings-section">
+        <div className="section-title">
+          内核连接
+          <span className={cx('badge', kernel?.connected ? 'badge-green' : 'badge-red')}>
+            {kernel?.connected ? '在线' : '离线'}
+          </span>
+        </div>
+        <div className="settings-summary">
+          <div>
+            <span className="muted">控制器</span>
+            <strong>{kernel?.connected ? kernel.endpoint : '未发现'}</strong>
+          </div>
+          <div>
+            <span className="muted">版本</span>
+            <strong>{kernel?.version ?? '—'}</strong>
+          </div>
+          <div>
+            <span className="muted">最近通信</span>
+            <strong>{kernel?.lastSeenAt ? formatRelative(kernel.lastSeenAt) : '—'}</strong>
+          </div>
+        </div>
+        {kernel?.error ? <div className="callout warn" style={{ marginTop: 10 }}>{kernel.error}</div> : null}
+
+        {loading ? (
+          <div className="loading-block">
+            <Spinner /> 正在读取连接设置…
+          </div>
+        ) : (
+          <div className="stack" style={{ marginTop: 14 }}>
+            <label className="field">
+              <span className="field-label">探测方式</span>
+              <Select
+                value={mode}
+                onChange={(value) => setMode(value as typeof mode)}
+                ariaLabel="探测方式"
+                options={[
+                  { value: 'auto', label: '自动探测（推荐）' },
+                  { value: 'tcp', label: '手动 TCP 控制器' },
+                  { value: 'pipe', label: '手动命名管道' },
+                ]}
+              />
+              <span className="hint">
+                Verge 的控制器通常走命名管道，且每次启动名称可能变化；自动探测会读取配置并枚举当前管道。
+              </span>
+            </label>
+            {mode !== 'auto' ? (
+              <label className="field">
+                <span className="field-label">控制器地址</span>
+                <input
+                  className="input mono"
+                  placeholder={mode === 'tcp' ? '127.0.0.1:9090' : '\\\\.\\pipe\\verge-mihomo-...'}
+                  value={endpoint}
+                  onChange={(event) => setEndpoint(event.target.value)}
+                />
+              </label>
+            ) : null}
+            <label className="field">
+              <span className="field-label">
+                密钥
+                {hasSecret ? <span className="badge badge-green badge-plain">已保存</span> : null}
+              </span>
+              <input
+                className="input mono"
+                type="password"
+                autoComplete="off"
+                placeholder="留空沿用 Verge 配置中的 secret"
+                value={secret}
+                onChange={(event) => setSecret(event.target.value)}
+              />
+            </label>
+            {testState ? (
+              <div className={cx('callout', testState.ok ? 'success' : 'danger')}>
+                {testState.ok ? <Check size={14} /> : <span className="dot red" />}
+                <span>{testState.message}</span>
+              </div>
+            ) : null}
+            <div className="row" style={{ marginTop: 4 }}>
+              <button className="btn btn-outline" onClick={testConnection}>
+                测试连接
+              </button>
+              <button className="btn btn-outline" onClick={rediscover} disabled={rediscovering}>
+                {rediscovering ? <Spinner /> : <RefreshCw size={13} />}
+                重新探测
+              </button>
+              <span className="spacer" />
+              <button className="btn btn-primary" onClick={saveKernel} disabled={savingKernel}>
+                {savingKernel ? <Spinner onAccent /> : null}
+                保存并连接
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section className="settings-section">
+        <div className="section-title">工作台偏好</div>
+        <div className="stack">
+          <label className="field">
+            <span className="field-label">测速地址</span>
+            <input className="input mono" value={testUrl} onChange={(event) => setTestUrl(event.target.value)} />
+            <span className="hint">用于 url-test / fallback 出口和手动测速，默认为 generate_204。</span>
+          </label>
+          <div className="form-grid">
+            <label className="field">
+              <span className="field-label">连接保留时长</span>
+              <div className="inline" style={{ gap: 6 }}>
+                <input
+                  className="input mono"
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={retention}
+                  onChange={(event) => setRetention(event.target.value)}
+                  style={{ width: 82 }}
+                />
+                <span className="muted" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>分钟</span>
+              </div>
+            </label>
+            <label className="field">
+              <span className="field-label">拖拽默认规则</span>
+              <Select
+                value={defaultRuleType}
+                onChange={(value) => setDefaultRuleType(value as typeof defaultRuleType)}
+                ariaLabel="拖拽默认规则"
+                options={[
+                  { value: 'DOMAIN-SUFFIX', label: 'DOMAIN-SUFFIX' },
+                  { value: 'DOMAIN', label: 'DOMAIN' },
+                  { value: 'DOMAIN-KEYWORD', label: 'DOMAIN-KEYWORD' },
+                ]}
+              />
+            </label>
+          </div>
+          <label className="checkbox-row">
+            <input type="checkbox" checked={useProxy} onChange={(event) => setUseProxy(event.target.checked)} />
+            <span>
+              订阅与规则集直连失败时走内核代理
+              <span className="hint">使用当前 mihomo 混合端口重试，适合需要代理才能访问的机场。</span>
+            </span>
+          </label>
+          <button className="btn btn-outline" onClick={savePreferences} style={{ alignSelf: 'flex-start' }}>
+            保存偏好
+          </button>
+        </div>
+      </section>
+
+      <section className="settings-section">
+        <div className="section-title">数据位置</div>
+        <div className="path-row">
+          <span className="muted">工作区</span>
+          <code>{status?.dataDir ?? '—'}</code>
+          <button className="icon-btn" onClick={() => copy('data', status?.dataDir ?? '')} title="复制路径">
+            {copied === 'data' ? <Check size={13} /> : <Copy size={13} />}
+          </button>
+        </div>
+        <div className="path-row">
+          <span className="muted">导出目录</span>
+          <code>{status?.exportsDir ?? '—'}</code>
+          <button className="icon-btn" onClick={() => copy('exports', status?.exportsDir ?? '')} title="复制路径">
+            {copied === 'exports' ? <Check size={13} /> : <Copy size={13} />}
+          </button>
+        </div>
+        {status?.vergeProfile ? (
+          <div className="callout info" style={{ marginTop: 10 }}>
+            <ExternalLink size={14} />
+            <span>检测到 Clash Verge 当前配置：<strong>{status.vergeProfile}</strong>，可在节点页一键导入。</span>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="settings-section">
+        <div className="section-title">
+          <ShieldCheck size={14} /> 本地与安全
+        </div>
+        <p className="hint" style={{ lineHeight: 1.8 }}>
+          本地服务只监听 127.0.0.1，用一次性 Cookie 保护接口。本工具不会改写 Clash Verge 的
+          profiles.yaml，也不会重载内核；导出文件只写入上方导出目录。
+        </p>
+        <p className="hint" style={{ marginTop: 8 }}>路由台 v{status?.version ?? '0.1.0'}</p>
+      </section>
+    </Drawer>
+  );
+}
