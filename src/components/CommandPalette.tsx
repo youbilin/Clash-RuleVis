@@ -150,7 +150,7 @@ export function CommandPalette() {
         title: entry.label,
         subtitle: `${formatRelative(new Date(entry.at).getTime())}${entry.counts ? ` · ${entry.counts.nodes} 节点` : ''}`,
         icon: History,
-        run: () => go(`/export?history=${entry.id}#history`),
+        run: () => go(`/export?history=${entry.id}`),
       }));
 
     return [

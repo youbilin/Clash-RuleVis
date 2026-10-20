@@ -505,27 +505,6 @@
   padding-top: 15px;
 }
 
-.prefix-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--field);
-}
-
-.prefix-controls .hint {
-  flex-basis: 100%;
-}
-
-.prefix-input {
-  width: 168px;
-  height: 27px;
-  font-size: 10.5px;
-}
-
 .verge-import-panel {
   display: flex;
   align-items: flex-start;

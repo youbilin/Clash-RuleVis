@@ -364,6 +364,15 @@ export function NodesPage() {
                 })),
               ]}
             />
+            <button
+              className="node-test-all"
+              onClick={() => void testAllNodes()}
+              disabled={testingAll || !enabledCount || !kernel?.connected}
+              title={kernel?.connected ? '测试全部启用节点' : '内核未连接，无法测速'}
+              aria-label="测试全部启用节点"
+            >
+              {testingAll ? <Spinner /> : <Zap size={14} />}
+            </button>
             {selectedSource ? (
               <div className="source-actions">
                 {selectedSource.type === 'subscription' || selectedSource.type === 'verge' ? (
@@ -405,6 +414,7 @@ export function NodesPage() {
             </div>
             <Select
               compact
+              className="node-tag-filter"
               value={tagFilter}
               onChange={setTagFilter}
               ariaLabel="按标签筛选"
@@ -413,15 +423,6 @@ export function NodesPage() {
                 ...tags.map((tag) => ({ value: tag, label: tag })),
               ]}
             />
-            <button
-              className="btn btn-sm btn-outline"
-              onClick={() => void testAllNodes()}
-              disabled={testingAll || !enabledCount}
-              title={kernel?.connected ? '测试全部启用节点' : '内核未连接'}
-            >
-              {testingAll ? <Spinner /> : <Zap size={12} />}
-              {testingAll ? '测速中' : '全部测速'}
-            </button>
             {failedCount > 0 || onlyFailed ? (
               <button
                 className={cx('node-fail-filter', onlyFailed && 'active')}

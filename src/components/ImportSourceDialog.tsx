@@ -63,10 +63,6 @@ export function ImportSourceDialog({
   const [error, setError] = useState('');
   const [result, setResult] = useState<ImportResultState | null>(null);
 
-  const [usePrefix, setUsePrefix] = useState(true);
-  const [prefix, setPrefix] = useState('');
-  const [keepRules, setKeepRules] = useState(false);
-
   const [subName, setSubName] = useState('');
   const [subUrl, setSubUrl] = useState('');
   const [fileName, setFileName] = useState('');
@@ -90,13 +86,8 @@ export function ImportSourceDialog({
   }, [manualLink]);
 
   useEffect(() => {
-    setUsePrefix(tab === 'subscription');
-    setPrefix('');
-    setKeepRules(tab === 'verge');
     setError('');
   }, [tab]);
-
-  const prefixPayload = usePrefix ? (prefix.trim() || undefined) : '';
 
   const runImport = async (request: () => Promise<ImportSummary>, label: string) => {
     setLoading(true);
@@ -143,7 +134,7 @@ export function ImportSourceDialog({
       () =>
         api<ImportSummary>('/api/sources/subscription', {
           method: 'POST',
-          body: { name, url: subUrl.trim(), prefix: prefixPayload, keepRules },
+          body: { name, url: subUrl.trim() },
         }),
       name,
     );
@@ -175,7 +166,7 @@ export function ImportSourceDialog({
       () =>
         api<ImportSummary>('/api/sources/file', {
           method: 'POST',
-          body: { name, content: fileText, prefix: prefixPayload, keepRules },
+          body: { name, content: fileText },
         }),
       name,
     );
@@ -191,7 +182,7 @@ export function ImportSourceDialog({
       () =>
         api<ImportSummary>('/api/sources/paste', {
           method: 'POST',
-          body: { name, content: pasteText, prefix: prefixPayload, keepRules },
+          body: { name, content: pasteText },
         }),
       name,
     );
@@ -220,7 +211,7 @@ export function ImportSourceDialog({
       () =>
         api<ImportSummary>('/api/sources/verge', {
           method: 'POST',
-          body: { prefix: prefixPayload, keepRules },
+          body: {},
         }),
       'Clash Verge 当前配置',
     );
@@ -347,15 +338,6 @@ export function ImportSourceDialog({
                   />
                 </label>
               </div>
-              <ImportAdvanced
-                usePrefix={usePrefix}
-                setUsePrefix={setUsePrefix}
-                prefix={prefix}
-                setPrefix={setPrefix}
-                keepRules={keepRules}
-                setKeepRules={setKeepRules}
-                prefixHint="给节点添加来源前缀，避免不同机场重名；留空自动生成。"
-              />
             </div>
           ) : null}
 
@@ -396,15 +378,6 @@ export function ImportSourceDialog({
                 </label>
                 <div />
               </div>
-              <ImportAdvanced
-                usePrefix={usePrefix}
-                setUsePrefix={setUsePrefix}
-                prefix={prefix}
-                setPrefix={setPrefix}
-                keepRules={keepRules}
-                setKeepRules={setKeepRules}
-                prefixHint="给文件里的节点加统一前缀。"
-              />
             </div>
           ) : null}
 
@@ -424,15 +397,6 @@ export function ImportSourceDialog({
                   placeholder={'proxies:\n  - name: 日本 01\n    type: ss\n    server: ...'}
                 />
               </label>
-              <ImportAdvanced
-                usePrefix={usePrefix}
-                setUsePrefix={setUsePrefix}
-                prefix={prefix}
-                setPrefix={setPrefix}
-                keepRules={keepRules}
-                setKeepRules={setKeepRules}
-                prefixHint="支持完整 Clash 配置或单独的 proxies 列表。"
-              />
             </div>
           ) : null}
 
@@ -511,100 +475,11 @@ export function ImportSourceDialog({
                   </p>
                 </div>
               </div>
-              <PrefixControls
-                usePrefix={usePrefix}
-                setUsePrefix={setUsePrefix}
-                prefix={prefix}
-                setPrefix={setPrefix}
-                hint="默认不加前缀，这样导出名与 Verge 当前节点名一致，方便对照实时链路。"
-              />
-              <KeepRulesControl keepRules={keepRules} setKeepRules={setKeepRules} />
-              <div className="callout info">
-                <FileText size={14} />
-                <span>保留策略组与规则时会镜像当前配置的出口和规则集；关闭则只复制节点。</span>
-              </div>
             </div>
           ) : null}
         </div>
       )}
       </div>
     </section>
-  );
-}
-
-function ImportAdvanced({
-  usePrefix,
-  setUsePrefix,
-  prefix,
-  setPrefix,
-  keepRules,
-  setKeepRules,
-  prefixHint,
-}: {
-  usePrefix: boolean;
-  setUsePrefix: (value: boolean) => void;
-  prefix: string;
-  setPrefix: (value: string) => void;
-  keepRules: boolean;
-  setKeepRules: (value: boolean) => void;
-  prefixHint: string;
-}) {
-  return (
-    <details className="import-advanced">
-      <summary>高级选项</summary>
-      <PrefixControls
-        usePrefix={usePrefix}
-        setUsePrefix={setUsePrefix}
-        prefix={prefix}
-        setPrefix={setPrefix}
-        hint={prefixHint}
-      />
-      <KeepRulesControl keepRules={keepRules} setKeepRules={setKeepRules} />
-    </details>
-  );
-}
-
-function PrefixControls({
-  usePrefix,
-  setUsePrefix,
-  prefix,
-  setPrefix,
-  hint,
-}: {
-  usePrefix: boolean;
-  setUsePrefix: (value: boolean) => void;
-  prefix: string;
-  setPrefix: (value: string) => void;
-  hint: string;
-}) {
-  return (
-    <div className="prefix-controls">
-      <label className="checkbox-row">
-        <input type="checkbox" checked={usePrefix} onChange={(event) => setUsePrefix(event.target.checked)} />
-        <span>添加来源前缀</span>
-      </label>
-      {usePrefix ? (
-        <input
-          className="input mono prefix-input"
-          value={prefix}
-          onChange={(event) => setPrefix(event.target.value)}
-          placeholder="留空自动生成"
-          maxLength={24}
-        />
-      ) : null}
-      <p className="hint">{hint}</p>
-    </div>
-  );
-}
-
-function KeepRulesControl({ keepRules, setKeepRules }: { keepRules: boolean; setKeepRules: (value: boolean) => void }) {
-  return (
-    <label className="checkbox-row">
-      <input type="checkbox" checked={keepRules} onChange={(event) => setKeepRules(event.target.checked)} />
-      <span>
-        保留来源自带的策略组与规则
-        <span className="hint">会镜像订阅中的出口和规则，排在你自定义的规则之后；订阅规则较多时建议关闭。</span>
-      </span>
-    </label>
   );
 }

@@ -6,6 +6,7 @@ import {
   Camera,
   Check,
   CheckCircle2,
+  ChevronDown,
   ClipboardCopy,
   Download,
   FileOutput,
@@ -68,12 +69,15 @@ export function ExportPage() {
   } | null>(null);
   const [viewing, setViewing] = useState<{ entry: HistoryEntry; yaml: string } | null>(null);
   const [snapshotting, setSnapshotting] = useState(false);
+  const [historyMenuOpen, setHistoryMenuOpen] = useState(false);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const requestId = useRef(0);
-  const historyStripRef = useRef<HTMLDivElement | null>(null);
+  const historyMenuRef = useRef<HTMLDivElement | null>(null);
   const detailsRef = useRef<HTMLElement | null>(null);
 
   useBodyLock(detailsOpen);
   useEscape(() => setDetailsOpen(false), detailsOpen);
+  useEscape(() => setHistoryMenuOpen(false), historyMenuOpen);
   useDialogFocus(detailsRef, detailsOpen);
 
   const loadHistory = useCallback(async () => {
@@ -146,6 +150,7 @@ export function ExportPage() {
       ? hasDiff
       : workspace.revision > (workspace.lastExport?.revision ?? 0);
   const counts = preview?.counts;
+  const selectedHistory = history.find((entry) => entry.id === selectedHistoryId) ?? null;
 
   const exportNow = async () => {
     setExporting(true);
@@ -247,6 +252,8 @@ export function ExportPage() {
       );
       applyServerWorkspace(result.workspace);
       await Promise.all([loadPreview(false), loadHistory()]);
+      setHistoryMenuOpen(false);
+      setSelectedHistoryId(null);
       offerUndo(result.undoEntry, '工作区已恢复', entry.label);
     } catch (error) {
       toast('error', '恢复失败', (error as Error).message);
@@ -260,9 +267,33 @@ export function ExportPage() {
 
   useEffect(() => {
     if (!historyFocusId || loadingHistory) return;
-    const item = historyStripRef.current?.querySelector<HTMLElement>(`[data-history-id="${historyFocusId}"]`);
-    item?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-  }, [historyFocusId, loadingHistory, history]);
+    setSelectedHistoryId(historyFocusId);
+    setHistoryMenuOpen(true);
+  }, [historyFocusId, loadingHistory]);
+
+  useEffect(() => {
+    if (!historyMenuOpen) return;
+    const close = (event: MouseEvent) => {
+      if (!historyMenuRef.current?.contains(event.target as Node)) setHistoryMenuOpen(false);
+    };
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [historyMenuOpen]);
+
+  useEffect(() => {
+    if (!historyMenuOpen || !selectedHistoryId) return;
+    requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(`.export-history-option[data-history-id="${selectedHistoryId}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
+    });
+  }, [historyMenuOpen, selectedHistoryId, history]);
+
+  useEffect(() => {
+    if (selectedHistoryId && !history.some((entry) => entry.id === selectedHistoryId)) {
+      setSelectedHistoryId(null);
+    }
+  }, [history, selectedHistoryId]);
 
   return (
     <div className="page export-page">
@@ -272,6 +303,86 @@ export function ExportPage() {
         subtitle={`完整 YAML · 安全模式只写入工具目录 · ${exportStatusText}${!neverExported && dirtySinceExport ? ' · 有未导出的改动' : ''}`}
         actions={
           <>
+            <div className="export-history-select" ref={historyMenuRef}>
+              <button
+                className={cx('btn btn-outline', historyMenuOpen && 'active')}
+                onClick={() => setHistoryMenuOpen((open) => !open)}
+                aria-expanded={historyMenuOpen}
+                aria-haspopup="dialog"
+              >
+                <History size={13} /> 历史快照
+                <span className="number-badge">{history.length}</span>
+                <ChevronDown size={12} />
+              </button>
+              {historyMenuOpen ? (
+                <div className="export-history-menu" role="dialog" aria-label="历史快照">
+                  <div className="export-history-menu-head">
+                    <span>选择快照后恢复</span>
+                    <button className="btn btn-sm btn-outline" onClick={() => void createSnapshot()} disabled={snapshotting}>
+                      {snapshotting ? <Spinner /> : <Camera size={12} />} 创建工作区快照
+                    </button>
+                  </div>
+                  <div className="export-history-menu-list" role="listbox" aria-label="历史快照列表">
+                    {loadingHistory ? (
+                      <div className="export-history-menu-note"><Spinner /> 读取历史…</div>
+                    ) : history.length ? (
+                      history.map((entry) => {
+                        const active = selectedHistoryId === entry.id;
+                        return (
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={active}
+                            className={cx('export-history-option', active && 'selected')}
+                            key={entry.id}
+                            data-history-id={entry.id}
+                            onClick={() => setSelectedHistoryId(entry.id)}
+                          >
+                            <span className={cx('history-kind', entry.kind)}>
+                              {entry.kind === 'export' ? 'EXPORT' : entry.kind === 'restore' ? 'RESTORE' : 'SNAPSHOT'}
+                            </span>
+                            <span className="export-history-option-copy">
+                              <strong className="truncate" title={entry.label}>{entry.label}</strong>
+                              <span className="truncate">
+                                {formatRelative(new Date(entry.at).getTime())}
+                                {entry.counts ? ` · ${entry.counts.nodes} 节点 · ${entry.counts.rules} 规则` : ''}
+                                {entry.fileName ? ` · ${baseName(entry.fileName)}` : ''}
+                              </span>
+                            </span>
+                            {active ? <Check size={13} className="export-history-check" /> : null}
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="export-history-menu-note">还没有历史记录。创建工作区快照或导出配置后会显示在这里。</div>
+                    )}
+                  </div>
+                  <div className="export-history-menu-foot">
+                    <span className="export-history-selection truncate" title={selectedHistory?.label}>
+                      {selectedHistory ? `已选择：${selectedHistory.label}` : '选择一个快照'}
+                    </span>
+                    {selectedHistory?.exportPath ? (
+                      <button
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => {
+                          setHistoryMenuOpen(false);
+                          void viewHistoryExport(selectedHistory);
+                        }}
+                      >
+                        <FileOutput size={11} /> 查看 YAML
+                      </button>
+                    ) : null}
+                    <button
+                      className="btn btn-sm btn-primary"
+                      onClick={() => selectedHistory && void restore(selectedHistory)}
+                      disabled={!selectedHistory}
+                    >
+                      <RotateCcw size={11} /> 恢复
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
             <button
               className={cx('btn btn-outline', detailsOpen && 'active')}
               onClick={() => setDetailsOpen((open) => !open)}
@@ -287,69 +398,6 @@ export function ExportPage() {
           </>
         }
       />
-
-      <section className="export-history-bar" aria-label="历史快照">
-        <div className="export-history-head">
-          <History size={13} />
-          <span className="export-history-title">历史快照</span>
-          <span className="number-badge">{history.length}</span>
-          <span className="export-history-hint">恢复工作区，或查看往次导出的 YAML</span>
-          <span className="spacer" />
-          <button className="icon-btn" onClick={() => void loadHistory()} title="刷新历史" aria-label="刷新历史">
-            <RefreshCw size={12} />
-          </button>
-          <button className="btn btn-sm btn-outline" onClick={() => void createSnapshot()} disabled={snapshotting}>
-            {snapshotting ? <Spinner /> : <Camera size={12} />} 创建工作区快照
-          </button>
-        </div>
-        <div className="export-history-strip" ref={historyStripRef}>
-          {loadingHistory ? (
-            <div className="export-history-note"><Spinner /> 读取历史…</div>
-          ) : history.length ? (
-            history.map((entry) => (
-              <div
-                className={cx('export-history-item', historyFocusId === entry.id && 'history-item-focus')}
-                key={entry.id}
-                data-history-id={entry.id}
-              >
-                <span className={cx('history-kind', entry.kind)}>
-                  {entry.kind === 'export' ? 'EXPORT' : entry.kind === 'restore' ? 'RESTORE' : 'SNAPSHOT'}
-                </span>
-                <div className="export-history-copy">
-                  <strong className="truncate" title={entry.label}>{entry.label}</strong>
-                  <span className="export-history-meta">
-                    {formatRelative(new Date(entry.at).getTime())}
-                    {entry.counts ? ` · ${entry.counts.nodes} 节点 · ${entry.counts.rules} 规则` : ''}
-                    {entry.fileName ? ` · ${baseName(entry.fileName)}` : ''}
-                  </span>
-                </div>
-                <div className="export-history-actions">
-                  {entry.exportPath ? (
-                    <button
-                      className="icon-btn"
-                      title="查看 YAML"
-                      aria-label={`查看 ${entry.label} 的 YAML`}
-                      onClick={() => void viewHistoryExport(entry)}
-                    >
-                      <FileOutput size={11} />
-                    </button>
-                  ) : null}
-                  <button
-                    className="icon-btn"
-                    title="恢复此快照"
-                    aria-label={`恢复 ${entry.label}`}
-                    onClick={() => void restore(entry)}
-                  >
-                    <RotateCcw size={11} />
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="export-history-note">还没有历史记录。导出配置或创建工作区快照后会显示在这里。</div>
-          )}
-        </div>
-      </section>
 
       <section className="panel yaml-panel">
         <div className="yaml-toolbar">
@@ -523,21 +571,6 @@ export function ExportPage() {
                         </div>
                         <Switch checked={includeBase} onChange={toggleBaseTemplate} label="合并 Verge 基础设置" />
                       </div>
-                      {includeBase && preview?.baseSettings ? (
-                        <>
-                          <div className="base-source">
-                            来源 <strong>{preview.baseSettings.source ?? 'Clash Verge'}</strong>
-                          </div>
-                          <div className="base-keys">
-                            {(preview.baseSettings.keys ?? []).map((key) => (
-                              <code key={key}>{key}</code>
-                            ))}
-                          </div>
-                          <p className="hint">不包含 external-controller、secret、节点与规则；这些由本工具生成。</p>
-                        </>
-                      ) : (
-                        <p className="hint">关闭后导出只是节点 / 出口 / 规则片段，切换前需确认 Verge 的网络设置会生效。</p>
-                      )}
                     </div>
                   </section>
 
