@@ -14,6 +14,14 @@ import { useUi, toast } from '../store/ui';
 import { formatRelative } from '../lib/format';
 import { cx } from '../lib/misc';
 
+function GitHubMark() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 .5C5.73.5.9 5.33.9 11.6c0 4.9 3.17 9.05 7.57 10.5.55.1.75-.24.75-.53v-1.86c-3.08.67-3.73-1.48-3.73-1.48-.5-1.28-1.23-1.62-1.23-1.62-1-.69.08-.67.08-.67 1.11.08 1.69 1.14 1.69 1.14.98 1.68 2.58 1.2 3.2.92.1-.71.39-1.2.7-1.47-2.46-.28-5.05-1.23-5.05-5.47 0-1.21.43-2.2 1.14-2.97-.11-.28-.5-1.41.11-2.94 0 0 .93-.3 3.05 1.13a10.6 10.6 0 0 1 2.78-.37c.94 0 1.89.13 2.78.37 2.12-1.43 3.05-1.13 3.05-1.13.61 1.53.22 2.66.11 2.94.71.77 1.14 1.76 1.14 2.97 0 4.25-2.6 5.19-5.07 5.46.4.35.76 1.03.76 2.08v3.08c0 .29.2.63.76.52 4.4-1.45 7.56-5.6 7.56-10.5C23.1 5.33 18.27.5 12 .5z" />
+    </svg>
+  );
+}
+
 const NAV_ITEMS = [
   { to: '/live', label: '实时连接', icon: Activity },
   { to: '/nodes', label: '节点与订阅', icon: Server },
@@ -21,21 +29,6 @@ const NAV_ITEMS = [
   { to: '/rulesets', label: '规则集', icon: Layers },
   { to: '/export', label: '导出', icon: FileOutput },
 ];
-
-function BrandMark() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M5 18V10a4 4 0 0 1 4-4h9.5"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-      <circle cx="19.5" cy="6" r="2.1" fill="currentColor" />
-      <circle cx="5" cy="19" r="1.7" fill="currentColor" opacity="0.55" />
-    </svg>
-  );
-}
 
 export function Topbar() {
   const workspace = useWorkspace((state) => state.workspace);
@@ -60,16 +53,6 @@ export function Topbar() {
 
   return (
     <header className="topbar">
-      <div className="topbar-brand">
-        <div className="brand-mark">
-          <BrandMark />
-        </div>
-        <div className="brand-text">
-          <div className="brand-name">路由台</div>
-          <div className="brand-sub">CLASH ROUTE DESK</div>
-        </div>
-      </div>
-
       <nav className="topnav" aria-label="主导航">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
@@ -87,8 +70,6 @@ export function Topbar() {
           );
         })}
       </nav>
-
-      <div className="topbar-spacer" />
 
       <div className="topbar-status">
         <button className="command-chip" onClick={() => setCommandOpen(true)} title="全局搜索 (Ctrl+K)" aria-label="全局搜索">
@@ -120,6 +101,16 @@ export function Topbar() {
           ) : null}
           <Settings size={13} />
         </button>
+        <a
+          className="topbar-github"
+          href="https://github.com/youbilin/Clash-RuleVis"
+          target="_blank"
+          rel="noreferrer"
+          title="GitHub 仓库"
+          aria-label="打开 GitHub 仓库"
+        >
+          <GitHubMark />
+        </a>
       </div>
     </header>
   );

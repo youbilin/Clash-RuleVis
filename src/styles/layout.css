@@ -21,42 +21,6 @@
   backdrop-filter: blur(16px);
 }
 
-.topbar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 100%;
-  padding-right: 18px;
-  border-right: 1px solid var(--line-soft);
-}
-
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 29px;
-  height: 29px;
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
-  background: linear-gradient(150deg, #f2f2ec, #ffffff);
-  color: var(--accent);
-  box-shadow: inset 0 1px 0 rgba(29, 32, 28, 0.054);
-}
-
-.brand-name {
-  font-family: var(--font-display);
-  font-size: 13.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.brand-sub {
-  margin-top: 1px;
-  color: var(--faint);
-  font-family: var(--font-mono);
-  font-size: 8px;
-  letter-spacing: 0.14em;
-}
-
 .topnav {
   display: flex;
   align-self: stretch;
@@ -114,10 +78,6 @@
   color: var(--amber);
   font-family: var(--font-mono);
   font-size: 9px;
-}
-
-.topbar-spacer {
-  flex: 1;
 }
 
 .topbar-status {
@@ -318,12 +278,6 @@
 }
 
 @media (max-width: 900px) {
-  .topbar-brand {
-    padding-right: 0;
-    border-right: 0;
-  }
-
-  .topbar-brand .brand-text,
   .topnav-label {
     display: none;
   }

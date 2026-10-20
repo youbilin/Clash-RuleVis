@@ -350,7 +350,7 @@ export function ExitsPage() {
   };
 
   return (
-    <div className="page">
+    <div className="page exits-page">
       <PageHeader
         kicker="EXITS / POLICY GROUPS"
         title="出口"
@@ -381,91 +381,93 @@ export function ExitsPage() {
         }
       />
 
-      <div className="exit-section-heading">
-        <div className="section-title" style={{ margin: 0 }}>
-          自定义出口
+      <div className="exits-body">
+        <div className="exit-section-heading">
+          <div className="section-title" style={{ margin: 0 }}>
+            自定义出口
+          </div>
+          {customExits.some((exit) => !workspace.routes.some((route) => route.exitId === exit.id)) ? (
+            <button className="btn btn-sm btn-ghost" onClick={() => void removeUnused()}>清理未引用出口</button>
+          ) : null}
         </div>
-        {customExits.some((exit) => !workspace.routes.some((route) => route.exitId === exit.id)) ? (
-          <button className="btn btn-sm btn-ghost" onClick={() => void removeUnused()}>清理未引用出口</button>
-        ) : null}
-      </div>
 
-      {customExits.length ? (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <SortableContext items={customExits.map((exit) => exit.id)} strategy={verticalListSortingStrategy}>
-            <div className="panel exit-list-panel">
-              <div className="exit-list-head">
-                <span />
-                <span />
-                <span>类型</span>
-                <span>出口</span>
-                <span>成员</span>
-                <span>当前节点</span>
-                <span>延迟</span>
-                <span>命中</span>
-                <span>操作</span>
+        {customExits.length ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={customExits.map((exit) => exit.id)} strategy={verticalListSortingStrategy}>
+              <div className="panel exit-list-panel exit-custom-panel">
+                <div className="exit-list-head">
+                  <span />
+                  <span />
+                  <span>类型</span>
+                  <span>出口</span>
+                  <span>成员</span>
+                  <span>当前节点</span>
+                  <span>延迟</span>
+                  <span>命中</span>
+                  <span>操作</span>
+                </div>
+                {customExits.map((exit) => (
+                  <ExitRow
+                    key={exit.id}
+                    exit={exit}
+                    resolution={resolutions.get(exit.id)!}
+                    group={groups[exit.name]}
+                    hits={hitsFor(exit)}
+                    testing={testingExit === exit.id}
+                    onEdit={() => setEditing({ mode: 'edit', exitId: exit.id })}
+                    onDuplicate={() => duplicateExit(exit)}
+                    onTest={() => void testExit(exit)}
+                    favorite={(workspace.settings.favoriteExitIds ?? []).includes(exit.id)}
+                    onToggleFavorite={() =>
+                      update((draft) => {
+                        const list = draft.settings.favoriteExitIds ?? [];
+                        draft.settings.favoriteExitIds = list.includes(exit.id)
+                          ? list.filter((item) => item !== exit.id)
+                          : [...list, exit.id];
+                      })
+                    }
+                  />
+                ))}
               </div>
-              {customExits.map((exit) => (
-                <ExitRow
-                  key={exit.id}
-                  exit={exit}
-                  resolution={resolutions.get(exit.id)!}
-                  group={groups[exit.name]}
-                  hits={hitsFor(exit)}
-                  testing={testingExit === exit.id}
-                  onEdit={() => setEditing({ mode: 'edit', exitId: exit.id })}
-                  onDuplicate={() => duplicateExit(exit)}
-                  onTest={() => void testExit(exit)}
-                  favorite={(workspace.settings.favoriteExitIds ?? []).includes(exit.id)}
-                  onToggleFavorite={() =>
-                    update((draft) => {
-                      const list = draft.settings.favoriteExitIds ?? [];
-                      draft.settings.favoriteExitIds = list.includes(exit.id)
-                        ? list.filter((item) => item !== exit.id)
-                        : [...list, exit.id];
-                    })
-                  }
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      ) : (
-        <div className="panel">
-          <EmptyState
-            icon={<Waypoints size={20} />}
-            title="还没有自定义出口"
-            description="出口是拖拽规则的落点。可以用模板快速创建「家宽」「看视频」等，再按标签收集节点。"
-            actions={
-              <button className="btn btn-primary btn-sm" onClick={() => setEditing({ mode: 'create' })}>
-                <Plus size={12} /> 新建出口
-              </button>
-            }
-          />
-        </div>
-      )}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="panel exit-empty-panel">
+            <EmptyState
+              icon={<Waypoints size={20} />}
+              title="还没有自定义出口"
+              description="出口是拖拽规则的落点。可以用模板快速创建「家宽」「看视频」等，再按标签收集节点。"
+              actions={
+                <button className="btn btn-primary btn-sm" onClick={() => setEditing({ mode: 'create' })}>
+                  <Plus size={12} /> 新建出口
+                </button>
+              }
+            />
+          </div>
+        )}
 
-      <div className="exit-section-heading" style={{ marginTop: 24 }}>
-        <div className="section-title" style={{ margin: 0 }}>
-          内置出站
-          <span className="eyebrow">BUILT-IN</span>
+        <div className="exit-section-heading exit-builtin-heading">
+          <div className="section-title" style={{ margin: 0 }}>
+            内置出站
+            <span className="eyebrow">BUILT-IN</span>
+          </div>
         </div>
-      </div>
-      <div className="panel exit-list-panel">
-        <div className="exit-list-head">
-          <span />
-          <span />
-          <span>类型</span>
-          <span>出口</span>
-          <span>成员</span>
-          <span>当前节点</span>
-          <span>延迟</span>
-          <span>命中</span>
-          <span>操作</span>
+        <div className="panel exit-list-panel exit-builtin-panel">
+          <div className="exit-list-head">
+            <span />
+            <span />
+            <span>类型</span>
+            <span>出口</span>
+            <span>成员</span>
+            <span>当前节点</span>
+            <span>延迟</span>
+            <span>命中</span>
+            <span>操作</span>
+          </div>
+          {builtinExits.map((exit) => (
+            <BuiltinExitRow key={exit.id} exit={exit} hits={hitsFor(exit)} />
+          ))}
         </div>
-        {builtinExits.map((exit) => (
-          <BuiltinExitRow key={exit.id} exit={exit} hits={hitsFor(exit)} />
-        ))}
       </div>
 
       {editing ? (

@@ -602,20 +602,6 @@
   box-shadow: var(--shadow-card);
 }
 
-.exit-rail-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 12px 12px 7px;
-}
-
-.exit-rail-title {
-  margin-top: 3px;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
 .exit-rail-hint {
   display: flex;
   align-items: flex-start;

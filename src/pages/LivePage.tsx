@@ -1158,15 +1158,6 @@ export function LivePage() {
           </div>
 
           <aside className="exit-rail">
-            <div className="exit-rail-head">
-              <div>
-                <div className="eyebrow">DROP TARGETS</div>
-                <div className="exit-rail-title">出口与节点</div>
-              </div>
-              <button className="icon-btn" onClick={() => navigate('/exits')} title="管理出口">
-                <Settings2 size={14} />
-              </button>
-            </div>
             <div className="target-tabs" role="tablist" aria-label="拖放目标类型">
               <button
                 role="tab"
