@@ -5,8 +5,9 @@ pub mod model;
 pub mod resolve;
 
 pub use defaults::{
-    create_builtin_exits, ensure_workspace_shape, normalize_manual_sources,
-    prune_unavailable_exit_members, MANUAL_SOURCE_NAME, MANUAL_SOURCE_NOTE,
+    create_builtin_exits, create_default_workspace, ensure_workspace_shape,
+    normalize_manual_sources, prune_unavailable_exit_members, MANUAL_SOURCE_NAME,
+    MANUAL_SOURCE_NOTE,
 };
 pub use generator::{generate_config, GenerateOptions, GeneratedConfig};
 pub use links::{

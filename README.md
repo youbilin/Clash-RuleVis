@@ -28,7 +28,7 @@
 
 ---
 
-> 当前是本地 Web 工作台（Node.js 运行）。Rust 核心已完成 fixture 语义对齐，Tauri 2 轻量壳与 Windows 安装包属于下一阶段；不用 Electron 或 Node sidecar 冒充正式桌面版。
+> 本地 Web 工作台已稳定。Tauri 2 桌面预览已接入 Rust 工作区、导出与历史，但订阅/YAML 导入和内核适配仍在迁移中，暂不发布 Windows 安装包；不用 Electron 或 Node sidecar 冒充正式桌面版。
 
 ## 这是什么
 
@@ -154,7 +154,7 @@ flowchart LR
 - 8 种分享链接解析：SS / SSR / VMess / VLESS / Trojan / Hysteria2 / TUIC / SOCKS5，包含 percent-encoded SS、Reality、ws/grpc、obfs 等参数。
 - CLI：`check`、`generate`、`normalize`、`parse-link`。
 
-它还没有接入 Web 运行时；Tauri 2 壳、导入解析和内核适配会在后续阶段逐步替换 Node 实现。parity 测试以 [fixtures](fixtures/README.md) 为语言无关契约，YAML 比较的是解析后的语义结构而非缩进。
+Web 端仍使用 Fastify；桌面端通过 Tauri IPC 直接调用 Rust，不启动本地 HTTP 服务，也不带 Node sidecar。parity 测试以 [fixtures](fixtures/README.md) 为语言无关契约，YAML 比较的是解析后的语义结构而非缩进。
 
 ```bash
 cd rust
@@ -164,7 +164,29 @@ cargo test --workspace
 cargo run -p rulevis-core -- check ../demo/workspace.json
 ```
 
-GitHub Actions 会独立运行 `Rust core parity`。Windows 安装包的前置条件是 MSVC Build Tools、Windows SDK 和 WebView2；当前仓库没有发布任何桌面安装包。
+GitHub Actions 会运行 Rust 核心与桌面 API 测试，并在 Windows runner 上检查 Tauri 壳编译。Windows 安装包的前置条件是 MSVC Build Tools、Windows SDK 和 WebView2；当前仓库没有发布任何桌面安装包。
+
+## 桌面预览（Tauri 2）
+
+桌面端已经可以启动，工作区保存在系统应用数据目录（默认 `%APPDATA%\io.github.youbilin.clash-rulevis`，可用 `CRS_DATA_DIR` 覆盖），与 Web 版的 `data/` 相互独立。Windows 构建前置：Rust stable、MSVC Build Tools 的 C++ 工作负载、Windows SDK 10、WebView2 Runtime。
+
+```bash
+npm run desktop:dev    # 启动 Tauri 窗口 + Vite
+npm run desktop:check  # 只做 Rust 编译检查
+npm run desktop:build  # 构建桌面二进制（当前不生成安装包）
+```
+
+首次使用可以在设置中导入 Web 版导出的工作区 JSON 备份，完成数据迁移。当前桌面预览已经接入：
+
+- 工作区加载 / 保存 / 版本冲突、JSON 备份导入、历史快照与恢复。
+- 手动节点链接导入、节点与出口编辑、链路生成/删除、从规则库批量添加规则集。
+- 完整 YAML 预览、diff、导出到应用数据目录、打开导出目录。
+- 读取 Clash Verge 当前 profile 的端口 / DNS / TUN 等基础设置（只读，不写入）。
+- 桌面端实时页改为空状态轮询，不再依赖 WebSocket 服务。
+
+仍待迁移：订阅/YAML 导入、来源刷新、内核连接与实时流、测速/探测、规则集在线刷新、`verge-mihomo -t` 校验。调用这些能力会返回明确的 `DESKTOP_UNAVAILABLE` 错误，不会静默失败。
+
+安全边界与 Web 版一致：控制器密钥和订阅信息不会被导出，应用只监听系统 IPC，不开放本地端口。
 
 ## 快速开始
 
@@ -236,8 +258,10 @@ npm test           # 40 项单元测试
 npm run test:e2e   # 构建后用临时数据目录跑 Playwright 冒烟
 npm run build      # 类型检查 + 生产构建
 npm start          # 运行生产服务
-npm run rust:test  # Rust 核心 parity 测试
+npm run rust:test  # Rust 核心 + 桌面 API 测试
 npm run rust:lint  # Rust fmt + clippy
+npm run desktop:dev   # Tauri 2 桌面预览
+npm run desktop:check # 桌面壳编译检查
 ```
 
 `test:e2e` 会使用系统临时数据目录和本机 Chrome 跑一次完整冒烟，不触碰当前 `data/`；如果 Chrome 不在默认位置，可设置 `CHROME_PATH`。
@@ -265,16 +289,19 @@ demo/                  # 无敏感数据的演示工作区
 docs/assets/           # README 截图与演示 GIF
 shared/                # 前后端共享类型与解析模型
 scripts/               # 规则目录、演示与截图脚本
-rust/rulevis-core/     # 工作区规范化、YAML 生成、链接解析（迁移中）
+rust/rulevis-core/     # 工作区规范化、YAML 生成、链接解析
+rust/rulevis-app/      # 桌面存储、历史、导出与 API（可独立测试）
+src-tauri/             # Tauri 2 壳，仅负责窗口与 IPC
 fixtures/              # TypeScript ↔ Rust 的 parity 契约
 ```
 
 ## Roadmap
 
 - **v0.2（当前）**：本地 Web 工作台、完整规则/出口/链路/导出闭环、自动刷新与备份。
-- **Rust 地基（已完成）**：`rulevis-core` 覆盖规范化、导出生成和链接解析，13 项测试与 fixture 语义对齐，CI 已接入。
-- **下一步**：Tauri 2 壳 + 保留 React UI；接入 Rust 工作区存储与导出，再把内核适配、订阅导入迁到 Rust，最后发布 Windows 安装包。不会用 Electron 或 Node sidecar 冒充正式桌面版。
-- **之后**：更多协议与 Proxy Provider、桌面托盘、签名安装包、增量更新。
+- **Rust 地基（已完成）**：`rulevis-core` 覆盖规范化、导出生成和链接解析，20 项 Rust 测试包含 fixture 语义对齐与桌面 API 端到端，CI 已接入。
+- **桌面预览（当前）**：Tauri 2 壳 + React UI；Rust 已接管工作区存储、历史、导出、手动节点、链路和规则库批量添加。
+- **下一步**：订阅/YAML 导入、内核控制器与实时流、测速和内核校验迁到 Rust，随后发布签名 Windows 安装包。不会用 Electron 或 Node sidecar 冒充正式桌面版。
+- **之后**：更多协议与 Proxy Provider、桌面托盘、增量更新。
 - **再评估**：只有在 WebView 被证明是瓶颈时，才考虑用 Rust 重写 UI；纯 Rust UI 不是当前目标。
 
 ## 已知边界

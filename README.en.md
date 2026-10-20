@@ -24,7 +24,7 @@ See every request as **domain → rule → policy group → node**, then edit, r
 
 ---
 
-> This repository currently ships a local web workbench. Its Rust core is now fixture-aligned; the Tauri 2 shell and Windows installers are the next milestone. No Electron/Node sidecar is being presented as the final desktop app.
+> The local web workbench is stable. A Tauri 2 desktop preview now uses Rust for workspace storage, export and history, but subscription/YAML import and kernel integration are still being migrated. No Windows installer is published yet, and no Electron/Node sidecar is used as a stand-in.
 
 ## What it is
 
@@ -102,20 +102,41 @@ npm run typecheck
 npm test
 npm run test:e2e
 npm run rust:test
+npm run desktop:check
 ```
 
 40 unit tests plus a Playwright smoke flow that imports nodes, merges duplicates, creates an exit, creates a chain node, cleans invalid rules, exports, restores history and round-trips a workspace backup. E2E uses a temporary data directory and local Chrome; set `CHROME_PATH` if needed.
 
-## Rust core (migration in progress)
+## Desktop preview (Tauri 2)
 
-`rust/rulevis-core` is the desktop foundation for workspace normalization, YAML generation and share-link parsing. It currently covers:
+The desktop shell runs the same React UI and talks to Rust over Tauri IPC; it does not start a local HTTP server or a Node sidecar. Its data lives in the platform app-data directory (`%APPDATA%\io.github.youbilin.clash-rulevis` on Windows, override with `CRS_DATA_DIR`) and is independent from the web build's `data/`. Windows builds need Rust stable, MSVC Build Tools with the C++ workload, Windows SDK 10 and the WebView2 runtime.
+
+```bash
+npm run desktop:dev    # Tauri window + Vite
+npm run desktop:check  # Rust compile check for the shell
+npm run desktop:build  # Desktop binary, no installer bundle yet
+```
+
+To migrate an existing web workspace, import its JSON backup from the desktop settings drawer. Implemented in the preview:
+
+- Workspace load/save with revision conflicts, JSON backup import, history snapshots and restore.
+- Manual share-link import, node/exit editing, chain creation/deletion, rule-catalog batch add.
+- Full YAML preview, diff, safe export and open-export-directory.
+- Read-only Clash Verge profile discovery for base port/DNS/TUN settings.
+- Empty-state live polling without a WebSocket service.
+
+Still to migrate: subscription/YAML import, source refresh, kernel controller and live stream, latency tests, ruleset refresh and `verge-mihomo -t` validation. These return an explicit `DESKTOP_UNAVAILABLE` error instead of failing silently.
+
+## Rust core
+
+`rust/rulevis-core` is the shared foundation for workspace normalization, YAML generation and share-link parsing. It currently covers:
 
 - Workspace v2 serde models and the same normalization rules as the web app.
 - The complete YAML generator, including exit resolution, providers, rule priority and validation issues / counts.
 - SS, SSR, VMess, VLESS, Trojan, Hysteria2, TUIC and SOCKS5 links, including percent-encoded SS, Reality, ws/grpc and obfs.
 - A small CLI with `check`, `generate`, `normalize` and `parse-link`.
 
-It is not wired into the web runtime yet. Parity tests use [fixtures](fixtures/README.md) as a language-independent contract and compare parsed YAML semantics, not indentation.
+The web build still uses Fastify; the desktop shell calls Rust directly. Parity tests use [fixtures](fixtures/README.md) as a language-independent contract and compare parsed YAML semantics, not indentation. `rust/rulevis-app` contains the testable desktop storage/export/API layer, while `src-tauri` only hosts the window and IPC command.
 
 ```bash
 cd rust
@@ -125,7 +146,7 @@ cargo test --workspace
 cargo run -p rulevis-core -- check ../demo/workspace.json
 ```
 
-CI runs a dedicated `Rust core parity` job. Building Windows installers later requires MSVC Build Tools, the Windows SDK and WebView2; no desktop installer is published yet.
+CI runs the Rust workspace tests, including the desktop API end-to-end cases. Building Windows installers later requires MSVC Build Tools, the Windows SDK and WebView2; no desktop installer is published yet.
 
 ## Data
 
@@ -154,9 +175,10 @@ See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 ## Roadmap
 
 - **v0.2**: current local web workbench and complete import/rules/chain/export loop.
-- **Rust foundation (done)**: `rulevis-core` covers normalization, config generation and link parsing with 13 parity tests in CI.
-- **Next**: Tauri 2 shell with the React UI; wire in Rust workspace storage and export, then migrate the kernel adapter and subscription importer before publishing signed Windows installers.
-- **Later**: more protocols, proxy providers, tray, signed auto-update.
+- **Rust foundation (done)**: `rulevis-core` covers normalization, config generation and link parsing; 20 Rust tests include fixture parity and desktop API end-to-end cases.
+- **Desktop preview (current)**: Tauri 2 shell with the React UI; Rust now owns workspace storage, history, export, manual nodes, chains and rule-catalog batch add.
+- **Next**: migrate subscription/YAML import, the kernel controller and live stream, latency tests and kernel validation, then publish signed Windows installers.
+- **Later**: more protocols, proxy providers, tray, auto-update.
 - A pure Rust UI rewrite is not a goal unless the WebView is proven to be the bottleneck.
 
 ## Contributing

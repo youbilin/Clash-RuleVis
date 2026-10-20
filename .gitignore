@@ -1,6 +1,8 @@
 node_modules/
 dist/
 rust/target/
+src-tauri/target/
+src-tauri/gen/schemas/
 /data/
 .demo-data/
 .env

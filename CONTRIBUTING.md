@@ -34,6 +34,25 @@ implementation and the Rust core together. `fixtures/` is the
 language-independent contract: run `npm run fixtures:generate` after intentional
 output changes and make sure `cargo test` still passes.
 
+## Desktop preview
+
+```bash
+npm run desktop:dev    # Tauri window + Vite
+npm run desktop:check  # Rust compile check
+npm run desktop:build  # Binary only; bundle is disabled for now
+```
+
+`rust/rulevis-app` contains the testable desktop storage/export/API layer;
+`src-tauri` only owns the window and the IPC command. Desktop requirements on
+Windows are a stable Rust toolchain, MSVC Build Tools with the C++ workload, the
+Windows SDK and the WebView2 runtime. Run the Rust checks after touching desktop
+code:
+
+```bash
+npm run rust:lint
+npm run rust:test
+```
+
 ## Data safety
 
 - Never commit `data/`, subscriptions, exported YAML, controller secrets, or

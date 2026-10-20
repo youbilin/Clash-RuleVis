@@ -8,16 +8,28 @@
   generator and eight share-link parsers, with a `check` / `generate` /
   `normalize` / `parse-link` CLI.
 - Language-independent parity tests against the demo export and link fixtures:
-  13 Rust tests now cover export semantics, counts/issues, percent-encoded SS,
+  14 core tests cover export semantics, counts/issues, percent-encoded SS,
   chain relays, disabled members, manual-source merging and privacy regressions.
-- CI job `Rust core parity` running `cargo fmt`, `clippy -D warnings` and
-  `cargo test`.
+- `rust/rulevis-app`: testable desktop storage, history, export, Verge base
+  template reader and JSON API, independent of the Tauri shell.
+- Tauri 2 desktop preview: workspace load/save with revision conflicts, manual
+  node import, chains, rule-catalog batch add, YAML preview/diff/export,
+  history restore and open-export-directory.
+- Frontend runtime bridge: browser builds keep using Fastify, desktop builds use
+  a single Tauri IPC command; live status falls back to an empty-state poll.
+- Six desktop API tests covering save conflicts, manual nodes, chains, export,
+  history restore, source deletion, unavailable endpoints and frontend error
+  serialization.
+- CI runs `cargo fmt`, `clippy -D warnings` and `cargo test` for both Rust
+  crates, plus a Windows job that checks the Tauri shell.
 
 ### Notes
 
-- The Rust core is not wired into the web runtime yet. The Tauri 2 shell, Rust
-  workspace storage and Windows installers are the next milestone; no Electron
-  or Node sidecar is used as a stand-in desktop build.
+- Desktop subscription/YAML import, source refresh, kernel connection/live
+  stream, latency tests, ruleset refresh and `verge-mihomo -t` validation are
+  still being migrated and return `DESKTOP_UNAVAILABLE` explicitly.
+- No Windows installer is published yet. The desktop shell uses Rust IPC only;
+  no Electron or Node sidecar is used as a stand-in desktop build.
 
 ## 0.2.0 — 2026-10-20
 

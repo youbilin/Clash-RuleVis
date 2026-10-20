@@ -21,7 +21,7 @@ import {
 import type { DelayResult, ProxyNode, RefreshSummary, Source, SourceType, Workspace } from '../../shared/types';
 import { collectTags, nodeDisplayName, nodeTagLabels } from '../../shared/model';
 import { regionEmoji } from '../../shared/regions';
-import { api } from '../api';
+import { api, isDesktopRuntime } from '../api';
 import { useWorkspace } from '../store/workspace';
 import { useUi, toast } from '../store/ui';
 import { EmptyState, PageHeader, Spinner, Switch } from '../components/Common';
@@ -713,7 +713,9 @@ export function NodesPage() {
                 description={
                   workspace.nodes.length
                     ? '试试清除搜索、标签或来源筛选。'
-                    : '从 Verge 当前配置读取，或导入订阅 / 粘贴 Clash 配置。'
+                    : isDesktopRuntime()
+                      ? '桌面预览版请先用「添加来源」导入节点链接；订阅与 YAML 导入将在下一阶段接入。'
+                      : '从 Verge 当前配置读取，或导入订阅 / 粘贴 Clash 配置。'
                 }
                 actions={
                   workspace.nodes.length ? (

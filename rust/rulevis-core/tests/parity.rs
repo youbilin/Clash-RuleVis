@@ -173,6 +173,20 @@ fn partial_settings_are_filled_from_defaults() {
 }
 
 #[test]
+fn default_workspace_has_builtins_auto_all_and_match() {
+    let workspace = rulevis_core::create_default_workspace("2026-10-20T00:00:00.000Z".to_string());
+    assert_eq!(workspace.version, 2);
+    assert_eq!(workspace.exits.len(), 4);
+    assert_eq!(workspace.exits[0].id, "direct");
+    assert_eq!(workspace.exits[1].id, "reject");
+    assert!(workspace.exits[2].name == "自动选择");
+    assert!(workspace.exits[3].name == "全部节点");
+    assert_eq!(workspace.routes.len(), 1);
+    assert!(workspace.routes[0].is_match());
+    assert_eq!(workspace.created_at, "2026-10-20T00:00:00.000Z");
+}
+
+#[test]
 fn normalization_merges_manual_sources_and_repairs_shape() {
     let mut workspace = empty_workspace();
     workspace.sources = vec![

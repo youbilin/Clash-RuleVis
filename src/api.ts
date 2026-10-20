@@ -12,7 +12,33 @@ export class ApiError extends Error {
 
 let sessionPromise: Promise<void> | null = null;
 
+export function isDesktopRuntime(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    Boolean((window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__)
+  );
+}
+
+type InvokeFn = <T>(command: string, args?: Record<string, unknown>) => Promise<T>;
+let desktopInvoke: InvokeFn | null = null;
+
+async function invokeDesktop<T>(path: string, method: string, body: unknown): Promise<T> {
+  if (!desktopInvoke) {
+    const module = await import('@tauri-apps/api/core');
+    desktopInvoke = module.invoke as InvokeFn;
+  }
+  try {
+    return await desktopInvoke<T>('api_request', { method, path, body: body ?? null });
+  } catch (raw) {
+    const failure = (
+      raw && typeof raw === 'object' ? raw : { error: String(raw ?? '桌面请求失败') }
+    ) as { status?: number; error?: string };
+    throw new ApiError(failure.status ?? 500, failure.error || '桌面请求失败', failure);
+  }
+}
+
 export async function ensureSession(): Promise<void> {
+  if (isDesktopRuntime()) return;
   if (!sessionPromise) {
     sessionPromise = fetch('/api/bootstrap', {
       method: 'GET',
@@ -55,6 +81,9 @@ async function send<T>(path: string, options: RequestOptions): Promise<T> {
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? 'GET';
+  if (isDesktopRuntime()) {
+    return invokeDesktop<T>(path, method, options.body);
+  }
   const retryable = method === 'GET';
   let sessionRetried = false;
   for (let attempt = 0; attempt < 3; attempt += 1) {

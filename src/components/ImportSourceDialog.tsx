@@ -12,7 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import type { ImportSummary } from '../../shared/types';
-import { api } from '../api';
+import { api, isDesktopRuntime } from '../api';
 import { Spinner } from './Common';
 import { Modal } from './Overlay';
 import { useWorkspace } from '../store/workspace';
@@ -217,6 +217,9 @@ export function ImportSourceDialog({ onClose }: { onClose: () => void }) {
       }
     >
       <div className="source-batch">
+        {isDesktopRuntime() ? (
+          <div className="hint">桌面预览版当前仅支持节点链接；订阅与 YAML 导入将在下一阶段接入。</div>
+        ) : null}
         <div className="source-batch-list">
           {rows.map((row, index) => {
             const kind = detectKind(row.value);
@@ -273,10 +276,14 @@ export function ImportSourceDialog({ onClose }: { onClose: () => void }) {
           <button className="inline-link" onClick={() => fileInputRef.current?.click()} disabled={importing}>
             <Upload size={12} /> 导入本地文件
           </button>
-          <span className="meta-sep">·</span>
-          <button className="inline-link" onClick={() => void importVerge()} disabled={importing || vergeLoading}>
-            {vergeLoading ? <Spinner /> : <DownloadCloud size={12} />} 从 Verge 读取
-          </button>
+          {isDesktopRuntime() ? null : (
+            <>
+              <span className="meta-sep">·</span>
+              <button className="inline-link" onClick={() => void importVerge()} disabled={importing || vergeLoading}>
+                {vergeLoading ? <Spinner /> : <DownloadCloud size={12} />} 从 Verge 读取
+              </button>
+            </>
+          )}
         </div>
         <input
           ref={fileInputRef}

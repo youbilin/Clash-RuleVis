@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { LiveSnapshot } from '../../shared/types';
-import { ensureSession, liveSocketUrl } from '../api';
+import { api, ensureSession, isDesktopRuntime, liveSocketUrl } from '../api';
 
 interface LiveState {
   snapshot: LiveSnapshot | null;
@@ -17,6 +17,36 @@ interface LiveState {
 let socket: WebSocket | null = null;
 let started = false;
 let retryTimer: number | null = null;
+let desktopPollTimer: number | null = null;
+
+function applySnapshot(snapshot: LiveSnapshot): void {
+  const state = useLive.getState();
+  if (state.paused) {
+    useLive.setState({
+      pendingSnapshot: snapshot,
+      pausedUpdates: state.pausedUpdates + 1,
+      lastMessageAt: Date.now(),
+    });
+  } else {
+    useLive.setState({ snapshot, lastMessageAt: Date.now() });
+  }
+}
+
+async function pollDesktop(): Promise<void> {
+  try {
+    const snapshot = await api<LiveSnapshot>('/api/live');
+    useLive.setState({ socketConnected: true });
+    applySnapshot(snapshot);
+  } catch {
+    useLive.setState({ socketConnected: false });
+  }
+}
+
+function startDesktopPolling(): void {
+  if (desktopPollTimer !== null) return;
+  void pollDesktop();
+  desktopPollTimer = window.setInterval(() => void pollDesktop(), 3000);
+}
 
 function openSocket(): void {
   if (retryTimer !== null) {
@@ -36,16 +66,7 @@ function openSocket(): void {
     try {
       const message = JSON.parse(event.data) as { type?: string; data?: LiveSnapshot };
       if (message.type !== 'live' || !message.data) return;
-      const state = useLive.getState();
-      if (state.paused) {
-        useLive.setState({
-          pendingSnapshot: message.data,
-          pausedUpdates: state.pausedUpdates + 1,
-          lastMessageAt: Date.now(),
-        });
-      } else {
-        useLive.setState({ snapshot: message.data, lastMessageAt: Date.now() });
-      }
+      applySnapshot(message.data);
     } catch {
       // 忽略无法解析的推送
     }
@@ -81,6 +102,10 @@ export const useLive = create<LiveState>((set, get) => ({
   connect: () => {
     if (started) return;
     started = true;
+    if (isDesktopRuntime()) {
+      startDesktopPolling();
+      return;
+    }
     openSocket();
   },
   setPaused: (paused) => {

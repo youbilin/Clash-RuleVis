@@ -8,6 +8,68 @@ use crate::model::{Exit, Route, RuleRoute, Workspace, WORKSPACE_VERSION};
 pub const MANUAL_SOURCE_NAME: &str = "节点链接";
 pub const MANUAL_SOURCE_NOTE: &str = "manual-link";
 
+pub fn create_default_workspace(created_at: String) -> Workspace {
+    let auto_id = Uuid::new_v4().to_string();
+    let all_id = Uuid::new_v4().to_string();
+    let mut exits = create_builtin_exits();
+    exits.push(Exit {
+        id: auto_id.clone(),
+        name: "自动选择".to_string(),
+        kind: "url-test".to_string(),
+        members: vec![crate::model::ExitMember {
+            by: "regex".to_string(),
+            value: ".*".to_string(),
+        }],
+        builtin: None,
+        source_id: None,
+        order: 0,
+        test_url: None,
+        interval: Some(300),
+        tolerance: None,
+    });
+    exits.push(Exit {
+        id: all_id,
+        name: "全部节点".to_string(),
+        kind: "select".to_string(),
+        members: vec![crate::model::ExitMember {
+            by: "regex".to_string(),
+            value: ".*".to_string(),
+        }],
+        builtin: None,
+        source_id: None,
+        order: 1,
+        test_url: None,
+        interval: None,
+        tolerance: None,
+    });
+    let match_route = RuleRoute {
+        id: Uuid::new_v4().to_string(),
+        rule_type: "MATCH".to_string(),
+        payload: String::new(),
+        exit_id: auto_id,
+        target_node_id: None,
+        no_resolve: None,
+        origin: "manual".to_string(),
+        source_id: None,
+        note: None,
+        enabled: true,
+        pending: None,
+        applied_at: None,
+    };
+    Workspace {
+        version: WORKSPACE_VERSION,
+        revision: 0,
+        created_at: created_at.clone(),
+        updated_at: created_at,
+        sources: Vec::new(),
+        nodes: Vec::new(),
+        exits,
+        routes: vec![Route::Rule(match_route)],
+        settings: Default::default(),
+        last_export: None,
+    }
+}
+
 pub fn create_builtin_exits() -> Vec<Exit> {
     vec![
         Exit {

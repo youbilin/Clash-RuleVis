@@ -27,7 +27,7 @@ jobs:
       - run: npm run build
 
   rust-core:
-    name: Rust core parity
+    name: Rust core · desktop API
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -44,6 +44,24 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+
+  desktop-check:
+    name: Tauri shell check
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: cargo check --manifest-path src-tauri/Cargo.toml
 
   e2e:
     name: Playwright smoke

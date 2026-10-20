@@ -20,7 +20,12 @@ redacted examples.
 
 ## Security boundaries
 
-- The local service binds `127.0.0.1` and uses a session cookie plus an Origin allowlist.
+- The web build binds `127.0.0.1` and uses a session cookie plus an Origin allowlist.
+- The desktop preview does not start an HTTP listener. It uses Tauri IPC, a
+  restricted CSP and a minimal capability set; it does not ship Node or an
+  Electron/Node sidecar.
+- Desktop data (workspace, history snapshots, exports and rule-set files) lives
+  in the platform app-data directory. Treat that directory as secret.
 - Imports and exports are local. The tool does not modify Clash Verge profiles
   and does not trigger a kernel reload.
 - Exported YAML never includes source subscription URLs or the controller secret.
