@@ -253,6 +253,28 @@ test('chain nodes export as independent proxies with dialer-proxy', () => {
   assert.equal(chainNode.raw['dialer-proxy'], 'X-日本 01');
 });
 
+test('disabling a node prunes its direct exit membership', () => {
+  const workspace = makeWorkspace();
+  const home = workspace.exits.find((exit) => exit.name === '家宽')!;
+  home.members = [
+    { by: 'node', value: 'n1' },
+    { by: 'node', value: 'n2' },
+    { by: 'node', value: 'missing-node' },
+  ];
+  workspace.nodes[0]!.enabled = false;
+  ensureWorkspaceShape(workspace);
+  assert.deepEqual(home.members, [{ by: 'node', value: 'n2' }]);
+  const generated = generateConfig(workspace);
+  assert.equal(
+    generated.issues.filter(
+      (issue) =>
+        issue.severity === 'error' &&
+        (issue.code === 'missing-member' || issue.code === 'empty-exit'),
+    ).length,
+    0,
+  );
+});
+
 test('chain nodes with missing relays block export', () => {
   const workspace = makeWorkspace();
   workspace.sources.push({

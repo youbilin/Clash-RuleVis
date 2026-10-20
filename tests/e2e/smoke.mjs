@@ -67,25 +67,25 @@ async function main() {
     await page.locator('.nodes-page').waitFor();
     assert.ok(await page.locator('.nodes-add-source').isVisible(), '节点工具栏应有添加来源入口');
 
-    const importNode = async (link, expectedName) => {
+    const importNodes = async (links) => {
       await page.locator('.nodes-add-source').click();
       await page.getByRole('dialog', { name: '添加来源' }).waitFor();
-      await page.locator('.import-tab', { hasText: '节点链接' }).click();
-      await page.locator('input[aria-label="节点分享链接"]').fill(link);
-      await page.locator('.modal').getByRole('button', { name: '添加节点', exact: true }).click();
-      await page.locator('.modal-title', { hasText: '导入完成' }).waitFor();
-      await page.locator('.modal').getByRole('button', { name: '完成', exact: true }).click();
-      await page.locator('.node-row', { hasText: expectedName }).waitFor();
+      for (let index = 0; index < links.length; index += 1) {
+        if (index > 0) await page.locator('.source-row-add').click();
+        await page.locator('.source-row-input').nth(index).fill(links[index].link);
+      }
+      await page.locator('.modal-foot .btn-primary').click();
+      await page.locator('.modal').waitFor({ state: 'detached' });
+      for (const item of links) {
+        await page.locator('.node-row', { hasText: item.name }).waitFor();
+      }
     };
 
-    await importNode(
-      'ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@relay.example.com:8388#Relay-A',
-      'Relay-A',
-    );
-    await importNode(
-      'ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@landing.example.com:8389#Landing-B',
-      'Landing-B',
-    );
+    await importNodes([
+      { link: 'ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@relay.example.com:8388#Relay-A', name: 'Relay-A' },
+      { link: 'ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@landing.example.com:8389#Landing-B', name: 'Landing-B' },
+    ]);
+
     const duplicateStatus = await page.evaluate(async () => {
       const response = await fetch('/api/workspace', {
         headers: { 'X-Requested-With': 'clash-route-desk' },

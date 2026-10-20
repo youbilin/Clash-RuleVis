@@ -1,4 +1,4 @@
-export type ShareNodeType = 'ss' | 'vmess' | 'vless' | 'trojan' | 'hysteria2' | 'tuic';
+export type ShareNodeType = 'ss' | 'ssr' | 'vmess' | 'vless' | 'trojan' | 'hysteria2' | 'tuic' | 'socks5';
 
 export interface ParsedShareNode {
   type: ShareNodeType;
@@ -6,6 +6,7 @@ export interface ParsedShareNode {
   port: number;
   name?: string;
   uuid?: string;
+  username?: string;
   password?: string;
   cipher?: string;
   tls: boolean;
@@ -138,12 +139,13 @@ function parseShadowsocks(text: string): ParsedShareNode {
 
   let cipher = '';
   let password = '';
-  if (userPart.includes(':')) {
-    const colon = userPart.indexOf(':');
-    cipher = safeDecode(userPart.slice(0, colon));
-    password = safeDecode(userPart.slice(colon + 1));
+  const decodedUserPart = safeDecode(userPart);
+  if (decodedUserPart.includes(':')) {
+    const colon = decodedUserPart.indexOf(':');
+    cipher = decodedUserPart.slice(0, colon);
+    password = decodedUserPart.slice(colon + 1);
   } else {
-    const decoded = decodeBase64Text(userPart);
+    const decoded = decodeBase64Text(decodedUserPart);
     const colon = decoded.indexOf(':');
     if (colon < 0) throw new NodeLinkError('Shadowsocks 用户信息格式不正确');
     cipher = decoded.slice(0, colon);
@@ -169,6 +171,74 @@ function parseShadowsocks(text: string): ParsedShareNode {
     network: 'tcp',
     extras,
     warnings,
+  };
+}
+
+function parseSsr(text: string): ParsedShareNode {
+  const payload = text.slice('ssr://'.length).split('#')[0].trim();
+  const decoded = decodeBase64Text(payload);
+  const [main, queryText] = decoded.split('/?');
+  const parts = (main ?? '').split(':');
+  if (parts.length < 6) throw new NodeLinkError('SSR 链接字段不完整');
+  const [server, portText, protocol, cipher, obfs, encodedPassword] = parts;
+  const port = Number(portText);
+  if (!server?.trim() || !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new NodeLinkError('SSR 链接缺少有效的服务器或端口');
+  }
+  if (!cipher || !encodedPassword) throw new NodeLinkError('SSR 链接缺少加密方式或密码');
+  const query = new URLSearchParams(queryText ?? '');
+  const decodeParam = (name: string): string | undefined => {
+    const raw = query.get(name);
+    if (!raw) return undefined;
+    try {
+      return decodeBase64Text(raw);
+    } catch {
+      return raw;
+    }
+  };
+  const extras: Record<string, unknown> = {
+    protocol: protocol || 'origin',
+    obfs: obfs || 'plain',
+  };
+  const protocolParam = decodeParam('protoparam');
+  const obfsParam = decodeParam('obfsparam');
+  if (protocolParam) extras['protocol-param'] = protocolParam;
+  if (obfsParam) extras['obfs-param'] = obfsParam;
+  return {
+    type: 'ssr',
+    name: decodeParam('remarks'),
+    server: server.trim(),
+    port,
+    cipher,
+    password: decodeBase64Text(encodedPassword),
+    tls: false,
+    network: 'tcp',
+    extras,
+    warnings: [],
+  };
+}
+
+function parseSocks5(text: string): ParsedShareNode {
+  let url: URL;
+  try {
+    url = new URL(text.replace(/^socks:\/\//i, 'socks5://'));
+  } catch {
+    throw new NodeLinkError('SOCKS5 链接格式不正确');
+  }
+  const server = url.hostname.replace(/^\[|\]$/g, '');
+  if (!server) throw new NodeLinkError('SOCKS5 链接缺少服务器地址');
+  const port = parsePortFromUrl(url);
+  return {
+    type: 'socks5',
+    name: fragmentName(url),
+    server,
+    port,
+    username: safeDecode(url.username) || undefined,
+    password: safeDecode(url.password) || undefined,
+    tls: false,
+    network: 'tcp',
+    extras: {},
+    warnings: [],
   };
 }
 
@@ -351,6 +421,7 @@ export function parseShareLink(input: string): ParsedShareNode {
   if (lower.startsWith('http://') || lower.startsWith('https://')) {
     throw new NodeLinkError('这是订阅或网页链接，请切换到「订阅」标签导入');
   }
+  if (lower.startsWith('ssr://')) return parseSsr(text);
   if (lower.startsWith('ss://')) return parseShadowsocks(text);
   if (lower.startsWith('vmess://')) return parseVmess(text);
   if (lower.startsWith('vless://')) return parseUrlNode(text, 'vless');
@@ -359,7 +430,8 @@ export function parseShareLink(input: string): ParsedShareNode {
     return parseUrlNode(text.replace(/^hy2:\/\//i, 'hysteria2://'), 'hysteria2');
   }
   if (lower.startsWith('tuic://')) return parseUrlNode(text, 'tuic');
-  throw new NodeLinkError('暂不支持该链接协议；支持 ss / vmess / vless / trojan / hysteria2 / tuic');
+  if (lower.startsWith('socks5://') || lower.startsWith('socks://')) return parseSocks5(text);
+  throw new NodeLinkError('暂不支持该链接协议；支持 ss / ssr / vmess / vless / trojan / hysteria2 / tuic / socks5');
 }
 
 export function shareNodeDisplayName(node: ParsedShareNode): string {
@@ -378,6 +450,12 @@ export function shareNodeToProxy(node: ParsedShareNode): Record<string, unknown>
   if (node.type === 'ss') {
     proxy.cipher = node.cipher;
     proxy.password = node.password;
+  } else if (node.type === 'ssr') {
+    proxy.cipher = node.cipher;
+    proxy.password = node.password;
+  } else if (node.type === 'socks5') {
+    if (node.username) proxy.username = node.username;
+    if (node.password) proxy.password = node.password;
   } else if (node.type === 'vmess') {
     proxy.uuid = node.uuid;
     proxy.cipher = 'auto';
@@ -393,10 +471,10 @@ export function shareNodeToProxy(node: ParsedShareNode): Record<string, unknown>
     proxy.password = node.password;
   }
 
-  if (node.type !== 'ss' && node.tls) proxy.tls = true;
+  if (node.type !== 'ss' && node.type !== 'ssr' && node.type !== 'socks5' && node.tls) proxy.tls = true;
   if (node.sni) {
     if (node.type === 'hysteria2' || node.type === 'tuic') proxy.sni = node.sni;
-    else if (node.type !== 'ss') proxy.servername = node.sni;
+    else if (node.type !== 'ss' && node.type !== 'ssr' && node.type !== 'socks5') proxy.servername = node.sni;
   }
 
   if (node.type !== 'hysteria2' && node.type !== 'tuic' && node.network !== 'tcp') {

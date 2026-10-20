@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { AppStatus, HistoryEntry, RuleRoute, Workspace } from '../../shared/types';
-import { findDuplicateRoute, insertRouteOrdered } from '../../shared/model';
+import { findDuplicateRoute, insertRouteOrdered, pruneUnavailableExitMembers } from '../../shared/model';
 import { ApiError, api } from '../api';
 import { toast, useUi } from './ui';
 
@@ -162,6 +162,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     if (!current) return;
     const draft = structuredClone(current);
     mutate(draft);
+    pruneUnavailableExitMembers(draft);
     changeCounter += 1;
     set({ workspace: draft });
     schedulePersist();

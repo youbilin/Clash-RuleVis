@@ -66,9 +66,38 @@ test('parses VLESS with Reality, Trojan, Hysteria2 and TUIC', () => {
   assert.equal(tuic.tls, true);
 });
 
+test('parses percent-encoded SS, SSR and SOCKS5 links', () => {
+  const encodedSs = parseShareLink(
+    'ss://aes-128-gcm%3A9NosWuwAmgkVsMlBN0Pvvw%3D%3D@142.91.109.151:23025#ss',
+  );
+  assert.equal(encodedSs.type, 'ss');
+  assert.equal(encodedSs.cipher, 'aes-128-gcm');
+  assert.equal(encodedSs.password, '9NosWuwAmgkVsMlBN0Pvvw==');
+  assert.equal(encodedSs.server, '142.91.109.151');
+  assert.equal(encodedSs.port, 23025);
+
+  const ssrPayload = b64(
+    `ssr.example:8388:auth_aes128_md5:aes-256-cfb:tls1.2_ticket_auth:${b64('ssr-pass')}/?remarks=${b64('SSR 节点')}&obfsparam=${b64('cdn.example')}`,
+  );
+  const ssr = parseShareLink(`ssr://${ssrPayload}`);
+  assert.equal(ssr.type, 'ssr');
+  assert.equal(ssr.name, 'SSR 节点');
+  assert.equal(ssr.server, 'ssr.example');
+  assert.equal(ssr.password, 'ssr-pass');
+  assert.equal(ssr.extras.protocol, 'auth_aes128_md5');
+  assert.equal(ssr.extras.obfs, 'tls1.2_ticket_auth');
+  assert.equal(ssr.extras['obfs-param'], 'cdn.example');
+
+  const socks = parseShareLink('socks5://user:pass@127.0.0.1:1080#SOCKS');
+  assert.equal(socks.type, 'socks5');
+  assert.equal(socks.username, 'user');
+  assert.equal(socks.password, 'pass');
+  assert.equal(socks.server, '127.0.0.1');
+  assert.equal(socks.port, 1080);
+});
+
 test('rejects unsupported or invalid links', () => {
   assert.throws(() => parseShareLink('https://example.com/sub'), NodeLinkError);
-  assert.throws(() => parseShareLink('socks5://host:1080'), NodeLinkError);
   assert.throws(() => parseShareLink('vmess://not-base64'), NodeLinkError);
   assert.throws(() => parseShareLink('ss://bad'), NodeLinkError);
 });
@@ -88,4 +117,19 @@ test('builds Clash proxy payloads from parsed links', async () => {
   assert.equal(hy2.password, 'auth');
   assert.equal(hy2.sni, 'front.example');
   assert.equal(hy2.network, undefined);
+
+  const ssrPayload = b64(
+    `ssr.example:8388:origin:aes-256-cfb:plain:${b64('ssr-pass')}/?remarks=${b64('SSR Node')}`,
+  );
+  const ssr = shareNodeToProxy(parseShareLink(`ssr://${ssrPayload}`));
+  assert.equal(ssr.type, 'ssr');
+  assert.equal(ssr.cipher, 'aes-256-cfb');
+  assert.equal(ssr.password, 'ssr-pass');
+  assert.equal(ssr.protocol, 'origin');
+  assert.equal(ssr.obfs, 'plain');
+
+  const socks = shareNodeToProxy(parseShareLink('socks5://user:pass@127.0.0.1:1080#SOCKS'));
+  assert.equal(socks.type, 'socks5');
+  assert.equal(socks.username, 'user');
+  assert.equal(socks.password, 'pass');
 });

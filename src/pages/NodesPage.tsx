@@ -33,8 +33,6 @@ import { delayTone, expiresIn, formatDateTime, formatDelay, formatRelative, form
 import { cx } from '../lib/misc';
 import { offerUndo } from '../lib/undo';
 
-type ImportTab = 'subscription' | 'file' | 'paste' | 'manual' | 'verge';
-
 const TYPE_META: Record<SourceType, { label: string; icon: typeof Link2 }> = {
   subscription: { label: '订阅链接', icon: Link2 },
   file: { label: '本地 YAML', icon: FileText },
@@ -77,7 +75,6 @@ export function NodesPage() {
   const [sourceFilter, setSourceFilter] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
-  const [importTab, setImportTab] = useState<ImportTab>('subscription');
   const [importOpen, setImportOpen] = useState(false);
   const [settingsSourceId, setSettingsSourceId] = useState<string | null>(null);
   const [refreshingSource, setRefreshingSource] = useState<string | null>(null);
@@ -105,13 +102,7 @@ export function NodesPage() {
     const q = params.get('q');
     if (!add && !q) return;
     if (q) setQuery(q);
-    if (add) {
-      const tab: ImportTab = ['subscription', 'file', 'paste', 'manual', 'verge'].includes(add)
-        ? (add as ImportTab)
-        : 'subscription';
-      setImportTab(tab);
-      setImportOpen(true);
-    }
+    if (add) setImportOpen(true);
     const next = new URLSearchParams(params);
     next.delete('add');
     next.delete('q');
@@ -398,6 +389,15 @@ export function NodesPage() {
   };
 
   const enabledCount = workspace.nodes.filter((node) => node.enabled).length;
+  const hasFilters = Boolean(tagFilter || query || sourceFilter || onlyFailed || onlyDisabled || onlyDuplicate);
+  const clearFilters = () => {
+    setTagFilter('');
+    setQuery('');
+    setSourceFilter('');
+    setOnlyFailed(false);
+    setOnlyDisabled(false);
+    setOnlyDuplicate(false);
+  };
   const selectedSource = sourceFilter ? workspace.sources.find((source) => source.id === sourceFilter) : undefined;
   const refreshableSources = workspace.sources.filter(
     (source) => source.type === 'subscription' || source.type === 'verge',
@@ -563,6 +563,13 @@ export function NodesPage() {
                 placeholder="搜索节点名、服务器或标签"
                 aria-label="搜索节点"
               />
+              <span className="search-clear-slot">
+                {hasFilters ? (
+                  <button className="icon-btn" onClick={clearFilters} title="清除筛选" aria-label="清除筛选">
+                    <X size={12} />
+                  </button>
+                ) : null}
+              </span>
             </div>
             <Select
               compact
@@ -609,21 +616,6 @@ export function NodesPage() {
                 title="合并配置完全相同的节点，并保留一个"
               >
                 合并 {duplicateInfo.groups.length} 组
-              </button>
-            ) : null}
-            {tagFilter || query || sourceFilter || onlyFailed || onlyDisabled || onlyDuplicate ? (
-              <button
-                className="btn btn-sm btn-ghost"
-                onClick={() => {
-                  setTagFilter('');
-                  setQuery('');
-                  setSourceFilter('');
-                  setOnlyFailed(false);
-                  setOnlyDisabled(false);
-                  setOnlyDuplicate(false);
-                }}
-              >
-                <X size={12} /> 清除
               </button>
             ) : null}
             <span className="spacer" />
@@ -682,14 +674,7 @@ export function NodesPage() {
                 }
                 actions={
                   workspace.nodes.length ? (
-                    <button className="btn btn-sm btn-outline" onClick={() => {
-                      setQuery('');
-                      setTagFilter('');
-                      setSourceFilter('');
-                      setOnlyFailed(false);
-                      setOnlyDisabled(false);
-                      setOnlyDuplicate(false);
-                    }}>
+                    <button className="btn btn-sm btn-outline" onClick={clearFilters}>
                       清除筛选
                     </button>
                   ) : null
@@ -803,9 +788,7 @@ export function NodesPage() {
           </div>
         </section>
 
-      {importOpen ? (
-        <ImportSourceDialog initialTab={importTab} onClose={() => setImportOpen(false)} />
-      ) : null}
+      {importOpen ? <ImportSourceDialog onClose={() => setImportOpen(false)} /> : null}
 
       {editingNode ? <NodeEditor node={editingNode} onClose={() => setEditingNodeId(null)} /> : null}
 

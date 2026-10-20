@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Exit, RuleRoute, Workspace, WorkspaceSettings } from '../shared/types';
 import { WORKSPACE_VERSION } from '../shared/types';
-import { nodeDisplayName } from '../shared/model';
+import { nodeDisplayName, pruneUnavailableExitMembers } from '../shared/model';
 
 export const DEFAULT_SETTINGS: WorkspaceSettings = {
   onboarded: false,
@@ -88,6 +88,8 @@ export function ensureWorkspaceShape(workspace: Workspace): Workspace {
       };
     }
   }
+
+  pruneUnavailableExitMembers(workspace);
 
   const builtins = createBuiltinExits();
   for (const b of builtins) {

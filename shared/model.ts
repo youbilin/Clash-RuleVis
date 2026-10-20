@@ -76,6 +76,16 @@ export function routeTargetInfo(route: Route, workspace: Workspace): RouteTarget
   return { kind: 'exit', id: exit.id, name: exit.name, available: true, exit };
 }
 
+export function pruneUnavailableExitMembers(workspace: Workspace): void {
+  const enabledNodeIds = new Set(workspace.nodes.filter((node) => node.enabled).map((node) => node.id));
+  for (const exit of workspace.exits) {
+    if (!exit.members.some((member) => member.by === 'node')) continue;
+    exit.members = exit.members.filter(
+      (member) => member.by !== 'node' || enabledNodeIds.has(member.value),
+    );
+  }
+}
+
 export function collectTags(nodes: ProxyNode[]): string[] {
   const seen = new Map<string, string>();
   for (const node of nodes) {
