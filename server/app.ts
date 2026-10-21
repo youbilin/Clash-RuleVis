@@ -662,15 +662,18 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
       providers: {},
       warnings: [],
     };
-    const source: Source = {
-      id: randomUUID(),
-      type: 'manual',
-      name: typeof proxy.name === 'string' && proxy.name.trim() ? proxy.name.trim() : MANUAL_SOURCE_NAME,
-      prefix: '',
-      keepRules: false,
-      updatedAt: new Date().toISOString(),
-      note: MANUAL_SOURCE_NOTE,
-    };
+    const existing = getWorkspace().sources.find((item) => item.type === 'manual');
+    const source: Source = existing
+      ? { ...existing }
+      : {
+          id: randomUUID(),
+          type: 'manual',
+          name: MANUAL_SOURCE_NAME,
+          prefix: '',
+          keepRules: false,
+          updatedAt: new Date().toISOString(),
+          note: MANUAL_SOURCE_NOTE,
+        };
     return importParsed(source, parsed, false, '添加手动节点');
   });
 

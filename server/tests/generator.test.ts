@@ -253,10 +253,11 @@ test('chain nodes export as independent proxies with dialer-proxy', () => {
   assert.equal(chainNode.raw['dialer-proxy'], 'X-日本 01');
 });
 
-test('manual link sources are split into one source per node', () => {
+test('manual link sources are merged into one 节点链接 source', () => {
   const workspace = makeWorkspace();
   workspace.sources.push(
-    { id: 'm1', type: 'manual', name: '节点链接', prefix: '', keepRules: true },
+    { id: 'm1', type: 'manual', name: 'Relay-A', prefix: '', keepRules: false },
+    { id: 'm2', type: 'manual', name: 'Landing-B', prefix: '', keepRules: false },
     { id: 'empty-manual', type: 'manual', name: '空来源', prefix: '', keepRules: false },
   );
   workspace.nodes.push(
@@ -271,7 +272,7 @@ test('manual link sources are split into one source per node', () => {
     },
     {
       id: 'mn2',
-      sourceId: 'm1',
+      sourceId: 'm2',
       name: 'Landing-B',
       raw: { name: 'Landing-B', type: 'ss', server: 'landing.example.com', port: 8389 },
       tags: [],
@@ -281,13 +282,12 @@ test('manual link sources are split into one source per node', () => {
   );
   ensureWorkspaceShape(workspace);
   const manualSources = workspace.sources.filter((source) => source.type === 'manual');
-  assert.equal(manualSources.length, 2);
-  assert.deepEqual(manualSources.map((source) => source.name).sort(), ['Landing-B', 'Relay-A']);
-  assert.ok(manualSources.every((source) => source.note === 'manual-link'));
+  assert.equal(manualSources.length, 1);
+  assert.equal(manualSources[0]!.name, '节点链接');
+  assert.equal(manualSources[0]!.note, 'manual-link');
   assert.ok(!workspace.sources.some((source) => source.id === 'empty-manual'));
   const manualNodes = workspace.nodes.filter((node) => node.id === 'mn1' || node.id === 'mn2');
-  assert.equal(new Set(manualNodes.map((node) => node.sourceId)).size, 2);
-  assert.ok(manualNodes.every((node) => manualSources.some((source) => source.id === node.sourceId)));
+  assert.ok(manualNodes.every((node) => node.sourceId === manualSources[0]!.id));
 });
 
 test('disabling a node prunes its direct exit membership', () => {

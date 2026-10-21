@@ -802,9 +802,7 @@ export function NodesPage() {
                           {node.chain ? <span className="badge badge-blue">链式</span> : null}
                         </div>
                         <div className="node-name-sub">
-                          {source?.type === 'manual' && source.name === display
-                            ? '手动节点'
-                            : source?.name ?? '未知来源'}
+                          {source?.name ?? '未知来源'}
                           {source?.prefix ? <span className="faint"> · 原名 {node.name}</span> : null}
                         </div>
                       </div>

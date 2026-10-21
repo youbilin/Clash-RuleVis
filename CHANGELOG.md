@@ -7,10 +7,9 @@
 - Node latency tests now wait 5 seconds and explain when a node is not present
   in the running kernel. Batch tests report success/failure counts, and failed
   rows keep the exact reason in their tooltip.
-- Directly imported nodes now create one source per node instead of sharing a
-  single “节点链接” source. Existing grouped manual sources are split on load.
-- Deleting the last node of a source now removes that source as well; empty
-  manual sources are pruned when a workspace is normalized.
+- Directly imported nodes stay grouped in the single “节点链接” source.
+  Deleting the last node of a source removes that source, and empty manual
+  sources are pruned when a workspace is normalized.
 
 ## 0.3.2 — 2026-10-21
 

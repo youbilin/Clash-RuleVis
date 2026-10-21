@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::model::{Exit, Route, RuleRoute, Source, Workspace, WORKSPACE_VERSION};
+use crate::model::{Exit, Route, RuleRoute, Workspace, WORKSPACE_VERSION};
 
 pub const MANUAL_SOURCE_NAME: &str = "节点链接";
 pub const MANUAL_SOURCE_NOTE: &str = "manual-link";
@@ -100,76 +100,72 @@ pub fn create_builtin_exits() -> Vec<Exit> {
 }
 
 pub fn normalize_manual_sources(workspace: &mut Workspace) {
-    let manual_sources: Vec<Source> = workspace
+    let manual_ids: Vec<String> = workspace
         .sources
         .iter()
         .filter(|source| source.kind == "manual")
-        .cloned()
+        .map(|source| source.id.clone())
         .collect();
-    if manual_sources.is_empty() {
+    if manual_ids.is_empty() {
         return;
     }
-    let mut empty_ids = HashSet::new();
-    for source in manual_sources {
-        let node_indexes: Vec<usize> = workspace
+
+    let canonical_id = workspace
+        .sources
+        .iter()
+        .find(|source| {
+            source.kind == "manual" && source.note.as_deref() == Some(MANUAL_SOURCE_NOTE)
+        })
+        .map(|source| source.id.clone())
+        .unwrap_or_else(|| manual_ids[0].clone());
+    let merged_ids: HashSet<String> = manual_ids
+        .iter()
+        .filter(|id| **id != canonical_id)
+        .cloned()
+        .collect();
+
+    let canonical_has_note = workspace
+        .sources
+        .iter()
+        .find(|source| source.id == canonical_id)
+        .and_then(|source| source.note.as_deref())
+        == Some(MANUAL_SOURCE_NOTE);
+    if merged_ids.is_empty() && canonical_has_note {
+        if !workspace
             .nodes
             .iter()
-            .enumerate()
-            .filter(|(_, node)| node.source_id == source.id)
-            .map(|(index, _)| index)
-            .collect();
-        if node_indexes.is_empty() {
-            empty_ids.insert(source.id.clone());
-            continue;
-        }
-        if let Some(target) = workspace
-            .sources
-            .iter_mut()
-            .find(|item| item.id == source.id)
+            .any(|node| node.source_id == canonical_id)
         {
-            target.note = Some(MANUAL_SOURCE_NOTE.to_string());
+            workspace.sources.retain(|source| source.id != canonical_id);
         }
-        if node_indexes.len() == 1 {
-            continue;
-        }
-        let first_name = if workspace.nodes[node_indexes[0]].name.is_empty() {
-            MANUAL_SOURCE_NAME.to_string()
-        } else {
-            workspace.nodes[node_indexes[0]].name.clone()
-        };
-        if let Some(target) = workspace
-            .sources
-            .iter_mut()
-            .find(|item| item.id == source.id)
-        {
-            target.name = first_name;
-            target.keep_rules = false;
-        }
-        for index in &node_indexes[1..] {
-            let node_id = workspace.nodes[*index].id.clone();
-            let node_name = if workspace.nodes[*index].name.is_empty() {
-                MANUAL_SOURCE_NAME.to_string()
-            } else {
-                workspace.nodes[*index].name.clone()
-            };
-            let mut source_id = format!("manual-{}", node_id);
-            let mut suffix = 2;
-            while workspace.sources.iter().any(|item| item.id == source_id) {
-                source_id = format!("manual-{}-{}", node_id, suffix);
-                suffix += 1;
-            }
-            let mut next = source.clone();
-            next.id = source_id.clone();
-            next.name = node_name;
-            next.keep_rules = false;
-            next.note = Some(MANUAL_SOURCE_NOTE.to_string());
-            workspace.sources.push(next);
-            workspace.nodes[*index].source_id = source_id;
+        return;
+    }
+
+    if let Some(canonical) = workspace
+        .sources
+        .iter_mut()
+        .find(|source| source.id == canonical_id)
+    {
+        canonical.name = MANUAL_SOURCE_NAME.to_string();
+        canonical.note = Some(MANUAL_SOURCE_NOTE.to_string());
+        canonical.keep_rules = false;
+    }
+
+    for node in &mut workspace.nodes {
+        if merged_ids.contains(&node.source_id) {
+            node.source_id = canonical_id.clone();
         }
     }
     workspace
         .sources
-        .retain(|source| !empty_ids.contains(&source.id));
+        .retain(|source| !merged_ids.contains(&source.id));
+    if !workspace
+        .nodes
+        .iter()
+        .any(|node| node.source_id == canonical_id)
+    {
+        workspace.sources.retain(|source| source.id != canonical_id);
+    }
 }
 
 fn sync_chain_dialer_proxies(workspace: &mut Workspace) {

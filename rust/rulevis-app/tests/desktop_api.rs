@@ -154,13 +154,12 @@ fn manual_nodes_chain_export_history_and_restore_work_end_to_end() {
 
     let workspace = add_manual_node(&state, "东京 01", "tokyo.example.com");
     assert_eq!(workspace["nodes"].as_array().unwrap().len(), 1);
-    assert_eq!(workspace["sources"][0]["name"], json!("东京 01"));
+    assert_eq!(workspace["sources"][0]["name"], json!("节点链接"));
     assert_eq!(workspace["sources"][0]["note"], json!("manual-link"));
 
     let workspace = add_manual_node(&state, "洛杉矶 01", "la.example.com");
     assert_eq!(workspace["nodes"].as_array().unwrap().len(), 2);
-    assert_eq!(workspace["sources"].as_array().unwrap().len(), 2);
-    assert_eq!(workspace["sources"][1]["name"], json!("洛杉矶 01"));
+    assert_eq!(workspace["sources"].as_array().unwrap().len(), 1);
 
     let relay_id = node_id_by_name(&workspace, "东京 01");
     let landing_id = node_id_by_name(&workspace, "洛杉矶 01");

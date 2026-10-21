@@ -69,35 +69,29 @@ export const MANUAL_SOURCE_NAME = '节点链接';
 export const MANUAL_SOURCE_NOTE = 'manual-link';
 
 export function normalizeManualSources(workspace: Workspace): void {
-  const emptyIds = new Set<string>();
-  for (const source of workspace.sources.filter((item) => item.type === 'manual')) {
-    const nodes = workspace.nodes.filter((node) => node.sourceId === source.id);
-    if (!nodes.length) {
-      emptyIds.add(source.id);
-      continue;
+  const manualSources = workspace.sources.filter((source) => source.type === 'manual');
+  if (!manualSources.length) return;
+  const canonical =
+    manualSources.find((source) => source.note === MANUAL_SOURCE_NOTE) ?? manualSources[0];
+  const others = manualSources.filter((source) => source.id !== canonical.id);
+  if (!others.length && canonical.note === MANUAL_SOURCE_NOTE) {
+    if (!workspace.nodes.some((node) => node.sourceId === canonical.id)) {
+      workspace.sources = workspace.sources.filter((source) => source.id !== canonical.id);
     }
-    source.note = MANUAL_SOURCE_NOTE;
-    if (nodes.length === 1) continue;
-    const [first, ...rest] = nodes;
-    source.name = first!.name || MANUAL_SOURCE_NAME;
-    source.keepRules = false;
-    for (const node of rest) {
-      let id = `manual-${node.id}`;
-      let suffix = 2;
-      while (workspace.sources.some((item) => item.id === id)) {
-        id = `manual-${node.id}-${suffix++}`;
-      }
-      workspace.sources.push({
-        ...source,
-        id,
-        name: node.name || MANUAL_SOURCE_NAME,
-        updatedAt: new Date().toISOString(),
-      });
-      node.sourceId = id;
-    }
+    return;
   }
-  if (emptyIds.size) {
-    workspace.sources = workspace.sources.filter((source) => !emptyIds.has(source.id));
+  canonical.name = MANUAL_SOURCE_NAME;
+  canonical.note = MANUAL_SOURCE_NOTE;
+  canonical.keepRules = false;
+  const mergedIds = new Set(others.map((source) => source.id));
+  for (const node of workspace.nodes) {
+    if (mergedIds.has(node.sourceId)) node.sourceId = canonical.id;
+  }
+  if (mergedIds.size) {
+    workspace.sources = workspace.sources.filter((source) => !mergedIds.has(source.id));
+  }
+  if (!workspace.nodes.some((node) => node.sourceId === canonical.id)) {
+    workspace.sources = workspace.sources.filter((source) => source.id !== canonical.id);
   }
 }
 
