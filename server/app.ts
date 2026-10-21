@@ -43,7 +43,7 @@ import { RULE_SETS_DIR } from './paths';
 import { fileExists, isPathInside } from './fsutil';
 import { redactLog } from './logging';
 
-const APP_VERSION = '0.3.2';
+const APP_VERSION = '0.3.3';
 const COOKIE_NAME = 'crs_session';
 
 class HttpError extends Error {
@@ -535,7 +535,11 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
           const delay = await kernel.testNode(name, url);
           results[index] = { name, delay: delay ?? undefined };
         } catch (error) {
-          results[index] = { name, error: (error as Error).message };
+          const message = (error as Error).message;
+          results[index] = {
+            name,
+            error: /404|not found/i.test(message) ? '节点尚未应用到当前内核' : message,
+          };
         }
       }
     };
@@ -658,18 +662,15 @@ export async function buildServer(): Promise<{ app: FastifyInstance; aggregator:
       providers: {},
       warnings: [],
     };
-    const existing = getWorkspace().sources.find((item) => item.type === 'manual');
-    const source: Source = existing
-      ? { ...existing }
-      : {
-          id: randomUUID(),
-          type: 'manual',
-          name: MANUAL_SOURCE_NAME,
-          prefix: '',
-          keepRules: false,
-          updatedAt: new Date().toISOString(),
-          note: MANUAL_SOURCE_NOTE,
-        };
+    const source: Source = {
+      id: randomUUID(),
+      type: 'manual',
+      name: typeof proxy.name === 'string' && proxy.name.trim() ? proxy.name.trim() : MANUAL_SOURCE_NAME,
+      prefix: '',
+      keepRules: false,
+      updatedAt: new Date().toISOString(),
+      note: MANUAL_SOURCE_NOTE,
+    };
     return importParsed(source, parsed, false, '添加手动节点');
   });
 

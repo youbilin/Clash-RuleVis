@@ -1,6 +1,6 @@
 [package]
 name = "rulevis-core"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 description = "Rust core for Clash RuleVis: workspace normalization, config generation and share-link parsing."
 license = "MIT"

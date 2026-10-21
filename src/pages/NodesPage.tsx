@@ -229,11 +229,15 @@ export function NodesPage() {
     const targetRules = workspace.routes.filter(
       (route) => route.kind === 'rule' && route.targetNodeId === node.id,
     ).length;
+    const lastOfSource = !workspace.nodes.some(
+      (item) => item.id !== node.id && item.sourceId === node.sourceId,
+    );
     const confirmed = await confirm({
       title: '删除节点',
       message: [
         `将删除节点「${display}」，并自动从出口的直接成员中移除。`,
         targetRules ? `引用它的 ${targetRules} 条规则会一起删除。` : '',
+        lastOfSource && source ? `这是来源「${source.name}」的最后一个节点，来源记录会一起移除。` : '',
         '删除前会自动创建工作区快照。',
       ]
         .filter(Boolean)
@@ -249,9 +253,7 @@ export function NodesPage() {
         (route) => !(route.kind === 'rule' && route.targetNodeId === node.id),
       );
       if (!draft.nodes.some((item) => item.sourceId === node.sourceId)) {
-        draft.sources = draft.sources.filter(
-          (item) => item.id !== node.sourceId || (item.type !== 'manual' && item.type !== 'chain'),
-        );
+        draft.sources = draft.sources.filter((item) => item.id !== node.sourceId);
       }
     });
     notifyRemoved(undo, '节点已删除', display);
@@ -471,6 +473,9 @@ export function NodesPage() {
       nameToNodes.set(name, [...(nameToNodes.get(name) ?? []), node]);
     }
     const names = [...nameToNodes.keys()];
+    let success = 0;
+    let failed = 0;
+    const errors: string[] = [];
     for (let offset = 0; offset < names.length; offset += 40) {
       const batch = names.slice(offset, offset + 40);
       const response = await api<{ results: DelayResult[] }>('/api/delay', {
@@ -478,22 +483,30 @@ export function NodesPage() {
         body: { names: batch },
       });
       const byName = new Map(response.results.map((result) => [result.name, result]));
-      setNodeHealth((current) => {
-        const next = { ...current };
-        for (const name of batch) {
-          const result = byName.get(name);
-          if (!result) continue;
-          for (const node of nameToNodes.get(name) ?? []) {
-            next[node.id] = result.error
-              ? { error: result.error, at: Date.now() }
-              : result.delay
-                ? { delay: result.delay, at: Date.now() }
-                : { error: '测速无响应', at: Date.now() };
+      const updates: Record<string, NodeHealth> = {};
+      for (const name of batch) {
+        const result = byName.get(name);
+        if (!result) continue;
+        for (const node of nameToNodes.get(name) ?? []) {
+          if (result.error) {
+            failed += 1;
+            errors.push(result.error);
+            updates[node.id] = { error: result.error, at: Date.now() };
+          } else if (result.delay) {
+            success += 1;
+            updates[node.id] = { delay: result.delay, at: Date.now() };
+          } else {
+            failed += 1;
+            errors.push('测速无响应');
+            updates[node.id] = { error: '测速无响应', at: Date.now() };
           }
         }
-        return next;
-      });
+      }
+      if (Object.keys(updates).length) {
+        setNodeHealth((current) => ({ ...current, ...updates }));
+      }
     }
+    return { success, failed, errors };
   };
 
   const testAllNodes = async () => {
@@ -508,8 +521,19 @@ export function NodesPage() {
     }
     setTestingAll(true);
     try {
-      await requestDelays(targets);
-      toast('success', '测速完成', `已测试 ${targets.length} 个节点`);
+      const outcome = await requestDelays(targets);
+      if (outcome.failed) {
+        const missing = outcome.errors.some((error) => /404|not found|未应用|内核/i.test(error));
+        toast(
+          outcome.success ? 'warn' : 'error',
+          `测速完成：${outcome.success} 成功，${outcome.failed} 失败`,
+          missing
+            ? '有节点尚未应用到当前内核；先在 Clash Verge 导入导出的 YAML，再重新测速'
+            : '把鼠标放到失败标记上可以查看具体原因',
+        );
+      } else {
+        toast('success', '测速完成', `已测试 ${targets.length} 个节点`);
+      }
     } catch (error) {
       toast('error', '测速失败', (error as Error).message);
     } finally {
@@ -521,7 +545,8 @@ export function NodesPage() {
     if (!node.enabled || testingNodeId) return;
     setTestingNodeId(node.id);
     try {
-      await requestDelays([node]);
+      const outcome = await requestDelays([node]);
+      if (outcome.failed) toast('error', '测速失败', outcome.errors[0] ?? '节点无响应');
     } catch (error) {
       toast('error', '测速失败', (error as Error).message);
     } finally {
@@ -777,7 +802,9 @@ export function NodesPage() {
                           {node.chain ? <span className="badge badge-blue">链式</span> : null}
                         </div>
                         <div className="node-name-sub">
-                          {source?.name ?? '未知来源'}
+                          {source?.type === 'manual' && source.name === display
+                            ? '手动节点'
+                            : source?.name ?? '未知来源'}
                           {source?.prefix ? <span className="faint"> · 原名 {node.name}</span> : null}
                         </div>
                       </div>

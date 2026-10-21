@@ -187,21 +187,28 @@ fn default_workspace_has_builtins_auto_all_and_match() {
 }
 
 #[test]
-fn normalization_merges_manual_sources_and_repairs_shape() {
+fn normalization_splits_manual_sources_and_repairs_shape() {
     let mut workspace = empty_workspace();
-    workspace.sources = vec![
-        Source {
-            note: Some("manual-link".to_string()),
-            ..manual_source("manual-a", "节点链接")
-        },
-        manual_source("manual-b", "另一个节点链接"),
+    workspace.sources = vec![manual_source("manual-a", "节点链接")];
+    workspace.nodes = vec![
+        proxy_node("node-1", "manual-a", "节点一", true),
+        proxy_node("node-2", "manual-a", "节点二", true),
     ];
-    workspace.nodes = vec![proxy_node("node-1", "manual-b", "节点一", true)];
 
     normalize_manual_sources(&mut workspace);
-    assert_eq!(workspace.sources.len(), 1);
-    assert_eq!(workspace.sources[0].id, "manual-a");
-    assert_eq!(workspace.nodes[0].source_id, "manual-a");
+    assert_eq!(workspace.sources.len(), 2);
+    let mut names: Vec<&str> = workspace
+        .sources
+        .iter()
+        .map(|source| source.name.as_str())
+        .collect();
+    names.sort();
+    assert_eq!(names, vec!["节点一", "节点二"]);
+    assert_ne!(workspace.nodes[0].source_id, workspace.nodes[1].source_id);
+    assert!(workspace
+        .sources
+        .iter()
+        .all(|source| source.note.as_deref() == Some("manual-link")));
 
     ensure_workspace_shape(&mut workspace);
     assert_eq!(workspace.version, 2);

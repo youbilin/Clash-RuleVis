@@ -481,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "rulevis-app"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "base64",
  "chrono",
@@ -500,7 +500,7 @@ dependencies = [
 
 [[package]]
 name = "rulevis-core"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "base64",
  "percent-encoding",

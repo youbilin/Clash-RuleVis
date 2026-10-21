@@ -98,6 +98,16 @@ async function main() {
       { link: 'ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@relay.example.com:8388#Relay-A', name: 'Relay-A' },
       { link: 'ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@landing.example.com:8389#Landing-B', name: 'Landing-B' },
     ]);
+    const manualSources = await page.evaluate(async () => {
+      const response = await fetch('/api/workspace', {
+        headers: { 'X-Requested-With': 'clash-route-desk' },
+      });
+      return (await response.json()).workspace.sources
+        .filter((source) => source.type === 'manual')
+        .map((source) => source.name)
+        .sort();
+    });
+    assert.deepEqual(manualSources, ['Landing-B', 'Relay-A'], '直链节点应各自拥有独立来源');
 
     const duplicateStatus = await page.evaluate(async () => {
       const response = await fetch('/api/workspace', {
@@ -323,6 +333,30 @@ async function main() {
     });
     assert.ok(remainingNames.includes('Relay-A') && remainingNames.includes('Landing-B'));
     assert.ok(!remainingNames.includes('E2E 链路'));
+
+    await page.goto(`${baseUrl}/nodes`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.nodes-page').waitFor();
+    const landingRow = page.locator('.node-row', { hasText: 'Landing-B' });
+    await landingRow.locator('.node-row-actions .icon-btn.danger').click();
+    await page
+      .getByRole('alertdialog', { name: '删除节点' })
+      .getByRole('button', { name: '删除节点' })
+      .click();
+    await page.locator('.toast-title', { hasText: '节点已删除' }).waitFor();
+    await page.waitForTimeout(700);
+    const afterNodeDelete = await page.evaluate(async () => {
+      const response = await fetch('/api/workspace', {
+        headers: { 'X-Requested-With': 'clash-route-desk' },
+      });
+      const workspace = (await response.json()).workspace;
+      return {
+        sources: workspace.sources.filter((source) => source.type === 'manual').map((source) => source.name),
+        nodes: workspace.nodes.map((node) => node.name),
+      };
+    });
+    assert.ok(afterNodeDelete.sources.includes('Relay-A'));
+    assert.ok(!afterNodeDelete.sources.includes('Landing-B'), '删除最后一个节点后应同步删除来源');
+    assert.ok(!afterNodeDelete.nodes.includes('Landing-B'));
 
     const bulkStatus = await page.evaluate(async () => {
       const response = await fetch('/api/workspace', {

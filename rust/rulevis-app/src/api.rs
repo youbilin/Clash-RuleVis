@@ -8,7 +8,7 @@ use base64::Engine as _;
 use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
-use rulevis_core::defaults::{MANUAL_SOURCE_NAME, MANUAL_SOURCE_NOTE};
+use rulevis_core::defaults::MANUAL_SOURCE_NOTE;
 use rulevis_core::model::{
     ChainMeta, Exit, InlineRule, ProxyNode, Route, RuleSetRoute, RuleSetSource, Source, Workspace,
 };
@@ -625,10 +625,18 @@ fn test_delays(state: &AppState, body: Option<Value>) -> Result<Value, ApiFailur
                     break;
                 }
                 let name = &names[index];
-                let value = match test_node_with(&connection, name, url, 4000) {
+                let value = match test_node_with(&connection, name, url, 5000) {
                     Ok(Some(delay)) => json!({ "name": name, "delay": delay }),
-                    Ok(None) => json!({ "name": name }),
-                    Err(error) => json!({ "name": name, "error": error.message }),
+                    Ok(None) => json!({ "name": name, "error": "测速无响应" }),
+                    Err(error) => {
+                        let message =
+                            if error.code == "KERNEL_HTTP" && error.message.contains("404") {
+                                "节点尚未应用到当前内核".to_string()
+                            } else {
+                                error.message
+                            };
+                        json!({ "name": name, "error": message })
+                    }
                 };
                 if let Ok(mut results) = results.lock() {
                     results[index] = value;
@@ -1174,44 +1182,19 @@ fn import_manual_node(state: &AppState, body: Option<Value>) -> Result<Value, Ap
                     return Ok((0usize, 1usize));
                 }
                 let now = now_iso();
-                let source_index = workspace
-                    .sources
-                    .iter()
-                    .position(|source| source.kind == "manual");
-                let source_id = if let Some(index) = source_index {
-                    workspace.sources[index].updated_at = Some(now.clone());
-                    workspace.sources[index].id.clone()
-                } else {
-                    let id = Uuid::new_v4().to_string();
-                    workspace.sources.push(Source {
-                        id: id.clone(),
-                        kind: "manual".to_string(),
-                        name: MANUAL_SOURCE_NAME.to_string(),
-                        url: None,
-                        prefix: String::new(),
-                        keep_rules: false,
-                        updated_at: Some(now.clone()),
-                        userinfo: None,
-                        note: Some(MANUAL_SOURCE_NOTE.to_string()),
-                    });
-                    id
+                let source_id = Uuid::new_v4().to_string();
+                let source = Source {
+                    id: source_id,
+                    kind: "manual".to_string(),
+                    name: raw_name.to_string(),
+                    url: None,
+                    prefix: String::new(),
+                    keep_rules: false,
+                    updated_at: Some(now.clone()),
+                    userinfo: None,
+                    note: Some(MANUAL_SOURCE_NOTE.to_string()),
                 };
-                let source = workspace
-                    .sources
-                    .iter()
-                    .find(|source| source.id == source_id)
-                    .cloned()
-                    .unwrap_or(Source {
-                        id: source_id.clone(),
-                        kind: "manual".to_string(),
-                        name: MANUAL_SOURCE_NAME.to_string(),
-                        url: None,
-                        prefix: String::new(),
-                        keep_rules: false,
-                        updated_at: None,
-                        userinfo: None,
-                        note: Some(MANUAL_SOURCE_NOTE.to_string()),
-                    });
+                workspace.sources.push(source.clone());
                 let used_names: HashSet<String> = workspace
                     .nodes
                     .iter()

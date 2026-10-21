@@ -511,7 +511,7 @@ export class Kernel {
     return this.request<MihomoProviders>('/providers/rules', { timeout: 6000 });
   }
 
-  async testNode(name: string, url: string, timeout = 4000): Promise<number | null> {
+  async testNode(name: string, url: string, timeout = 5000): Promise<number | null> {
     const query = new URLSearchParams({ url, timeout: String(timeout) });
     const data = await this.request<{ delay?: number }>(
       `/proxies/${encodeURIComponent(name)}/delay?${query.toString()}`,
