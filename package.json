@@ -1,7 +1,7 @@
 {
   "name": "clash-route-desk",
   "private": true,
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "Local-first visual routing workbench for Clash Verge and mihomo.",
   "license": "MIT",
   "type": "module",

@@ -28,6 +28,7 @@ use crate::storage::{now_iso, NewHistory, Store, StoreError};
 use crate::types::{ApiFailure, AppStatus, KernelStatus, StatusCounts, StatusWorkspace};
 use crate::validation::validate_config;
 use crate::verge;
+use crate::verge_live;
 
 pub struct AppState {
     store: Arc<Mutex<Store>>,
@@ -755,6 +756,63 @@ pub fn handle_request(
             kernel.discover(true);
             Ok(json!({ "status": kernel.status() }))
         }),
+        ("GET", "/api/verge/live") => {
+            with_store(state, |store| serialize(verge_live::status(store)))
+        }
+        ("POST", "/api/verge/live/enable") => with_store(state, |store| {
+            let view =
+                verge_live::enable(store).map_err(|message| ApiFailure::new(409, message))?;
+            serialize(view)
+        }),
+        ("POST", "/api/verge/live/apply") => {
+            with_kernel(state, |kernel| {
+                if kernel.connection_snapshot().is_none() {
+                    return Err(ApiFailure::new(409, "内核未连接，无法应用实时配置"));
+                }
+                Ok(())
+            })?;
+            let prepared = with_store(state, |store| {
+                verge_live::prepare_apply(store).map_err(|message| ApiFailure::new(409, message))
+            })?;
+            if let Err(error) = with_kernel(state, |kernel| {
+                verge_live::reload(kernel, &prepared.yaml)
+                    .map_err(|error| ApiFailure::new(409, error.message))
+            }) {
+                let message = error.error.clone();
+                let _ = with_store(state, |store| {
+                    verge_live::rollback_apply(store, &prepared, &message)
+                        .map_err(ApiFailure::internal)
+                });
+                let _ = with_kernel(state, |kernel| {
+                    verge_live::reload(kernel, &prepared.old_yaml)
+                        .map_err(|error| ApiFailure::new(409, error.message))
+                });
+                return Err(error);
+            }
+            with_store(state, |store| {
+                verge_live::finish_apply(store, &prepared).map_err(ApiFailure::internal)
+            })
+        }
+        ("POST", "/api/verge/live/disable") => {
+            let (seed, _original) = with_store(state, |store| {
+                verge_live::prepare_disable(store).map_err(|message| ApiFailure::new(409, message))
+            })?;
+            if let Err(error) = with_kernel(state, |kernel| {
+                verge_live::reload(kernel, &seed)
+                    .map_err(|error| ApiFailure::new(409, error.message))
+            }) {
+                let message = error.error.clone();
+                with_store(state, |store| {
+                    verge_live::fail_disable(store, &message);
+                    Ok(())
+                })?;
+                return Err(error);
+            }
+            with_store(state, |store| {
+                let view = verge_live::finish_disable(store).map_err(ApiFailure::internal)?;
+                serialize(view)
+            })
+        }
         ("POST", "/api/exports/open") => {
             let exports_dir = with_store(state, |store| Ok(store.exports_dir.clone()))?;
             open_directory(&exports_dir)?;

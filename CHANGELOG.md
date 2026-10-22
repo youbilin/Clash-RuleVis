@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.4.0 — 2026-10-22
+
+### Added
+
+- Optional **live mode** for the desktop app. Safe mode remains the default.
+  Live mode creates a dedicated local Clash Verge profile, copies the active
+  profile's nodes, groups, rules and selected policies, and switches Verge to
+  it without touching the subscription profile.
+- “应用到 Clash Verge” in the topbar is the only action that applies live-mode
+  changes. It merges the current workspace while preserving controller, secret,
+  ports and unknown settings, validates the full YAML with mihomo, backs up the
+  previous profile, writes atomically, and reloads the running kernel through
+  `PUT /configs?force=true`. Failures roll the file back and reload the previous
+  configuration.
+- Closing live mode switches back to the original profile, restores the
+  pre-live configuration and keeps the dedicated profile plus backups for later
+  re-enablement.
+- Topbar safe/live status chip, apply button with pending rule count,
+  confirmation dialogs, profile-mismatch detection, and status refresh on focus
+  and every 30 seconds. Applying first flushes unsaved workspace edits.
+- Live-profile backups live in the app-data `verge-backups/` directory. The
+  pre-live seed backup is protected from automatic pruning so safe mode can
+  always be restored.
+- Unit and integration coverage for live-profile creation, selected-policy
+  copying, managed-section merging, controller preservation, apply/disable
+  state, and a mocked controller reload. Rust tests now total 33 plus one
+  optional real-controller smoke test.
+
+### Changed
+
+- Version bumped to 0.4.0. README, README.en and SECURITY now describe safe mode
+  as the default and live mode as an explicit, backed-up opt-in.
+- The E2E harness now asks the OS for a free loopback port instead of picking a
+  random port that may collide with Windows ephemeral allocations.
+
 ## 0.3.3 — 2026-10-21
 
 ### Fixed

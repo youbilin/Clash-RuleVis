@@ -32,8 +32,17 @@ redacted examples.
   publisher.
 - Desktop data (workspace, history snapshots, exports and rule-set files) lives
   in the platform app-data directory. Treat that directory as secret.
-- Imports and exports are local. The tool does not modify Clash Verge profiles
-  and does not trigger a kernel reload.
+- The web and desktop builds default to safe mode: exports are local and the tool
+  does not modify Clash Verge profiles or trigger a kernel reload.
+- Desktop live mode is opt-in and requires explicit confirmation. It creates a
+  dedicated local profile named "Clash RuleVis 实时" and never modifies the active
+  subscription profile. Every apply backs up the previous profile into the
+  app-data `verge-backups/` directory, validates the merged YAML, writes
+  atomically, and reloads the mihomo controller with `PUT /configs?force=true`.
+  Disabling live mode switches back to the original profile and restores the
+  pre-live configuration.
+- Live-profile backups contain node credentials and complete routing config.
+  They are local sensitive files; never attach them to a public issue.
 - Exported YAML never includes source subscription URLs or the controller secret.
 - Node credentials are intentionally written to the generated YAML because the
   kernel needs them; treat exported files as secrets.

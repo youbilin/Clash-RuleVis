@@ -330,7 +330,7 @@ dependencies = [
 
 [[package]]
 name = "clash-route-desk"
-version = "0.3.3"
+version = "0.4.0"
 dependencies = [
  "rulevis-app",
  "serde_json",
@@ -2521,7 +2521,7 @@ dependencies = [
 
 [[package]]
 name = "rulevis-app"
-version = "0.3.3"
+version = "0.4.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -2531,6 +2531,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "sha2",
  "similar",
  "ureq",
  "url",
@@ -2540,7 +2541,7 @@ dependencies = [
 
 [[package]]
 name = "rulevis-core"
-version = "0.3.3"
+version = "0.4.0"
 dependencies = [
  "base64 0.22.1",
  "percent-encoding",

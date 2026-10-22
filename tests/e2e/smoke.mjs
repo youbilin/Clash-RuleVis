@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
@@ -7,7 +8,15 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const port = 4890 + Math.floor(Math.random() * 80);
+
+const port = await new Promise((resolve, reject) => {
+  const probe = net.createServer();
+  probe.on('error', reject);
+  probe.listen(0, '127.0.0.1', () => {
+    const address = probe.address();
+    probe.close(() => resolve(address.port));
+  });
+});
 const baseUrl = `http://127.0.0.1:${port}`;
 const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'clash-routedesk-e2e-'));
 let server;

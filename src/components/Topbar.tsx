@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Activity,
@@ -5,17 +6,22 @@ import {
   GitBranch,
   Layers,
   RadioTower,
+  RotateCcw,
   Search,
   Server,
   Settings,
+  ShieldAlert,
+  ShieldCheck,
+  Upload,
   Waypoints,
 } from 'lucide-react';
 import { useWorkspace } from '../store/workspace';
 import { useLive } from '../store/live';
 import { useUi, toast } from '../store/ui';
+import { useApplyMode } from '../store/applyMode';
 import { formatRelative } from '../lib/format';
 import { cx } from '../lib/misc';
-import { openExternal } from '../api';
+import { isDesktopRuntime, openExternal } from '../api';
 
 function GitHubMark() {
   return (
@@ -43,8 +49,15 @@ export function Topbar() {
   const snapshot = useLive((state) => state.snapshot);
   const setSettingsOpen = useUi((state) => state.setSettingsOpen);
   const setCommandOpen = useUi((state) => state.setCommandOpen);
+  const confirm = useUi((state) => state.confirm);
   const paused = useLive((state) => state.paused);
   const setPaused = useLive((state) => state.setPaused);
+  const liveStatus = useApplyMode((state) => state.status);
+  const liveBusy = useApplyMode((state) => state.busy);
+  const refreshLive = useApplyMode((state) => state.refresh);
+  const enableLive = useApplyMode((state) => state.enable);
+  const disableLive = useApplyMode((state) => state.disable);
+  const applyLive = useApplyMode((state) => state.applyNow);
   const location = useLocation();
   const currentPage = NAV_ITEMS.find((item) => location.pathname.startsWith(item.to))?.label ?? '';
 
@@ -56,6 +69,104 @@ export function Topbar() {
     await saveNow();
     if (useWorkspace.getState().saveState === 'error') {
       toast('error', '仍然无法保存', '请检查本地服务是否在运行');
+    }
+  };
+
+  useEffect(() => {
+    if (!isDesktopRuntime()) return;
+    void refreshLive();
+    const timer = window.setInterval(() => {
+      if (!useApplyMode.getState().busy) void refreshLive();
+    }, 30_000);
+    const onFocus = () => {
+      if (!useApplyMode.getState().busy) void refreshLive();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [refreshLive]);
+
+  const toggleLiveMode = async () => {
+    if (!liveStatus?.available) {
+      toast('warn', '实时模式不可用', liveStatus?.error ?? '未检测到 Clash Verge');
+      return;
+    }
+    if (liveStatus.mode === 'live') {
+      const confirmed = await confirm({
+        title: '关闭实时模式',
+        message: [
+          `将把 Verge 当前 profile 恢复为「${liveStatus.originalProfile?.name ?? '原 profile'}」。`,
+          'Clash RuleVis 创建的本地 profile 会保留，之后可以重新开启实时模式。',
+        ].join('\n\n'),
+        confirmLabel: '恢复并关闭',
+        danger: true,
+      });
+      if (!confirmed) return;
+      try {
+        await disableLive();
+        toast('success', '已关闭实时模式', 'Verge profile 已切回原配置');
+      } catch (error) {
+        toast('error', '关闭实时模式失败', (error as Error).message);
+      }
+      return;
+    }
+    const confirmed = await confirm({
+      title: '开启实时模式',
+      message: [
+        '将创建并切换到一个 Clash RuleVis 本地 Verge profile，不会修改订阅 profile。',
+        '实时模式会复制当前节点与规则；订阅更新后请在节点页刷新并重新应用到 Verge。',
+        '开启后仍需点击「应用到 Clash Verge」才会写入规则；写入时会重载内核，可能短暂断线。',
+        'Verge 界面可能需要重启后同步，但内核和本地 profile 会立即更新。',
+      ].join('\n\n'),
+      confirmLabel: '开启实时模式',
+      danger: true,
+    });
+    if (!confirmed) return;
+    try {
+      await enableLive();
+      toast('success', '实时模式已开启', '点击「应用到 Clash Verge」写入当前配置');
+    } catch (error) {
+      toast('error', '开启实时模式失败', (error as Error).message);
+    }
+  };
+
+  const applyToVerge = async () => {
+    await saveNow();
+    if (useWorkspace.getState().saveState === 'error') {
+      toast('error', '工作区尚未保存', '请先重试保存，再应用到 Clash Verge');
+      return;
+    }
+    try {
+      const result = await applyLive();
+      useWorkspace.getState().applyServerWorkspace(result.workspace);
+      toast(
+        'success',
+        '已应用到 Clash Verge',
+        `${result.profile.name} · 已备份并重载内核`,
+      );
+    } catch (error) {
+      toast('error', '应用到 Clash Verge 失败', (error as Error).message);
+      void refreshLive();
+    }
+  };
+
+  const resumeLive = async () => {
+    const confirmed = await confirm({
+      title: '恢复实时模式',
+      message: [
+        'Verge 当前 profile 已被切换到其他配置。',
+        '恢复会把当前 profile 切回 Clash RuleVis 的专用实时 profile；内核不会自动重载，恢复后请点击「应用到 Clash Verge」写入最新配置。',
+      ].join('\n\n'),
+      confirmLabel: '恢复实时模式',
+    });
+    if (!confirmed) return;
+    try {
+      await enableLive();
+      toast('success', '已恢复实时模式', '点击「应用到 Clash Verge」写入最新配置');
+    } catch (error) {
+      toast('error', '恢复实时模式失败', (error as Error).message);
     }
   };
 
@@ -124,6 +235,62 @@ export function Topbar() {
           ) : null}
           <Settings size={13} />
         </button>
+        {isDesktopRuntime() && liveStatus ? (
+          <>
+            <button
+              type="button"
+              className={cx('apply-mode-chip', liveStatus.mode === 'live' && 'live')}
+              onClick={() => void toggleLiveMode()}
+              disabled={Boolean(liveBusy) || !liveStatus.available}
+              title={
+                !liveStatus.available
+                  ? liveStatus.error ?? '实时模式不可用'
+                  : liveStatus.mode === 'live'
+                    ? liveStatus.currentMatches
+                      ? `实时模式（手动应用） · ${liveStatus.liveProfile?.name ?? '本地 profile'}`
+                      : liveStatus.error ?? 'Verge 当前 profile 已被切换'
+                    : '切换到实时模式'
+              }
+            >
+              {liveStatus.mode === 'live' ? <ShieldAlert size={13} /> : <ShieldCheck size={13} />}
+              {liveStatus.mode === 'live'
+                ? liveStatus.currentMatches
+                  ? '实时模式'
+                  : '实时已暂停'
+                : '安全模式'}
+            </button>
+            {liveStatus.mode === 'live' ? (
+              liveStatus.currentMatches ? (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary apply-to-verge"
+                  onClick={() => void applyToVerge()}
+                  disabled={Boolean(liveBusy) || !connected}
+                  title={
+                    !connected
+                      ? '内核未连接，无法重载实时配置'
+                      : '写入 Clash RuleVis 本地 profile 并重载内核'
+                  }
+                >
+                  <Upload size={13} />
+                  {liveBusy === 'apply' ? '应用中…' : '应用到 Clash Verge'}
+                  {pending > 0 ? <span className="apply-count">{pending}</span> : null}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary apply-to-verge"
+                  onClick={() => void resumeLive()}
+                  disabled={Boolean(liveBusy)}
+                  title={liveStatus.error ?? '把 Verge 当前 profile 切回 Clash RuleVis 实时 profile'}
+                >
+                  <RotateCcw size={13} />
+                  恢复实时模式
+                </button>
+              )
+            ) : null}
+          </>
+        ) : null}
         <button
           type="button"
           className="topbar-github"

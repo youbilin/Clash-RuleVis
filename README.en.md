@@ -30,14 +30,16 @@ See every request as **domain → rule → policy group → node**, then edit, r
 
 Clash routing is spread across subscriptions, policy groups, `rule-providers` and several YAML files. A rule edit often means guessing whether it matches, which policy group it uses, and which node actually carries the traffic.
 
-Clash RuleVis is a local workbench (web and Windows desktop) that connects to a running mihomo controller, shows the live path, lets you drag domains into rules, manage policy groups, and export a complete validated YAML.
+Clash RuleVis is a local workbench (web and Windows desktop) that connects to a running mihomo controller, shows the live path, lets you drag domains into rules, manage policy groups, and export or apply a complete validated YAML.
 
-**Safe mode is a product constraint, not a setting:**
+**Safe mode is the default, and remains the product's core constraint:**
 
 - It never writes Clash Verge configuration or profiles.
 - It never reloads the kernel.
 - Exports are written only to the tool's own directory for manual import.
 - Subscription URLs, node credentials and the controller secret stay on the local machine.
+
+If you want edits to take effect directly, the desktop app offers an optional **live mode**. It writes only to a dedicated local profile, backs up the previous file, and reloads the kernel after you explicitly press **Apply to Clash Verge**. It never modifies your subscription profile.
 
 ## Highlights
 
@@ -47,6 +49,7 @@ Clash RuleVis is a local workbench (web and Windows desktop) that connects to a 
 - **Node health**: single/all latency tests, persisted results, failed/disabled/duplicate filters, duplicate merge.
 - **Visual chain proxy**: left relay + right landing generates a new independent node using `dialer-proxy`; original nodes are untouched.
 - **Safe export**: full YAML, diff against previous export, real `verge-mihomo -t` validation, history dropdown with diff-aware restore.
+- **Live mode (desktop, opt-in)**: switch to a dedicated local Verge profile, press Apply to merge the current workspace, back up and reload the kernel, then switch back to the original profile at any time.
 - **Local data tools**: workspace JSON backup/restore, export confirmation with a custom file name, open export directory, export storage stats with 30-day cleanup, one-click Clash Verge import.
 - **Large directories**: live connections and rules are virtualized, so 1000+ entries stay responsive without hiding data behind pagination.
 - **Offline editing**: start the workbench before Verge; kernel status refreshes in the background and the app offers re-detect plus subscription import.
@@ -107,7 +110,7 @@ npm run rust:test
 npm run desktop:check
 ```
 
-40 web unit tests plus 27 Rust tests, a Playwright smoke flow and a hardware-gated real-controller test. The E2E flow verifies offline entry and subscription import, imports nodes, merges duplicates, creates an exit and a chain node, cleans invalid rules, exports, restores and clears history, checks a 300-rule virtualized list, cleans orphan export files and round-trips a workspace backup.
+40 web unit tests plus 31 Rust tests, a Playwright smoke flow and an optional real-controller test. The E2E flow verifies offline entry and subscription import, imports nodes, merges duplicates, creates an exit and a chain node, cleans invalid rules, exports, restores and clears history, checks a 300-rule virtualized list, cleans orphan export files and round-trips a workspace backup.
 
 ## Windows download
 
@@ -127,6 +130,7 @@ The desktop app keeps the same React UI and uses Rust for the local API. It does
 - Full YAML preview, diff, real `verge-mihomo -t` validation, safe export and history restore.
 - One-click Clash Verge import: serves the current export on a temporary loopback URL and opens `clash://install-config`; the URL can also be copied manually.
 - Read-only Verge profile discovery for base port/DNS/TUN settings.
+- Live mode: creates and switches to a dedicated local profile, applies the workspace on demand, backs up before writing, reloads the kernel, and restores the original profile on exit.
 
 ```bash
 npm run desktop:dev    # Tauri window + Vite
@@ -135,6 +139,8 @@ npm run desktop:build  # Release build + NSIS installer
 ```
 
 Windows builds need Rust stable, MSVC Build Tools with the C++ workload, Windows SDK 10 and the WebView2 runtime. Live features require Clash Verge Rev / mihomo.
+
+Safety boundary: safe mode is the default and never writes a Verge profile or reloads the kernel. Live mode is explicit: it writes only to the Clash RuleVis local profile, backs up the previous file into the app-data directory, and reloads the kernel after you press Apply. Disabling it switches back to the original profile and restores the pre-live configuration. Subscription URLs and the controller secret never appear in exported YAML.
 
 ## Rust core
 
@@ -174,17 +180,20 @@ Override it with `CRS_DATA_DIR`. `data/`, `.demo-data/` and exported files are e
 ## Safety and privacy
 
 - The web build binds `127.0.0.1` with a local session cookie and Origin allowlist; the desktop build normally uses Tauri IPC only. Importing into Verge temporarily opens a random loopback port with a random token and a 30-minute TTL.
+- Live mode is off by default and requires an explicit confirmation. It writes only the dedicated Clash RuleVis local profile, backs up the previous file under the app-data directory, and reloads the kernel only when Apply is pressed.
+- Live mode snapshots the current nodes and rules. Subscription refreshes are not propagated automatically; refresh the source and apply again.
 - No telemetry or third-party analytics.
 - Export YAML excludes subscription source URLs, `external-controller` and `secret`.
 - Node credentials are intentionally present in exported YAML because the kernel needs them; treat exported files as secrets.
-- Workspace backups and the desktop app-data directory contain subscription URLs and node credentials; keep them local.
+- Workspace backups, live-profile backups and the desktop app-data directory contain subscription URLs and node credentials; keep them local.
 
 See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 
 ## Roadmap
 
-- **v0.3 (current)**: Tauri 2 + Rust desktop app with subscription/YAML import, TCP/named-pipe controller, live connections, latency tests, rulesets, mihomo validation and an NSIS installer.
-- **Rust foundation**: `rulevis-core` + `rulevis-app` ship 27 tests covering fixture parity, subscription fetch, desktop API and a real-controller smoke test.
+- **v0.3**: Tauri 2 + Rust desktop app with subscription/YAML import, TCP/named-pipe controller, live connections, latency tests, rulesets, mihomo validation and an NSIS installer.
+- **v0.4 (current)**: optional live mode — switch to a dedicated local profile, press Apply to merge, back up and reload the kernel, and restore the original profile at any time.
+- **Rust foundation**: `rulevis-core` + `rulevis-app` ship 33 automated tests covering fixture parity, desktop API, live-profile merge/restore and the reload request, plus an optional real-controller smoke test.
 - **Next**: code signing, auto-update, tray, multi-hop chains and Proxy Provider support.
 - **Platform**: Windows x64 installer today; the web build runs on any Node.js 22+ host. The installer is unsigned, and live features require Clash Verge Rev / mihomo.
 - A pure Rust UI rewrite is not a goal unless the WebView is proven to be the bottleneck.

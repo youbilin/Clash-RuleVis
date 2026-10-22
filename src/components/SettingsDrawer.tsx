@@ -467,10 +467,10 @@ function SettingsContent() {
           <ShieldCheck size={14} /> 本地与安全
         </div>
         <p className="hint" style={{ lineHeight: 1.8 }}>
-          本地服务只监听 127.0.0.1，用一次性 Cookie 保护接口。本工具不会改写 Clash Verge 的
-          profiles.yaml，也不会重载内核；导出文件只写入上方导出目录。
+          本地服务只监听 127.0.0.1，用一次性 Cookie 保护接口。安全模式只写入本工具的导出目录，
+          不改写 Verge profile；桌面版实时模式仅写入 Clash RuleVis 专用本地 profile，并在你点击应用时备份并重载内核。
         </p>
-        <p className="hint" style={{ marginTop: 8 }}>路由台 v{status?.version ?? '0.3.3'}</p>
+        <p className="hint" style={{ marginTop: 8 }}>路由台 v{status?.version ?? '0.4.0'}</p>
       </section>
     </Drawer>
   );

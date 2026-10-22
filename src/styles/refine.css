@@ -974,6 +974,56 @@ body {
   text-overflow: ellipsis;
 }
 
+.apply-mode-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.apply-mode-chip:hover:not(:disabled) {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.apply-mode-chip.live {
+  border-color: var(--amber-line);
+  background: var(--amber-dim);
+  color: var(--amber);
+}
+
+.apply-mode-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.apply-to-verge {
+  flex: 0 0 auto;
+  height: 30px;
+  white-space: nowrap;
+}
+
+.apply-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 10px;
+  line-height: 1;
+}
+
 .topbar-github {
   display: inline-grid;
   place-items: center;

@@ -322,7 +322,7 @@ export function ExitsPage() {
   const testExit = async (exit: Exit) => {
     const group = groups[exit.name];
     if (!group) {
-      toast('info', '该出口尚未进入内核', '安全模式下不会自动应用配置。把导出的 YAML 导入 Verge 后即可测速。');
+      toast('info', '该出口尚未进入内核', '先让配置生效再测速：安全模式请导出并导入 Verge，实时模式请点击顶栏「应用到 Clash Verge」。');
       return;
     }
     setTestingExit(exit.id);

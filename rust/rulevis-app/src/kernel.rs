@@ -395,6 +395,40 @@ impl Kernel {
         );
     }
 
+    pub fn reload_config(&mut self, payload: &str) -> Result<(), KernelError> {
+        let connection = self
+            .connection
+            .clone()
+            .ok_or_else(|| KernelError::new("KERNEL_OFFLINE", "内核未连接"))?;
+        let body = serde_json::json!({ "payload": payload }).to_string();
+        let response = raw_request(
+            &connection,
+            "PUT",
+            "/configs?force=true",
+            Some(&body),
+            15_000,
+        )?;
+        if !(200..300).contains(&response.status) {
+            let detail = serde_json::from_str::<Value>(&response.body)
+                .ok()
+                .and_then(|value| {
+                    value
+                        .get("message")
+                        .and_then(Value::as_str)
+                        .map(str::to_string)
+                })
+                .unwrap_or_else(|| response.body.chars().take(180).collect());
+            return Err(KernelError::new(
+                "KERNEL_HTTP",
+                format!("内核重载失败（{}）：{}", response.status, detail),
+            ));
+        }
+        self.status.connected = true;
+        self.status.last_seen_at = Some(crate::storage::now_millis());
+        self.status.error = None;
+        Ok(())
+    }
+
     pub fn refresh_configs(&mut self) -> Result<(), KernelError> {
         let Some(connection) = self.connection.clone() else {
             return Err(KernelError::new("KERNEL_OFFLINE", "内核未连接"));
@@ -930,4 +964,85 @@ pub fn test_group_with(
         timeout_ms + 4000,
     )?;
     parse_body(response)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+
+    fn header_end(bytes: &[u8]) -> Option<usize> {
+        bytes.windows(4).position(|window| window == b"\r\n\r\n")
+    }
+
+    #[test]
+    fn reload_config_puts_payload_to_controller() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind mock controller");
+        let port = listener.local_addr().expect("address").port();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept");
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .expect("timeout");
+            let mut data = Vec::new();
+            let mut buffer = [0u8; 4096];
+            loop {
+                let read = stream.read(&mut buffer).expect("read request");
+                if read == 0 {
+                    break;
+                }
+                data.extend_from_slice(&buffer[..read]);
+                let Some(end) = header_end(&data) else {
+                    continue;
+                };
+                let headers = String::from_utf8_lossy(&data[..end]).to_lowercase();
+                let length = headers
+                    .lines()
+                    .find_map(|line| line.strip_prefix("content-length:"))
+                    .and_then(|value| value.trim().parse::<usize>().ok())
+                    .unwrap_or(0);
+                if data.len() >= end + 4 + length {
+                    break;
+                }
+            }
+            stream
+                .write_all(
+                    b"HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                )
+                .expect("write response");
+            String::from_utf8_lossy(&data).to_string()
+        });
+
+        let dir = std::env::temp_dir().join(format!(
+            "rulevis-kernel-{}",
+            &uuid::Uuid::new_v4().simple().to_string()[..8]
+        ));
+        std::fs::create_dir_all(&dir).expect("create data dir");
+        let mut kernel = Kernel::load(&dir);
+        kernel.connection = Some(KernelConnection {
+            transport: "tcp".to_string(),
+            pipe: None,
+            host: Some("127.0.0.1".to_string()),
+            port: Some(port),
+            secret: "test-secret".to_string(),
+            endpoint_label: "mock".to_string(),
+        });
+        let payload = "mixed-port: 7897\nrules:\n  - MATCH,DIRECT\n";
+        kernel.reload_config(payload).expect("reload");
+        assert!(kernel.status().connected);
+
+        let request = server.join().expect("server");
+        assert!(request.starts_with("PUT /configs?force=true "), "{request}");
+        assert!(
+            request
+                .to_lowercase()
+                .contains("authorization: bearer test-secret"),
+            "{request}"
+        );
+        let body = request.split("\r\n\r\n").nth(1).expect("body");
+        let json: Value = serde_json::from_str(body).expect("json body");
+        assert_eq!(json["payload"], payload);
+        let _ = std::fs::remove_dir_all(dir);
+    }
 }

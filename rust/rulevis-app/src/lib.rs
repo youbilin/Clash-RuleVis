@@ -11,6 +11,7 @@ pub mod storage;
 pub mod types;
 pub mod validation;
 pub mod verge;
+pub mod verge_live;
 
 pub use api::{handle_request, AppState};
 pub use storage::Store;

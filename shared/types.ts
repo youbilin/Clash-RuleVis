@@ -372,6 +372,34 @@ export interface KernelSettingsView {
   hasSecret: boolean;
 }
 
+export interface LiveProfileRef {
+  uid: string;
+  name: string;
+  file: string;
+  path: string;
+}
+
+export interface VergeLiveStatus {
+  mode: 'safe' | 'live';
+  available: boolean;
+  liveProfile?: LiveProfileRef;
+  originalProfile?: LiveProfileRef;
+  currentMatches: boolean;
+  lastAppliedAt?: string;
+  lastBackup?: string;
+  error?: string;
+}
+
+export interface VergeLiveApplyResult {
+  profile: LiveProfileRef;
+  backupPath: string;
+  counts: ExportCounts;
+  validation: KernelValidation;
+  appliedAt: string;
+  workspace: Workspace;
+  historyId: string;
+}
+
 export interface DelayResult {
   name: string;
   delay?: number;
