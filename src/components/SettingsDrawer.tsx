@@ -470,7 +470,7 @@ function SettingsContent() {
           本地服务只监听 127.0.0.1，用一次性 Cookie 保护接口。安全模式只写入本工具的导出目录，
           不改写 Verge profile；桌面版实时模式仅写入 Clash RuleVis 专用本地 profile，并在你点击应用时备份并重载内核。
         </p>
-        <p className="hint" style={{ marginTop: 8 }}>路由台 v{status?.version ?? '0.4.0'}</p>
+        <p className="hint" style={{ marginTop: 8 }}>路由台 v{status?.version ?? '0.4.1'}</p>
       </section>
     </Drawer>
   );

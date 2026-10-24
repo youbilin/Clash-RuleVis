@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowUp, ListChecks, Plus, Trash2 } from 'lucide-react';
 import type { Exit, ExitMember, ExitType } from '../../shared/types';
 import { collectTags, nodeDisplayName, nodeTagLabels, resolveExit } from '../../shared/model';
 import { useWorkspace } from '../store/workspace';
 import { toast, useUi } from '../store/ui';
 import { Drawer } from './Overlay';
+import { NodePickerDialog } from './NodePickerDialog';
 import { Select } from './Select';
 import { cx } from '../lib/misc';
 import { notifyRemoved } from '../lib/undo';
@@ -14,8 +15,15 @@ interface DraftMember extends ExitMember {
   key: string;
 }
 
+export interface ExitTemplateSeed {
+  name: string;
+  type: ExitType;
+  members: ExitMember[];
+}
+
 interface ExitEditorProps {
   exit?: Exit;
+  initial?: ExitTemplateSeed;
   onClose: () => void;
 }
 
@@ -33,21 +41,22 @@ const TYPE_OPTIONS: Array<{ value: ExitType; label: string; hint: string }> = [
   { value: 'load-balance', label: '负载均衡', hint: '在可用成员之间分流' },
 ];
 
-export function ExitEditor({ exit, onClose }: ExitEditorProps) {
+export function ExitEditor({ exit, initial, onClose }: ExitEditorProps) {
   const workspace = useWorkspace((state) => state.workspace);
   const update = useWorkspace((state) => state.update);
   const createUndoPoint = useWorkspace((state) => state.createUndoPoint);
   const confirm = useUi((state) => state.confirm);
 
-  const [name, setName] = useState(exit?.name ?? '');
-  const [type, setType] = useState<ExitType>(exit?.type ?? 'select');
+  const [name, setName] = useState(exit?.name ?? initial?.name ?? '');
+  const [type, setType] = useState<ExitType>(exit?.type ?? initial?.type ?? 'select');
   const [testUrl, setTestUrl] = useState(exit?.testUrl ?? workspace?.settings.testUrl ?? '');
   const [interval, setIntervalValue] = useState(String(exit?.interval ?? 300));
   const [tolerance, setTolerance] = useState(String(exit?.tolerance ?? 50));
   const [members, setMembers] = useState<DraftMember[]>(
-    (exit?.members ?? []).map((member) => ({ ...member, key: crypto.randomUUID() })),
+    (exit?.members ?? initial?.members ?? []).map((member) => ({ ...member, key: crypto.randomUUID() })),
   );
   const [nameError, setNameError] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const sourcesById = useMemo(() => new Map((workspace?.sources ?? []).map((s) => [s.id, s])), [workspace?.sources]);
   const sortedNodes = useMemo(
@@ -232,6 +241,7 @@ export function ExitEditor({ exit, onClose }: ExitEditorProps) {
   };
 
   return (
+    <>
     <Drawer
       title={exit ? '编辑出口' : '新建出口'}
       subtitle={exit ? exit.name : '出口对应 mihomo 的策略组，是拖拽规则的落点'}
@@ -319,6 +329,9 @@ export function ExitEditor({ exit, onClose }: ExitEditorProps) {
           成员定义
           <span className="eyebrow">MIX & MATCH</span>
           <span className="spacer" />
+          <button className="btn btn-sm btn-outline" onClick={() => setPickerOpen(true)} disabled={!sortedNodes.length}>
+            <ListChecks size={12} /> 批量选节点
+          </button>
           <button className="btn btn-sm btn-outline" onClick={addMember}>
             <Plus size={12} /> 添加
           </button>
@@ -445,6 +458,9 @@ export function ExitEditor({ exit, onClose }: ExitEditorProps) {
           <div className="callout warn">
             <AlertTriangle size={14} />
             <span>该出口没有解析到任何已启用节点。导出前会被校验阻止。</span>
+            <button className="btn btn-sm btn-outline" onClick={() => setPickerOpen(true)} disabled={!sortedNodes.length}>
+              选择已有节点
+            </button>
           </div>
         )}
         {resolution?.missing.length ? (
@@ -459,5 +475,22 @@ export function ExitEditor({ exit, onClose }: ExitEditorProps) {
         ) : null}
       </div>
     </Drawer>
+    {pickerOpen ? (
+      <NodePickerDialog
+        nodes={sortedNodes}
+        sources={workspace.sources}
+        existingIds={new Set(resolution?.allNodeIds ?? [])}
+        onClose={() => setPickerOpen(false)}
+        onAdd={(ids) => {
+          setMembers((current) => [
+            ...current,
+            ...ids.map((id) => ({ key: crypto.randomUUID(), by: 'node' as const, value: id })),
+          ]);
+          setPickerOpen(false);
+          toast('success', '已添加节点', `${ids.length} 个节点`);
+        }}
+      />
+    ) : null}
+    </>
   );
 }

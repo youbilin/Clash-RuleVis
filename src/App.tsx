@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Topbar } from './components/Topbar';
@@ -67,7 +67,7 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, [refreshStatus]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: 'auto' });
   }, [location.pathname]);
 

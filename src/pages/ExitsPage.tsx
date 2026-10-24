@@ -38,6 +38,7 @@ interface ExitTemplate {
 }
 
 const TEMPLATES: ExitTemplate[] = [
+  { id: 'manual', name: '自选节点', type: 'select', members: [], hint: '打开后批量选择已有节点' },
   { id: 'home', name: '家宽', type: 'select', members: [{ by: 'tag', value: '家宽' }], hint: '按「家宽」标签收人' },
   { id: 'stream', name: '看视频', type: 'url-test', members: [{ by: 'tag', value: '流媒体' }], hint: '流媒体节点自动测速' },
   { id: 'ai', name: 'AI', type: 'select', members: [{ by: 'tag', value: 'AI' }], hint: '按「AI」标签收人' },
@@ -49,6 +50,7 @@ const TEMPLATES: ExitTemplate[] = [
 interface EditingState {
   mode: 'create' | 'edit';
   exitId?: string;
+  template?: ExitTemplate;
 }
 
 interface ExitRowProps {
@@ -248,6 +250,26 @@ export function ExitsPage() {
   };
 
   const addTemplate = (template: ExitTemplate) => {
+    const preview: Exit = {
+      id: `template-${template.id}`,
+      name: template.name,
+      type: template.type,
+      members: template.members,
+      order: 0,
+    };
+    const count = resolveExit(preview, {
+      nodes: workspace.nodes,
+      exits: workspace.exits,
+      sources: workspace.sources,
+    }).allNodeIds.length;
+    if (!count) {
+      setEditing({ mode: 'create', template: { ...template, name: uniqueName(template.name) } });
+      setTemplateOpen(false);
+      if (template.members.length) {
+        toast('info', `模板「${template.name}」暂无匹配节点`, '请在编辑器里批量选择已有节点');
+      }
+      return;
+    }
     const name = uniqueName(template.name);
     const order = workspace.exits.reduce((max, exit) => Math.max(max, exit.order), 0) + 1;
     update((draft) => {
@@ -407,13 +429,33 @@ export function ExitsPage() {
               {templateOpen ? (
                 <div className="template-menu">
                   <div className="ctx-label">PRESETS</div>
-                  {TEMPLATES.map((template) => (
-                    <button className="template-item" key={template.id} onClick={() => addTemplate(template)}>
-                      <span className="template-item-name">{template.name}</span>
-                      <span className="template-item-hint">{template.hint}</span>
-                      <span className="badge">{exitTypeLabel(template.type)}</span>
-                    </button>
-                  ))}
+                  {TEMPLATES.map((template) => {
+                    const count = resolveExit(
+                      {
+                        id: `template-${template.id}`,
+                        name: template.name,
+                        type: template.type,
+                        members: template.members,
+                        order: 0,
+                      },
+                      { nodes: workspace.nodes, exits: workspace.exits, sources: workspace.sources },
+                    ).allNodeIds.length;
+                    const countLabel =
+                      template.members.length === 0
+                        ? ''
+                        : count
+                          ? ` · ${count} 个匹配`
+                          : ' · 暂无匹配';
+                    return (
+                      <button className="template-item" key={template.id} onClick={() => addTemplate(template)}>
+                        <span className="template-item-name">{template.name}</span>
+                        <span className="template-item-hint">{template.hint}{countLabel}</span>
+                        <span className={cx('badge', template.members.length > 0 && !count && 'badge-amber')}>
+                          {exitTypeLabel(template.type)}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               ) : null}
             </div>
@@ -516,8 +558,9 @@ export function ExitsPage() {
 
       {editing ? (
         <ExitEditor
-          key={editing.mode === 'edit' ? editing.exitId : 'new'}
+          key={editing.mode === 'edit' ? editing.exitId : editing.template?.id ?? 'new'}
           exit={currentEditorExit}
+          initial={editing.mode === 'create' ? editing.template : undefined}
           onClose={() => setEditing(null)}
         />
       ) : null}

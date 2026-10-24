@@ -206,7 +206,7 @@ export function Topbar() {
       </nav>
 
       <div className="topbar-status">
-        <span className="topbar-current" aria-live="polite">{currentPage}</span>
+        <span className="topbar-current" key={currentPage} aria-live="polite">{currentPage}</span>
         <button className="command-chip" onClick={() => setCommandOpen(true)} title="全局搜索 (Ctrl+K)" aria-label="全局搜索">
           <Search size={15} />
         </button>

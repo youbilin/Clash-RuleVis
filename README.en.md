@@ -45,7 +45,8 @@ If you want edits to take effect directly, the desktop app offers an optional **
 
 - **Live paths**: active connections, rates, traffic, processes, matched rule and final node; drag a domain onto an exit or a single node.
 - **Chinese rule catalog**: all MetaCubeX `meta-rules-dat` geosite/geoip entries with Chinese names, recommended combos, lazy-loaded catalog and priority management in one list.
-- **Batch imports**: one dialog accepts multiple subscription URLs, YAML payloads or node links; each row is auto-detected.
+- **Batch imports**: one dialog accepts multiple subscription URLs, YAML payloads or node links; each row is auto-detected. Pasting into the empty dialog imports immediately, and a clipboard button is also available.
+- **Explicit node selection**: click Select in the node toolbar to enter batch mode; rows no longer toggle selection by default. The top bar can enable, disable, tag or add selected nodes to an existing exit.
 - **Node health**: single/all latency tests, persisted results, failed/disabled/duplicate filters, duplicate merge.
 - **Visual chain proxy**: left relay + right landing generates a new independent node using `dialer-proxy`; original nodes are untouched.
 - **Safe export**: full YAML, diff against previous export, real `verge-mihomo -t` validation, history dropdown with diff-aware restore.
@@ -54,6 +55,7 @@ If you want edits to take effect directly, the desktop app offers an optional **
 - **Large directories**: live connections and rules are virtualized, so 1000+ entries stay responsive without hiding data behind pagination.
 - **Offline editing**: start the workbench before Verge; kernel status refreshes in the background and the app offers re-detect plus subscription import.
 - **Desktop-first layout**: dense lists, internally scrolling tables and no page-level scroll on long lists.
+- **Layered surfaces**: pages rise and fade in on navigation, while panels, toolbars, fields and buttons use subtle gradients, borders and soft elevation without leaving the warm white/gray theme.
 
 ## Screenshots
 
@@ -125,12 +127,22 @@ The desktop app keeps the same React UI and uses Rust for the local API. It does
 - Independent workspace storage, revision conflicts, history restore and backup import.
 - Subscription URL, YAML paste, local file and active Verge profile import; source refresh with traffic and expiry metadata.
 - Manual share links, node/exit editing, chains, rule-catalog batch add, ruleset file/URL inspect and refresh.
+- Exit editor batch node picker; the template menu shows current match counts, opens empty templates in the editor and includes a self-select template. Selected nodes can also be added to an exit from the nodes page.
 - mihomo controller discovery over TCP and Windows named pipes; connection settings, rediscovery and node/exit latency tests.
 - Live connection aggregation with domains, rule hits, exits/nodes, processes, rates and history.
 - Full YAML preview, diff, real `verge-mihomo -t` validation, safe export and history restore.
 - One-click Clash Verge import: serves the current export on a temporary loopback URL and opens `clash://install-config`; the URL can also be copied manually.
 - Read-only Verge profile discovery for base port/DNS/TUN settings.
 - Live mode: creates and switches to a dedicated local profile, applies the workspace on demand, backs up before writing, reloads the kernel, and restores the original profile on exit.
+- System tray: closing the window asks whether to minimize to the tray or quit; the tray menu can reopen the window or exit, and background live tasks keep running while minimized.
+
+<p align="center">
+  <img src="docs/assets/live-mode.png" width="80%" alt="Desktop live mode and Apply to Clash Verge" />
+</p>
+<p align="center"><sub>Live mode writes only to the dedicated local profile after Apply.</sub></p>
+<p align="center">
+  <img src="docs/assets/tray-exit.png" width="58%" alt="Choose minimize to tray or quit when closing the window" />
+</p>
 
 ```bash
 npm run desktop:dev    # Tauri window + Vite
@@ -192,7 +204,7 @@ See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 ## Roadmap
 
 - **v0.3**: Tauri 2 + Rust desktop app with subscription/YAML import, TCP/named-pipe controller, live connections, latency tests, rulesets, mihomo validation and an NSIS installer.
-- **v0.4 (current)**: optional live mode — switch to a dedicated local profile, press Apply to merge, back up and reload the kernel, and restore the original profile at any time.
+- **v0.4.1 (current)**: optional live mode plus tray quit choice, explicit node batch selection, paste-to-import, exit node batch picking and template match hints.
 - **Rust foundation**: `rulevis-core` + `rulevis-app` ship 33 automated tests covering fixture parity, desktop API, live-profile merge/restore and the reload request, plus an optional real-controller smoke test.
 - **Next**: code signing, auto-update, tray, multi-hop chains and Proxy Provider support.
 - **Platform**: Windows x64 installer today; the web build runs on any Node.js 22+ host. The installer is unsigned, and live features require Clash Verge Rev / mihomo.

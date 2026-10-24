@@ -118,6 +118,18 @@ async function main() {
     });
     assert.deepEqual(manualSources, ['节点链接'], '直链节点应统一归入一个节点链接来源');
 
+    await page.locator('.nodes-add-source').click();
+    await page.getByRole('dialog', { name: '添加来源' }).waitFor();
+    await page.locator('.source-row-input').evaluate((element, text) => {
+      const data = new DataTransfer();
+      data.setData('text/plain', text);
+      element.dispatchEvent(
+        new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }),
+      );
+    }, 'ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@paste.example.com:8390#Paste-C');
+    await page.locator('.modal').waitFor({ state: 'detached' });
+    await page.locator('.node-row', { hasText: 'Paste-C' }).waitFor();
+
     const duplicateStatus = await page.evaluate(async () => {
       const response = await fetch('/api/workspace', {
         headers: { 'X-Requested-With': 'clash-route-desk' },
@@ -163,6 +175,22 @@ async function main() {
     });
     assert.ok(!nodeNames.includes('Relay-A-copy'), '重复节点合并应写入工作区');
 
+    await page.locator('.node-select-btn').click();
+    await page.locator('.node-selection-bar').waitFor();
+    await page.locator('.node-row', { hasText: 'Relay-A' }).click();
+    assert.equal(
+      await page.locator('.node-selection-bar .selection-count').innerText(),
+      '1',
+      '点击节点后应进入已选状态',
+    );
+    await page.locator('.node-selection-bar').getByRole('button', { name: '完成' }).click();
+    await page.locator('.node-selection-bar').waitFor({ state: 'detached' });
+    assert.equal(
+      await page.locator('.node-row.selected').count(),
+      0,
+      '完成选择后应清除选中状态',
+    );
+
     await page.goto(`${baseUrl}/exits`, { waitUntil: 'domcontentloaded' });
     await page.locator('.exits-page').waitFor();
     await page.getByRole('button', { name: /从模板新建/ }).click();
@@ -176,6 +204,28 @@ async function main() {
       return (await response.json()).workspace.exits.map((exit) => exit.name);
     });
     assert.ok(exitNames.includes('全部节点 2'), '新建出口应写入工作区');
+
+    await page.getByRole('button', { name: '新建出口' }).click();
+    const exitDrawer = page.getByRole('dialog', { name: '新建出口' });
+    await exitDrawer.waitFor();
+    await exitDrawer.locator('input').first().fill('批量出口');
+    await exitDrawer.getByRole('button', { name: '批量选节点' }).click();
+    const nodePicker = page.getByRole('dialog', { name: '批量选择节点' });
+    await nodePicker.waitFor();
+    await nodePicker.locator('.node-picker-row', { hasText: 'Relay-A' }).click();
+    await nodePicker.locator('.node-picker-row', { hasText: 'Landing-B' }).click();
+    await nodePicker.getByRole('button', { name: /添加 2 个节点/ }).click();
+    await page.getByRole('dialog', { name: '批量选择节点' }).waitFor({ state: 'detached' });
+    await exitDrawer.getByRole('button', { name: '创建出口' }).click();
+    await page.locator('.exit-row', { hasText: '批量出口' }).waitFor();
+    await page.waitForTimeout(900);
+    const bulkExit = await page.evaluate(async () => {
+      const response = await fetch('/api/workspace', {
+        headers: { 'X-Requested-With': 'clash-route-desk' },
+      });
+      return (await response.json()).workspace.exits.find((exit) => exit.name === '批量出口');
+    });
+    assert.equal(bulkExit?.members.filter((member) => member.by === 'node').length, 2, '批量选择应加入两个节点成员');
 
     await page.goto(`${baseUrl}/chains`, { waitUntil: 'domcontentloaded' });
     await page.locator('.chain-page').waitFor();
@@ -366,13 +416,22 @@ async function main() {
     assert.ok(afterNodeDelete.sources.includes('节点链接'));
     assert.ok(!afterNodeDelete.nodes.includes('Landing-B'));
 
+    const pasteRow = page.locator('.node-row', { hasText: 'Paste-C' });
+    await pasteRow.locator('.node-row-actions .icon-btn.danger').click();
+    await page
+      .getByRole('alertdialog', { name: '删除节点' })
+      .getByRole('button', { name: '删除节点' })
+      .click();
+    await page.locator('.node-row', { hasText: 'Paste-C' }).waitFor({ state: 'detached' });
+    await page.waitForTimeout(700);
+
     const relayRow = page.locator('.node-row', { hasText: 'Relay-A' });
     await relayRow.locator('.node-row-actions .icon-btn.danger').click();
     await page
       .getByRole('alertdialog', { name: '删除节点' })
       .getByRole('button', { name: '删除节点' })
       .click();
-    await page.locator('.toast-title', { hasText: '节点已删除' }).waitFor();
+    await page.locator('.node-row', { hasText: 'Relay-A' }).waitFor({ state: 'detached' });
     await page.waitForTimeout(700);
     const afterLastNodeDelete = await page.evaluate(async () => {
       const response = await fetch('/api/workspace', {

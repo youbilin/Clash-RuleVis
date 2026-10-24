@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Check,
   ClipboardPaste,
@@ -7,6 +7,7 @@ import {
   FileText,
   GitBranch,
   Link2,
+  ListChecks,
   Pencil,
   Plus,
   Plug,
@@ -15,11 +16,12 @@ import {
   Settings2,
   Trash2,
   TriangleAlert,
+  Waypoints,
   X,
   Zap,
 } from 'lucide-react';
-import type { DelayResult, ProxyNode, RefreshSummary, Source, SourceType, Workspace } from '../../shared/types';
-import { collectTags, nodeDisplayName, nodeTagLabels } from '../../shared/model';
+import type { DelayResult, Exit, ProxyNode, RefreshSummary, Source, SourceType, Workspace } from '../../shared/types';
+import { collectTags, nodeDisplayName, nodeTagLabels, resolveExit } from '../../shared/model';
 import { regionEmoji } from '../../shared/regions';
 import { api } from '../api';
 import { useWorkspace } from '../store/workspace';
@@ -30,6 +32,7 @@ import { NodeEditor } from '../components/NodeEditor';
 import { Modal } from '../components/Overlay';
 import { Select } from '../components/Select';
 import { delayTone, expiresIn, formatDateTime, formatDelay, formatRelative, formatTrafficAmount } from '../lib/format';
+import { exitTypeLabel } from '../lib/labels';
 import { cx } from '../lib/misc';
 import { notifyRemoved } from '../lib/undo';
 
@@ -69,11 +72,14 @@ export function NodesPage() {
   const kernel = useWorkspace((state) => state.status?.kernel);
   const confirm = useUi((state) => state.confirm);
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const [query, setQuery] = useState('');
   const [tagFilter, setTagFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [exitPickerOpen, setExitPickerOpen] = useState(false);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [settingsSourceId, setSettingsSourceId] = useState<string | null>(null);
@@ -212,6 +218,55 @@ export function NodesPage() {
       else for (const node of nodes) next.add(node.id);
       return next;
     });
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const enterSelectMode = () => {
+    setSelectMode(true);
+    setSelected(new Set());
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
+  const addSelectedToExit = (exit: Exit) => {
+    if (!selected.size) return;
+    const resolution = resolveExit(exit, {
+      nodes: workspace.nodes,
+      exits: workspace.exits,
+      sources: workspace.sources,
+    });
+    const included = new Set(resolution.allNodeIds);
+    const newIds = [...selected].filter((id) => !included.has(id));
+    if (!newIds.length) {
+      toast('info', '所选节点已在该出口中');
+      return;
+    }
+    update((draft) => {
+      const target = draft.exits.find((item) => item.id === exit.id);
+      if (!target) return;
+      const existing = new Set(
+        target.members.filter((member) => member.by === 'node').map((member) => member.value),
+      );
+      for (const id of newIds) {
+        if (existing.has(id)) continue;
+        target.members.push({ by: 'node', value: id });
+        existing.add(id);
+      }
+    });
+    toast('success', '已加入出口', `「${exit.name}」新增 ${newIds.length} 个节点`);
+    setExitPickerOpen(false);
+    exitSelectMode();
   };
 
   const deleteNode = async (node: Workspace['nodes'][number]) => {
@@ -444,6 +499,9 @@ export function NodesPage() {
     setOnlyDuplicate(false);
   };
   const selectedSource = sourceFilter ? workspace.sources.find((source) => source.id === sourceFilter) : undefined;
+  const customExits = workspace.exits
+    .filter((exit) => !exit.builtin)
+    .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
   const refreshableSources = workspace.sources.filter(
     (source) => source.type === 'subscription' || source.type === 'verge',
   );
@@ -556,6 +614,38 @@ export function NodesPage() {
 
   return (
     <div className="page nodes-page">
+      {selectMode ? (
+        <div className="node-selection-bar" role="region" aria-label="节点批量操作">
+          <span className="node-selection-title">
+            <ListChecks size={14} /> 批量选择
+          </span>
+          <span className="selection-count mono">{selected.size}</span>
+          <span>{selected.size ? '个节点已选' : '点击节点进行选择'}</span>
+          <button className="btn btn-sm btn-ghost" onClick={toggleAll} disabled={!nodes.length}>
+            {allSelected ? '取消全选' : `全选 ${nodes.length}`}
+          </button>
+          <button className="btn btn-sm btn-outline" onClick={() => setNodesEnabled(true)} disabled={!selected.size}>
+            启用
+          </button>
+          <button className="btn btn-sm btn-outline" onClick={() => setNodesEnabled(false)} disabled={!selected.size}>
+            禁用
+          </button>
+          <button className="btn btn-sm btn-outline" onClick={() => setBulkTagOpen(true)} disabled={!selected.size}>
+            添加标签
+          </button>
+          <button className="btn btn-sm btn-outline" onClick={() => setExitPickerOpen(true)} disabled={!selected.size}>
+            <Waypoints size={12} /> 加入出口
+          </button>
+          <span className="spacer" />
+          <button className="btn btn-sm btn-ghost" onClick={() => setSelected(new Set())} disabled={!selected.size}>
+            清除选择
+          </button>
+          <button className="btn btn-sm btn-outline" onClick={exitSelectMode}>
+            完成
+          </button>
+        </div>
+      ) : null}
+
       <PageHeader
         kicker="NODES & SOURCES"
         title="节点与订阅"
@@ -687,6 +777,16 @@ export function NodesPage() {
               </button>
             ) : null}
             <span className="spacer" />
+            {selectMode ? null : (
+              <button
+                className="btn btn-sm btn-ghost node-select-btn"
+                onClick={enterSelectMode}
+                disabled={!workspace.nodes.length}
+                title="进入批量选择模式"
+              >
+                <ListChecks size={12} /> 选择
+              </button>
+            )}
             <button
               className="btn btn-sm btn-outline nodes-add-source"
               onClick={() => setImportOpen(true)}
@@ -699,28 +799,18 @@ export function NodesPage() {
             </span>
           </div>
 
-          {selected.size > 0 ? (
-            <div className="bulk-bar">
-              <span className="selection-count mono">{selected.size}</span>
-              <span>个节点已勾选</span>
-              <button className="btn btn-sm btn-outline" onClick={() => setNodesEnabled(true)}>启用</button>
-              <button className="btn btn-sm btn-outline" onClick={() => setNodesEnabled(false)}>禁用</button>
-              <button className="btn btn-sm btn-outline" onClick={() => setBulkTagOpen(true)}>添加标签</button>
-              <span className="spacer" />
-              <button className="btn btn-sm btn-ghost" onClick={() => setSelected(new Set())}>清除选择</button>
-            </div>
-          ) : null}
-
           <div className="node-table">
             <div className="node-head">
               <div className="node-check">
-                <input
-                  ref={selectAllRef}
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={toggleAll}
-                  aria-label="全选节点"
-                />
+                {selectMode ? (
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    aria-label="全选节点"
+                  />
+                ) : null}
               </div>
               <div />
               <div>节点</div>
@@ -755,30 +845,23 @@ export function NodesPage() {
                 return (
                   <div
                     key={node.id}
-                    className={cx('node-row', !node.enabled && 'disabled', selected.has(node.id) && 'selected')}
-                    onClick={() =>
-                      setSelected((current) => {
-                        const next = new Set(current);
-                        if (next.has(node.id)) next.delete(node.id);
-                        else next.add(node.id);
-                        return next;
-                      })
-                    }
+                    className={cx(
+                      'node-row',
+                      !node.enabled && 'disabled',
+                      selectMode && 'selectable',
+                      selected.has(node.id) && 'selected',
+                    )}
+                    onClick={selectMode ? () => toggleSelected(node.id) : undefined}
                   >
                     <div className="node-check" data-control onClick={(event) => event.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selected.has(node.id)}
-                        onChange={() =>
-                          setSelected((current) => {
-                            const next = new Set(current);
-                            if (next.has(node.id)) next.delete(node.id);
-                            else next.add(node.id);
-                            return next;
-                          })
-                        }
-                        aria-label={`选择 ${display}`}
-                      />
+                      {selectMode ? (
+                        <input
+                          type="checkbox"
+                          checked={selected.has(node.id)}
+                          onChange={() => toggleSelected(node.id)}
+                          aria-label={`选择 ${display}`}
+                        />
+                      ) : null}
                     </div>
                     <div data-control onClick={(event) => event.stopPropagation()}>
                       <Switch
@@ -898,6 +981,52 @@ export function NodesPage() {
           ) : (
             <div className="callout success" style={{ marginTop: 10 }}>
               <Check size={14} /> 没有需要处理的差异。
+            </div>
+          )}
+        </Modal>
+      ) : null}
+
+      {exitPickerOpen ? (
+        <Modal
+          title="加入出口"
+          subtitle={`把选中的 ${selected.size} 个节点加入现有出口`}
+          size="md"
+          onClose={() => setExitPickerOpen(false)}
+          footer={<button className="btn btn-ghost" onClick={() => setExitPickerOpen(false)}>取消</button>}
+        >
+          {customExits.length ? (
+            <div className="exit-pick-list">
+              {customExits.map((exit) => {
+                const count = resolveExit(exit, {
+                  nodes: workspace.nodes,
+                  exits: workspace.exits,
+                  sources: workspace.sources,
+                }).allNodeIds.length;
+                return (
+                  <button className="exit-pick-row" key={exit.id} onClick={() => addSelectedToExit(exit)}>
+                    <span className="exit-pick-name">
+                      <Waypoints size={13} /> {exit.name}
+                    </span>
+                    <span className="exit-pick-meta">
+                      {exitTypeLabel(exit.type)} · {count} 个节点
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="callout info">
+              <Waypoints size={14} />
+              <span>还没有自定义出口。先创建一个出口，再把选中的节点批量加进去。</span>
+              <button
+                className="btn btn-sm btn-outline"
+                onClick={() => {
+                  setExitPickerOpen(false);
+                  navigate('/exits?new=1');
+                }}
+              >
+                去创建出口
+              </button>
             </div>
           )}
         </Modal>

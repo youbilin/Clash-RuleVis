@@ -1,6 +1,6 @@
 [package]
 name = "clash-route-desk"
-version = "0.4.0"
+version = "0.4.1"
 description = "Clash RuleVis desktop shell"
 authors = ["youbilin"]
 edition = "2021"
@@ -17,7 +17,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 rulevis-app = { path = "../rust/rulevis-app" }
 serde_json = { version = "1", features = ["preserve_order"] }
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

@@ -69,6 +69,7 @@ fn which_binary(name: &str) -> Option<PathBuf> {
         .arg(name)
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
+        .creation_flags_hidden()
         .output()
         .ok()?;
     if !output.status.success() {

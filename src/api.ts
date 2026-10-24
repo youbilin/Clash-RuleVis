@@ -37,6 +37,18 @@ async function invokeDesktop<T>(path: string, method: string, body: unknown): Pr
   }
 }
 
+export async function invokeNative<T = void>(
+  command: string,
+  args?: Record<string, unknown>,
+): Promise<T> {
+  if (!isDesktopRuntime()) throw new Error('仅桌面版支持此操作');
+  if (!desktopInvoke) {
+    const module = await import('@tauri-apps/api/core');
+    desktopInvoke = module.invoke as InvokeFn;
+  }
+  return desktopInvoke<T>(command, args);
+}
+
 export async function ensureSession(): Promise<void> {
   if (isDesktopRuntime()) return;
   if (!sessionPromise) {

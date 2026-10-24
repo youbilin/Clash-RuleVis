@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.4.1 — 2026-10-24
+
+### Added
+
+- System tray with “显示主窗口” and “退出”. Closing the main window now asks
+  whether to minimize to the tray or quit directly; minimizing keeps live
+  connections and background tasks running.
+- Explicit node selection mode. Clicking a node row no longer toggles selection;
+  press “选择” in the node toolbar, then click rows. The top batch bar supports
+  select-all, enable/disable, tags, “加入出口” and clear/finish actions.
+- Batch node picker in the exit editor, so multiple existing nodes can be added
+  to an exit at once. The nodes page can also add the current selection to an
+  existing exit.
+- Pasting a share link, subscription URL or YAML into the empty Add Source
+  dialog imports it automatically; a “粘贴并添加” clipboard button is also
+  available.
+- Exit templates now show their current match count. Templates with no matches
+  open the editor instead of creating an empty exit, and a new “自选节点”
+  template starts from a manual batch selection.
+
+### Changed
+
+- Page switching now uses a short rise-and-fade transition, with the topbar page
+  label animating in sync.
+- Depth pass across every page: panels, toolbars, table headers, fields, buttons,
+  chips, switches and the topbar use layered shadows, subtle gradients and inset
+  highlights while keeping the warm white/gray theme.
+
+### Fixed
+
+- Applying a live configuration no longer flashes console windows: the
+  `where.exe` lookup used during mihomo discovery is now created with
+  `CREATE_NO_WINDOW`, matching the validator and PowerShell probes.
+- The exit template menu grid placed the type badge over the name column,
+  causing overlapping text. The badge now occupies its own column and the menu
+  is slightly wider.
+- Nested modals only dismiss the topmost layer on Escape instead of closing the
+  drawer underneath.
+
 ## 0.4.0 — 2026-10-22
 
 ### Added

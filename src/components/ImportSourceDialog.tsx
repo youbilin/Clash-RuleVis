@@ -121,8 +121,8 @@ export function ImportSourceDialog({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const importAll = async () => {
-    if (!canImport) return;
+  const importRows = async (targets: ImportRow[], closeOnSuccess: boolean) => {
+    if (!targets.length || importing) return;
     setImporting(true);
     let added = 0;
     let importedSources = 0;
@@ -132,7 +132,7 @@ export function ImportSourceDialog({ onClose }: { onClose: () => void }) {
       if (useWorkspace.getState().saveState === 'error') {
         throw new Error('工作区尚未保存，已取消导入');
       }
-      for (const row of pendingRows) {
+      for (const row of targets) {
         const value = row.value.trim();
         const kind = detectKind(value);
         try {
@@ -189,12 +189,38 @@ export function ImportSourceDialog({ onClose }: { onClose: () => void }) {
         toast('warn', '部分来源未添加', `${failed.length} 个来源需要检查`);
       } else {
         toast('success', '来源已添加', `${importedSources} 个来源 · 新增 ${added} 个节点`);
-        onClose();
+        if (closeOnSuccess) onClose();
+        else setRows([freshRow()]);
       }
     } catch (error) {
       toast('error', '导入失败', (error as Error).message);
     } finally {
       setImporting(false);
+    }
+  };
+
+  const importAll = async () => {
+    if (!canImport) return;
+    await importRows(pendingRows, true);
+  };
+
+  const importPasted = async (text: string) => {
+    const value = text.trim();
+    if (!value) {
+      toast('warn', '剪贴板里没有可添加的内容');
+      return;
+    }
+    await importRows([{ id: crypto.randomUUID(), value }], true);
+  };
+
+  const pasteFromClipboard = async () => {
+    if (importing) return;
+    try {
+      const text = await navigator.clipboard.readText();
+      await importPasted(text);
+    } catch {
+      requestAnimationFrame(() => rowRefs.current.get(rows[0]?.id)?.focus());
+      toast('warn', '无法直接读取剪贴板', '请在输入框里按 Ctrl+V，粘贴后会自动识别');
     }
   };
 
@@ -249,6 +275,15 @@ export function ImportSourceDialog({ onClose }: { onClose: () => void }) {
                   className={cx('source-row-input', `kind-${kind}`)}
                   rows={kind === 'yaml' ? 5 : kind === 'links' ? 3 : 1}
                   value={row.value}
+                  autoFocus={index === 0}
+                  onPaste={(event) => {
+                    if (importing) return;
+                    const text = event.clipboardData.getData('text');
+                    if (!text.trim()) return;
+                    if (rows.length !== 1 || rows[0].value.trim()) return;
+                    event.preventDefault();
+                    void importPasted(text);
+                  }}
                   onChange={(event) => patchRow(row.id, { value: event.target.value, error: undefined })}
                   placeholder={index === 0 ? '粘贴订阅链接、节点链接或 YAML 配置' : '继续粘贴内容'}
                   aria-label={`${meta.label} #${index + 1}`}
@@ -270,6 +305,10 @@ export function ImportSourceDialog({ onClose }: { onClose: () => void }) {
           <Plus size={13} /> 添加订阅/节点源
         </button>
         <div className="source-row-quick">
+          <button className="inline-link" onClick={() => void pasteFromClipboard()} disabled={importing}>
+            <ClipboardPaste size={12} /> 粘贴并添加
+          </button>
+          <span className="meta-sep">·</span>
           <button className="inline-link" onClick={() => fileInputRef.current?.click()} disabled={importing}>
             <Upload size={12} /> 导入本地文件
           </button>
