@@ -191,7 +191,7 @@ body {
   font-size: 12.5px;
   font-weight: 450;
   text-align: left;
-  box-shadow: inset 0 1px 0 rgba(40, 42, 35, 0.018);
+  box-shadow: inset 0 1px 0 rgba(41, 41, 41, 0.018);
   transition:
     border-color var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out),
@@ -205,7 +205,7 @@ body {
 .select-trigger.open,
 .select-trigger:focus-visible {
   outline: none;
-  border-color: rgba(53, 96, 73, 0.52);
+  border-color: rgba(21, 21, 21, 0.52);
   background: #ffffff;
   box-shadow: var(--focus-ring);
 }
@@ -258,7 +258,7 @@ body {
   padding: 5px;
   border: 1px solid var(--line-strong);
   border-radius: 11px;
-  background: #fdfdfb;
+  background: #fdfdfd;
   box-shadow: var(--shadow-pop);
   animation: select-fade var(--duration-fast) var(--ease-out);
   overscroll-behavior: contain;
@@ -284,7 +284,7 @@ body {
   top: -5px;
   z-index: 1;
   padding: 7px 9px 4px;
-  background: #fdfdfb;
+  background: #fdfdfd;
   color: var(--faint);
   font-family: var(--font-mono);
   font-size: 11.5px;
@@ -382,7 +382,7 @@ body {
   left: 2px;
   width: 14px;
   height: 14px;
-  box-shadow: 0 1px 2px rgba(30, 33, 27, 0.16);
+  box-shadow: 0 1px 2px rgba(32, 32, 32, 0.16);
   transition: left var(--duration) var(--ease-out), background var(--duration) var(--ease-out);
 }
 
@@ -414,7 +414,7 @@ body {
 }
 
 .tab:hover {
-  background: rgba(29, 32, 28, 0.025);
+  background: rgba(31, 31, 31, 0.025);
 }
 
 .tab.active::after {
@@ -444,7 +444,7 @@ body {
 .segmented button.active {
   background: #ffffff;
   color: var(--text);
-  box-shadow: 0 1px 2px rgba(40, 42, 35, 0.07), inset 0 0 0 1px var(--line-soft);
+  box-shadow: 0 1px 2px rgba(41, 41, 41, 0.07), inset 0 0 0 1px var(--line-soft);
 }
 
 .badge {
@@ -475,9 +475,9 @@ body {
 }
 
 .rule-filter-tab.active {
-  background: #e9e9e2;
+  background: #e8e8e8;
   border-color: var(--line-soft);
-  box-shadow: inset 0 0 0 1px rgba(40, 42, 35, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(41, 41, 41, 0.035);
 }
 
 .rule-filter-tab .number-badge {
@@ -524,7 +524,7 @@ body {
 .node-row:hover,
 .conn-row:hover,
 .ruleset-row:hover {
-  background: rgba(29, 32, 28, 0.028);
+  background: rgba(31, 31, 31, 0.028);
 }
 
 .rule-row .rule-payload {
@@ -574,7 +574,7 @@ body {
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(29, 32, 28, 0.022);
+  background: rgba(31, 31, 31, 0.022);
 }
 
 *::-webkit-scrollbar-corner {
@@ -598,7 +598,7 @@ body {
 
 .stat-strip {
   border-radius: var(--radius);
-  background: #fdfdfb;
+  background: #fdfdfd;
   box-shadow: var(--shadow-1), inset 0 1px 0 #ffffff;
 }
 
@@ -628,7 +628,7 @@ body {
 .yaml-toolbar {
   gap: 8px;
   padding: 10px 12px;
-  background: rgba(250, 250, 246, 0.76);
+  background: rgba(250, 250, 250, 0.76);
 }
 
 .rule-toolbar {
@@ -745,7 +745,7 @@ body {
 
 .ruleset-list-panel,
 .rule-list-panel {
-  background: #fdfdfb;
+  background: #fdfdfd;
 }
 
 .rule-target .select-trigger,
@@ -755,7 +755,7 @@ body {
 
 .export-card {
   border-radius: var(--radius);
-  background: #fdfdfb;
+  background: #fdfdfd;
   box-shadow: var(--shadow-1), inset 0 1px 0 #ffffff;
 }
 
@@ -807,7 +807,7 @@ body {
 
 .modal-backdrop,
 .drawer-backdrop {
-  background: rgba(28, 31, 26, 0.34);
+  background: rgba(30, 30, 30, 0.34);
   backdrop-filter: blur(7px);
   animation: fade-in var(--duration) var(--ease-out);
 }
@@ -820,7 +820,7 @@ body {
   max-height: calc(100dvh - 48px);
   border-color: var(--line-strong);
   border-radius: var(--radius-lg);
-  background: #fbfbf8;
+  background: #fbfbfb;
   box-shadow: var(--shadow-modal);
   animation: modal-in var(--duration-slow) var(--ease-out);
 }
@@ -856,7 +856,7 @@ body {
 .drawer-foot {
   gap: 8px;
   padding: 14px 22px;
-  background: rgba(246, 246, 241, 0.78);
+  background: rgba(246, 246, 246, 0.78);
 }
 
 .modal-foot .foot-note {
@@ -866,8 +866,8 @@ body {
 .drawer {
   width: 520px;
   max-width: calc(100vw - 32px);
-  background: #fbfbf8;
-  box-shadow: -30px 0 90px rgba(40, 42, 35, 0.16);
+  background: #fbfbfb;
+  box-shadow: -30px 0 90px rgba(41, 41, 41, 0.16);
   animation: drawer-in var(--duration-slow) var(--ease-out);
 }
 
@@ -890,7 +890,7 @@ body {
   border-color: var(--line);
   border-left-width: 1px;
   border-radius: 11px;
-  background: #fdfdfb;
+  background: #fdfdfd;
   box-shadow: var(--shadow-2);
   animation: toast-in var(--duration) var(--ease-out);
 }
@@ -1042,7 +1042,7 @@ body {
 }
 
 .topbar-github:hover {
-  background: #ecece6;
+  background: #ececec;
   color: var(--text);
 }
 
@@ -1109,7 +1109,7 @@ body {
   padding: 30px 26px 24px;
   border: 1px solid var(--line-strong);
   border-radius: 14px;
-  background: #fbfbf8;
+  background: #fbfbfb;
   text-align: center;
   box-shadow: var(--shadow-modal);
 }
@@ -1422,7 +1422,7 @@ body {
 .exit-list-panel {
   border: 0;
   border-radius: 0;
-  background: rgba(251, 251, 248, 0.52);
+  background: rgba(251, 251, 251, 0.52);
   box-shadow: none;
 }
 
@@ -1489,7 +1489,7 @@ body {
 }
 
 .source-item:hover {
-  background: rgba(29, 32, 28, 0.022);
+  background: rgba(31, 31, 31, 0.022);
   box-shadow: none;
 }
 
@@ -1539,7 +1539,7 @@ body {
 
 .exit-drop:hover {
   border-color: var(--line-soft);
-  background: rgba(29, 32, 28, 0.025);
+  background: rgba(31, 31, 31, 0.025);
 }
 
 .exit-drop.builtin,
@@ -1796,7 +1796,7 @@ body {
   align-items: flex-start;
   justify-content: center;
   padding: 14vh 16px 16px;
-  background: rgba(28, 31, 26, 0.3);
+  background: rgba(30, 30, 30, 0.3);
   backdrop-filter: blur(6px);
   animation: fade-in var(--duration) var(--ease-out);
 }
@@ -1809,7 +1809,7 @@ body {
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 13px;
-  background: #fdfdfb;
+  background: #fdfdfd;
   box-shadow: var(--shadow-modal);
   animation: modal-in var(--duration) var(--ease-out);
 }
@@ -2087,8 +2087,8 @@ body {
   width: 44px;
   height: 26px;
   border-radius: 999px;
-  background: #d7d7cf;
-  box-shadow: inset 0 1px 2px rgba(30, 33, 28, 0.12);
+  background: #d6d6d6;
+  box-shadow: inset 0 1px 2px rgba(32, 32, 32, 0.12);
   transition: background var(--duration-fast) var(--ease-out);
 }
 
@@ -2104,7 +2104,7 @@ body {
   height: 20px;
   border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 1px 3px rgba(25, 28, 24, 0.25);
+  box-shadow: 0 1px 3px rgba(27, 27, 27, 0.25);
   transition: transform var(--duration-fast) var(--ease-out);
 }
 
@@ -2185,12 +2185,12 @@ body {
 
   .rules-page .rule-list-head {
     position: static;
-    background: #f7f7f2;
+    background: #f7f7f7;
   }
 
   .rules-page .rule-list-foot {
     position: static;
-    background: #f7f7f2;
+    background: #f7f7f7;
   }
 }
 
@@ -2233,7 +2233,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 3;
-    background: #f7f7f2;
+    background: #f7f7f7;
   }
 }
 
@@ -2284,7 +2284,7 @@ body {
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 12px;
-  background: #fbfbf8;
+  background: #fbfbfb;
   box-shadow: var(--shadow-pop);
   animation: modal-in var(--duration-fast) var(--ease-out);
 }
@@ -2376,7 +2376,7 @@ body {
   gap: 6px;
   padding: 9px 12px;
   border-top: 1px solid var(--line-soft);
-  background: rgba(246, 246, 241, 0.78);
+  background: rgba(246, 246, 246, 0.78);
 }
 
 .export-history-selection {
@@ -2445,7 +2445,7 @@ body {
   align-items: stretch;
   justify-content: flex-end;
   padding: 20px 24px;
-  background: rgba(28, 31, 26, 0.26);
+  background: rgba(30, 30, 30, 0.26);
   backdrop-filter: blur(4px);
   animation: fade-in var(--duration) var(--ease-out);
 }
@@ -2458,7 +2458,7 @@ body {
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 14px;
-  background: #fbfbf8;
+  background: #fbfbfb;
   box-shadow: var(--shadow-modal);
   animation: drawer-in var(--duration-slow) var(--ease-out);
 }
@@ -2739,7 +2739,7 @@ body {
 }
 
 .node-fail-filter:hover {
-  background: #f7e7e4;
+  background: #e9e9e9;
 }
 
 .node-fail-filter.active {
@@ -2890,13 +2890,13 @@ body {
   padding: 6px 12px;
   border: 0;
   border-bottom: 1px solid var(--line-soft);
-  background: #f4f4ef;
+  background: #f4f4f4;
   color: var(--text-2);
   text-align: left;
 }
 
 .rule-group-head:hover {
-  background: #efefe9;
+  background: #efefef;
 }
 
 .rule-group-head svg {
@@ -3054,7 +3054,7 @@ body {
 }
 
 .source-row-input:focus {
-  border-color: rgba(53, 96, 73, 0.52);
+  border-color: rgba(21, 21, 21, 0.52);
   box-shadow: var(--focus-ring);
 }
 
@@ -3168,7 +3168,7 @@ body {
   height: 28px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fdfdfb;
+  background: #fdfdfd;
   color: var(--accent);
   transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
@@ -3210,9 +3210,9 @@ body {
   gap: 7px;
   margin-bottom: 14px;
   padding: 9px 12px;
-  border: 1px solid rgba(53, 96, 73, 0.18);
+  border: 1px solid rgba(21, 21, 21, 0.18);
   border-radius: 10px;
-  background: linear-gradient(180deg, rgba(53, 96, 73, 0.075), rgba(53, 96, 73, 0.035));
+  background: linear-gradient(180deg, rgba(21, 21, 21, 0.075), rgba(21, 21, 21, 0.035));
   color: var(--text-2);
   font-size: 12px;
 }
@@ -3226,7 +3226,7 @@ body {
 }
 
 .node-selection-bar .selection-count {
-  background: rgba(53, 96, 73, 0.14);
+  background: rgba(21, 21, 21, 0.14);
   color: var(--accent);
 }
 
@@ -3260,7 +3260,7 @@ body {
   padding: 10px 11px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
-  background: #fdfdfb;
+  background: #fdfdfd;
   color: var(--text);
   text-align: left;
   cursor: pointer;
@@ -3268,7 +3268,7 @@ body {
 
 .exit-pick-row:hover {
   border-color: var(--line-strong);
-  background: #f8f8f3;
+  background: #f8f8f8;
 }
 
 .exit-pick-name {
@@ -3322,7 +3322,7 @@ body {
   overflow-y: auto;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
-  background: #fdfdfb;
+  background: #fdfdfd;
 }
 
 .node-picker-row {
@@ -3340,13 +3340,13 @@ body {
 }
 
 .node-picker-row:hover {
-  background: #f7f7f1;
+  background: #f7f7f7;
 }
 
 .node-picker-row.added {
   cursor: default;
   color: var(--muted);
-  background: rgba(53, 96, 73, 0.025);
+  background: rgba(21, 21, 21, 0.025);
 }
 
 .node-picker-row input[type="checkbox"] {
@@ -3416,7 +3416,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 3;
-  background: #f7f7f2;
+  background: #f7f7f7;
 }
 
 @media (max-width: 900px) {
@@ -3671,33 +3671,33 @@ body {
 
 :root {
   --depth-1:
-    0 1px 1px rgba(38, 42, 35, 0.045),
-    0 14px 30px -24px rgba(38, 42, 35, 0.32),
+    0 1px 1px rgba(41, 41, 41, 0.045),
+    0 14px 30px -24px rgba(41, 41, 41, 0.32),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
   --depth-2:
-    0 1px 2px rgba(38, 42, 35, 0.05),
-    0 22px 48px -30px rgba(38, 42, 35, 0.4),
+    0 1px 2px rgba(41, 41, 41, 0.05),
+    0 22px 48px -30px rgba(41, 41, 41, 0.4),
     inset 0 1px 0 #ffffff;
   --depth-field:
-    inset 0 1px 2px rgba(38, 42, 35, 0.05),
+    inset 0 1px 2px rgba(41, 41, 41, 0.05),
     0 1px 0 rgba(255, 255, 255, 0.85);
-  --surface-lift: linear-gradient(180deg, #fefefc 0%, #f9f9f5 100%);
+  --surface-lift: linear-gradient(180deg, #fefefe 0%, #f9f9f9 100%);
 }
 
 .main-pane {
   background-image:
     linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0) 240px),
-    radial-gradient(1000px 460px at 82% -12%, rgba(53, 96, 73, 0.06), transparent 62%),
-    radial-gradient(760px 380px at 8% 110%, rgba(76, 108, 142, 0.032), transparent 65%),
-    radial-gradient(circle at 1px 1px, rgba(29, 32, 28, 0.03) 1px, transparent 0);
+    radial-gradient(1000px 460px at 82% -12%, rgba(21, 21, 21, 0.06), transparent 62%),
+    radial-gradient(760px 380px at 8% 110%, rgba(21, 21, 21, 0.032), transparent 65%),
+    radial-gradient(circle at 1px 1px, rgba(31, 31, 31, 0.03) 1px, transparent 0);
   background-size: auto, auto, auto, 24px 24px;
 }
 
 .topbar {
-  background: linear-gradient(180deg, rgba(255, 255, 252, 0.98), rgba(247, 247, 242, 0.94));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 247, 247, 0.94));
   box-shadow:
     inset 0 1px 0 #ffffff,
-    0 10px 28px -26px rgba(31, 35, 29, 0.55);
+    0 10px 28px -26px rgba(34, 34, 34, 0.55);
 }
 
 .topbar-current {
@@ -3724,26 +3724,26 @@ body {
 
 .topnav-item.active {
   box-shadow:
-    inset 0 0 0 1px rgba(29, 32, 28, 0.04),
+    inset 0 0 0 1px rgba(31, 31, 31, 0.04),
     inset 0 1px 0 #ffffff,
-    0 1px 2px rgba(38, 42, 35, 0.06);
+    0 1px 2px rgba(41, 41, 41, 0.06);
 }
 
 .kernel-chip,
 .apply-mode-chip {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 1px 2px rgba(38, 42, 35, 0.05);
+    0 1px 2px rgba(41, 41, 41, 0.05);
 }
 
 .apply-mode-chip:not(.live) {
-  background: linear-gradient(180deg, #ffffff, #f4f4ef);
+  background: linear-gradient(180deg, #ffffff, #f4f4f4);
 }
 
 .apply-mode-chip.live {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 1px 2px rgba(149, 97, 32, 0.12);
+    0 1px 2px rgba(21, 21, 21, 0.12);
 }
 
 .stat-strip {
@@ -3788,16 +3788,16 @@ body {
 .ruleset-head,
 .exit-list-head,
 .conn-head {
-  background: linear-gradient(180deg, #fcfcF9 0%, #f5f5f0 100%);
+  background: linear-gradient(180deg, #fcfcfc 0%, #f5f5f5 100%);
   box-shadow:
     inset 0 1px 0 #ffffff,
-    0 1px 0 rgba(38, 42, 35, 0.03);
+    0 1px 0 rgba(41, 41, 41, 0.03);
 }
 
 .live-toolbar,
 .node-toolbar,
 .rule-toolbar {
-  background: linear-gradient(180deg, rgba(255, 255, 252, 0.72), rgba(246, 246, 241, 0.58));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(246, 246, 246, 0.58));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
@@ -3805,14 +3805,14 @@ body {
 .select-trigger,
 .search-box,
 .source-row-input {
-  background: linear-gradient(180deg, #fbfbf7 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #fbfbfb 0%, #ffffff 100%);
   box-shadow: var(--depth-field);
 }
 
 .select-trigger:hover {
   box-shadow:
-    inset 0 1px 2px rgba(38, 42, 35, 0.04),
-    0 2px 5px -4px rgba(38, 42, 35, 0.18);
+    inset 0 1px 2px rgba(41, 41, 41, 0.04),
+    0 2px 5px -4px rgba(41, 41, 41, 0.18);
 }
 
 .btn {
@@ -3825,42 +3825,42 @@ body {
 }
 
 .btn-primary {
-  border-color: #2b4f3b;
-  background: linear-gradient(180deg, #4a7a5e 0%, #356049 55%, #2c503c 100%);
+  border-color: #0f0f0f;
+  background: linear-gradient(180deg, #363636 0%, #181818 55%, #111111 100%);
   box-shadow:
-    0 1px 1px rgba(26, 45, 33, 0.25),
-    0 8px 18px -12px rgba(42, 77, 58, 0.75),
+    0 1px 1px rgba(21, 21, 21, 0.25),
+    0 8px 18px -12px rgba(21, 21, 21, 0.75),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .btn-primary:hover {
-  border-color: #335c46;
-  background: linear-gradient(180deg, #56876b 0%, #3f6e54 55%, #335c46 100%);
+  border-color: #1f1f1f;
+  background: linear-gradient(180deg, #444444 0%, #2c2c2c 55%, #1f1f1f 100%);
   transform: translateY(-1px);
   box-shadow:
-    0 2px 3px rgba(26, 45, 33, 0.22),
-    0 12px 22px -14px rgba(42, 77, 58, 0.72),
+    0 2px 3px rgba(21, 21, 21, 0.22),
+    0 12px 22px -14px rgba(21, 21, 21, 0.72),
     inset 0 1px 0 rgba(255, 255, 255, 0.26);
 }
 
 .btn-primary:active {
   transform: translateY(0);
-  box-shadow: inset 0 1px 2px rgba(10, 24, 15, 0.22);
+  box-shadow: inset 0 1px 2px rgba(21, 21, 21, 0.22);
 }
 
 .btn-outline {
   border-color: var(--line-strong);
-  background: linear-gradient(180deg, #ffffff, #f4f4ef);
+  background: linear-gradient(180deg, #ffffff, #f4f4f4);
   box-shadow:
-    0 1px 1px rgba(38, 42, 35, 0.05),
+    0 1px 1px rgba(41, 41, 41, 0.05),
     inset 0 1px 0 #ffffff;
 }
 
 .btn-outline:hover {
-  background: linear-gradient(180deg, #ffffff, #f0f0ea);
+  background: linear-gradient(180deg, #ffffff, #f0f0f0);
   transform: translateY(-1px);
   box-shadow:
-    0 4px 10px -8px rgba(38, 42, 35, 0.28),
+    0 4px 10px -8px rgba(41, 41, 41, 0.28),
     inset 0 1px 0 #ffffff;
 }
 
@@ -3869,17 +3869,17 @@ body {
 }
 
 .btn-danger {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(168, 71, 65, 0.1));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(21, 21, 21, 0.1));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .btn-ghost:hover {
-  background: rgba(38, 42, 35, 0.045);
+  background: rgba(41, 41, 41, 0.045);
 }
 
 .icon-btn:hover {
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(38, 42, 35, 0.07);
+  box-shadow: 0 1px 2px rgba(41, 41, 41, 0.07);
 }
 
 .badge,
@@ -3889,14 +3889,14 @@ body {
 
 .switch {
   box-shadow:
-    inset 0 1px 2px rgba(38, 42, 35, 0.13),
+    inset 0 1px 2px rgba(41, 41, 41, 0.13),
     inset 0 -1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .switch.on {
   box-shadow:
-    inset 0 1px 2px rgba(20, 40, 29, 0.2),
-    0 1px 2px rgba(38, 42, 35, 0.08);
+    inset 0 1px 2px rgba(21, 21, 21, 0.2),
+    0 1px 2px rgba(41, 41, 41, 0.08);
 }
 
 .modal {
@@ -3913,8 +3913,8 @@ body {
 
 .toast {
   box-shadow:
-    0 12px 32px rgba(30, 34, 28, 0.14),
-    0 2px 6px rgba(30, 34, 28, 0.06),
+    0 12px 32px rgba(33, 33, 33, 0.14),
+    0 2px 6px rgba(33, 33, 33, 0.06),
     inset 0 1px 0 #ffffff;
 }
 

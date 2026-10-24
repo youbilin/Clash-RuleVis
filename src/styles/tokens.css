@@ -1,50 +1,50 @@
 :root {
   color-scheme: light;
 
-  --bg: #f2f2ed;
-  --bg-deep: #e9e9e3;
-  --panel: #fbfbf8;
-  --panel-2: #f5f5f0;
-  --panel-3: #edede7;
-  --panel-hover: #f7f7f2;
+  --bg: #f2f2f2;
+  --bg-deep: #e9e9e9;
+  --panel: #fbfbfb;
+  --panel-2: #f5f5f5;
+  --panel-3: #ededed;
+  --panel-hover: #f7f7f7;
   --surface-strong: #ffffff;
-  --field: #f6f6f1;
+  --field: #f6f6f6;
 
-  --line: #dbdbd2;
-  --line-strong: #c6c7bd;
-  --line-soft: #e8e8e1;
+  --line: #dadada;
+  --line-strong: #c6c6c6;
+  --line-soft: #e7e7e7;
 
-  --text: #1b1e1a;
-  --text-2: #42463f;
-  --muted: #5f645b;
-  --faint: #70756b;
+  --text: #1d1d1d;
+  --text-2: #454545;
+  --muted: #626262;
+  --faint: #737373;
 
-  --ink: #1d201c;
-  --ink-hover: #2c302b;
+  --ink: #1f1f1f;
+  --ink-hover: #2f2f2f;
 
-  --accent: #356049;
-  --accent-bright: #447459;
-  --accent-dark: #2a4d3a;
-  --accent-dim: rgba(53, 96, 73, 0.08);
-  --accent-line: rgba(53, 96, 73, 0.26);
+  --accent: #181818;
+  --accent-bright: #2d2d2d;
+  --accent-dark: #0d0d0d;
+  --accent-dim: rgba(21, 21, 21, 0.08);
+  --accent-line: rgba(21, 21, 21, 0.26);
 
-  --amber: #956120;
-  --amber-dim: rgba(149, 97, 32, 0.09);
-  --amber-line: rgba(149, 97, 32, 0.26);
+  --amber: #4f4f4f;
+  --amber-dim: rgba(21, 21, 21, 0.09);
+  --amber-line: rgba(21, 21, 21, 0.26);
 
-  --red: #a84741;
-  --red-dim: rgba(168, 71, 65, 0.08);
-  --red-line: rgba(168, 71, 65, 0.25);
+  --red: #2d2d2d;
+  --red-dim: rgba(21, 21, 21, 0.08);
+  --red-line: rgba(21, 21, 21, 0.25);
 
-  --blue: #4c6c8e;
-  --blue-dim: rgba(76, 108, 142, 0.08);
-  --blue-line: rgba(76, 108, 142, 0.24);
+  --blue: #585858;
+  --blue-dim: rgba(21, 21, 21, 0.08);
+  --blue-line: rgba(21, 21, 21, 0.24);
 
-  --code-bg: #f6f6f2;
-  --scroll-thumb: #b2b5aa;
-  --scroll-thumb-hover: #969b8e;
-  --switch-off: #e2e3db;
-  --switch-border: #cfd0c7;
+  --code-bg: #f6f6f6;
+  --scroll-thumb: #b4b4b4;
+  --scroll-thumb-hover: #999999;
+  --switch-off: #e2e2e2;
+  --switch-border: #cfcfcf;
   --switch-knob: #ffffff;
 
   --font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
@@ -70,14 +70,14 @@
   --space-7: 24px;
   --space-8: 32px;
 
-  --shadow-1: 0 1px 2px rgba(40, 42, 35, 0.04);
-  --shadow-2: 0 2px 6px rgba(40, 42, 35, 0.05), 0 12px 30px rgba(40, 42, 35, 0.05);
-  --shadow-pop: 0 16px 44px rgba(40, 42, 35, 0.15), 0 3px 9px rgba(40, 42, 35, 0.07);
-  --shadow-modal: 0 34px 100px rgba(40, 42, 35, 0.24), 0 8px 26px rgba(40, 42, 35, 0.08);
-  --shadow-overlay: 0 28px 80px rgba(40, 42, 35, 0.16), 0 3px 10px rgba(40, 42, 35, 0.08);
-  --shadow-card: 0 1px 2px rgba(40, 42, 35, 0.04);
+  --shadow-1: 0 1px 2px rgba(41, 41, 41, 0.04);
+  --shadow-2: 0 2px 6px rgba(41, 41, 41, 0.05), 0 12px 30px rgba(41, 41, 41, 0.05);
+  --shadow-pop: 0 16px 44px rgba(41, 41, 41, 0.15), 0 3px 9px rgba(41, 41, 41, 0.07);
+  --shadow-modal: 0 34px 100px rgba(41, 41, 41, 0.24), 0 8px 26px rgba(41, 41, 41, 0.08);
+  --shadow-overlay: 0 28px 80px rgba(41, 41, 41, 0.16), 0 3px 10px rgba(41, 41, 41, 0.08);
+  --shadow-card: 0 1px 2px rgba(41, 41, 41, 0.04);
 
-  --focus-ring: 0 0 0 3px rgba(53, 96, 73, 0.12);
+  --focus-ring: 0 0 0 3px rgba(21, 21, 21, 0.12);
   --ease-out: cubic-bezier(0.22, 0.68, 0.3, 1);
   --duration-fast: 140ms;
   --duration: 180ms;

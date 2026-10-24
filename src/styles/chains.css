@@ -117,7 +117,7 @@
 }
 
 .chain-node:hover {
-  background: rgba(29, 32, 28, 0.026);
+  background: rgba(31, 31, 31, 0.026);
 }
 
 .chain-node.selected {
@@ -218,9 +218,9 @@
   height: 28px;
   border: 1px solid var(--line-strong);
   border-radius: 50%;
-  background: #fbfbf8;
+  background: #fbfbfb;
   color: var(--accent);
-  box-shadow: 0 1px 2px rgba(40, 42, 35, 0.06);
+  box-shadow: 0 1px 2px rgba(41, 41, 41, 0.06);
 }
 
 .chain-flow-label {
@@ -277,7 +277,7 @@
   padding: 8px 9px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: rgba(251, 251, 248, 0.6);
+  background: rgba(251, 251, 251, 0.6);
 }
 
 .chain-preview-slot.filled {
@@ -350,7 +350,7 @@
   margin: 5px 14px 0;
   padding: 8px 9px;
   border-left: 2px solid var(--accent-line);
-  background: rgba(53, 96, 73, 0.035);
+  background: rgba(21, 21, 21, 0.035);
   color: var(--faint);
   font-size: 11.5px;
   line-height: 1.55;

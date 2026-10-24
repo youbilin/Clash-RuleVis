@@ -54,11 +54,11 @@ ul {
 }
 
 ::selection {
-  background: rgba(53, 96, 73, 0.22);
+  background: rgba(21, 21, 21, 0.22);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(53, 96, 73, 0.55);
+  outline: 2px solid rgba(21, 21, 21, 0.55);
   outline-offset: 1px;
 }
 
@@ -147,7 +147,7 @@ ul {
 
 .btn-primary {
   background: var(--accent);
-  color: #fbfbf8;
+  color: #fbfbfb;
   border-color: var(--accent);
   font-weight: 600;
 }
@@ -155,7 +155,7 @@ ul {
 .btn-primary:hover {
   background: var(--accent-bright);
   border-color: var(--accent-bright);
-  color: #fbfbf8;
+  color: #fbfbfb;
 }
 
 .btn-outline {
@@ -181,8 +181,8 @@ ul {
 }
 
 .btn-danger:hover {
-  color: #b5564f;
-  background: rgba(168, 71, 65, 0.14);
+  color: #1b1b1b;
+  background: rgba(21, 21, 21, 0.14);
 }
 
 .btn-sm {
@@ -289,8 +289,8 @@ ul {
 .select:focus,
 .textarea:focus {
   outline: none;
-  border-color: rgba(53, 96, 73, 0.5);
-  box-shadow: 0 0 0 3px rgba(53, 96, 73, 0.07);
+  border-color: rgba(21, 21, 21, 0.5);
+  box-shadow: 0 0 0 3px rgba(21, 21, 21, 0.07);
 }
 
 .input::placeholder,
@@ -391,7 +391,7 @@ ul {
 .badge-green {
   color: var(--accent);
   background: var(--accent-dim);
-  border-color: rgba(53, 96, 73, 0.22);
+  border-color: rgba(21, 21, 21, 0.22);
 }
 
 .badge-amber {
@@ -427,7 +427,7 @@ ul {
   padding: 0 6px;
   border: 1px solid var(--line);
   border-radius: 4px;
-  background: rgba(29, 32, 28, 0.027);
+  background: rgba(31, 31, 31, 0.027);
   color: var(--muted);
   font-size: 12px;
 }
@@ -447,7 +447,7 @@ ul {
 }
 
 .tag.accent {
-  border-color: rgba(53, 96, 73, 0.22);
+  border-color: rgba(21, 21, 21, 0.22);
   background: var(--accent-dim);
   color: var(--accent);
 }
@@ -462,17 +462,17 @@ ul {
 
 .dot.green {
   background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(53, 96, 73, 0.08);
+  box-shadow: 0 0 0 3px rgba(21, 21, 21, 0.08);
 }
 
 .dot.amber {
   background: var(--amber);
-  box-shadow: 0 0 0 3px rgba(149, 97, 32, 0.08);
+  box-shadow: 0 0 0 3px rgba(21, 21, 21, 0.08);
 }
 
 .dot.red {
   background: var(--red);
-  box-shadow: 0 0 0 3px rgba(168, 71, 65, 0.08);
+  box-shadow: 0 0 0 3px rgba(21, 21, 21, 0.08);
 }
 
 .dot.blue {
@@ -486,10 +486,10 @@ ul {
 @keyframes dot-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(53, 96, 73, 0.25);
+    box-shadow: 0 0 0 0 rgba(21, 21, 21, 0.25);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(53, 96, 73, 0);
+    box-shadow: 0 0 0 4px rgba(21, 21, 21, 0);
   }
 }
 
@@ -520,8 +520,8 @@ ul {
 }
 
 .switch.on {
-  background: rgba(53, 96, 73, 0.16);
-  border-color: rgba(53, 96, 73, 0.48);
+  background: rgba(21, 21, 21, 0.16);
+  border-color: rgba(21, 21, 21, 0.48);
 }
 
 .switch.on::after {
@@ -637,7 +637,7 @@ ul {
 .spinner {
   width: 14px;
   height: 14px;
-  border: 1.5px solid rgba(29, 32, 28, 0.080);
+  border: 1.5px solid rgba(31, 31, 31, 0.080);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 700ms linear infinite;
@@ -645,8 +645,8 @@ ul {
 }
 
 .spinner.on-accent {
-  border-color: rgba(5, 19, 12, 0.25);
-  border-top-color: #fbfbf8;
+  border-color: rgba(21, 21, 21, 0.25);
+  border-top-color: #fbfbfb;
 }
 
 @keyframes spin {

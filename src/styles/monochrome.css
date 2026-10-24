@@ -1,0 +1,182 @@
+/* =========================================================
+   Monochrome layer
+   Color is removed; hierarchy comes from contrast, weight,
+   border rhythm and fill style.
+   ========================================================= */
+
+::selection {
+  background: rgba(17, 17, 17, 0.18);
+}
+
+:focus-visible {
+  outline-color: rgba(17, 17, 17, 0.62);
+}
+
+/* Navigation: the current page is the strongest dark anchor */
+.topnav-item.active {
+  background: #171717;
+  color: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.topnav-item.active svg {
+  color: #ffffff;
+}
+
+.topnav-item:hover:not(.active) {
+  background: #eaeaea;
+  color: #141414;
+}
+
+.topnav-item.active .nav-count {
+  background: #ffffff;
+  color: #111111;
+}
+
+/* Live mode is the one inverted status chip */
+.apply-mode-chip.live {
+  border-color: #1a1a1a;
+  background: #1a1a1a;
+  color: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.apply-mode-chip.live:hover:not(:disabled) {
+  border-color: #303030;
+  background: #303030;
+  color: #ffffff;
+}
+
+/* Status dots use fill vs. ring instead of hue */
+.dot.green {
+  background: #141414;
+  box-shadow: 0 0 0 3px rgba(20, 20, 20, 0.08);
+}
+
+.dot.amber {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px #6a6a6a;
+}
+
+.dot.red {
+  background: #141414;
+  box-shadow:
+    inset 0 0 0 1px #ffffff,
+    0 0 0 3px rgba(20, 20, 20, 0.06);
+}
+
+.dot.blue {
+  background: #7d7d7d;
+}
+
+/* Badges: solid for critical, dashed for warning, quiet for info */
+.badge-green {
+  border-color: #9a9a9a;
+  background: #f3f3f3;
+  color: #141414;
+}
+
+.badge-amber {
+  border-style: dashed;
+  border-color: #8a8a8a;
+  background: #f6f6f6;
+  color: #3b3b3b;
+}
+
+.badge-red {
+  border-color: #1a1a1a;
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.badge-blue {
+  border-color: #c6c6c6;
+  background: #f2f2f2;
+  color: #565656;
+}
+
+/* Callouts use line style and border weight to show severity */
+.callout.info {
+  border-color: #c6c6c6;
+  background: #f4f4f4;
+}
+
+.callout.warn {
+  border-style: dashed;
+  border-color: #8c8c8c;
+  background: #f6f6f6;
+}
+
+.callout.danger {
+  border-color: #1a1a1a;
+  background: #ededed;
+}
+
+.callout.success {
+  border-color: #1a1a1a;
+  background: #f4f4f4;
+}
+
+.toast.tone-success {
+  border-left-color: #141414;
+}
+
+.toast.tone-error {
+  border-left-width: 4px;
+  border-left-color: #141414;
+}
+
+.toast.tone-warn {
+  border-left-style: dashed;
+  border-left-color: #7a7a7a;
+}
+
+.toast.tone-info {
+  border-left-color: #b0b0b0;
+}
+
+.toast.tone-error .toast-icon {
+  color: #141414;
+}
+
+.toast.tone-warn .toast-icon {
+  color: #606060;
+}
+
+.toast.tone-info .toast-icon {
+  color: #808080;
+}
+
+/* Destructive actions are black-outlined instead of red */
+.btn-danger {
+  border-color: #1a1a1a;
+  background: #ffffff;
+  color: #141414;
+}
+
+.btn-danger:hover {
+  border-color: #000000;
+  background: #efefef;
+  color: #000000;
+}
+
+/* Flags are content, but they should not break the monochrome surface */
+.node-flag {
+  filter: grayscale(1);
+  opacity: 0.8;
+}
+
+/* Charts sit behind the information, not in front of it */
+.sparkline polyline {
+  stroke: var(--faint);
+  opacity: 0.7;
+}
+
+.sparkline polygon {
+  fill: var(--faint);
+  opacity: 0.06;
+}

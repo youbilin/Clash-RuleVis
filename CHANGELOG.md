@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0 — 2026-10-24
+
+### Changed
+
+- Full monochrome pass across every page. All CSS color literals and the app logo
+  were converted to pure grayscale; green, amber, red and blue accents are gone.
+- The current navigation item and primary actions now use a solid black anchor.
+  Online state uses a filled dot, warnings use dashed borders and hollow rings,
+  destructive actions use inverted or black-outlined treatments, and info states
+  use quieter grays. Hierarchy now comes from contrast, weight, borders and fill
+  style rather than hue.
+- Node country flags are grayscaled. Page transitions, layered panel elevation,
+  inset highlights and the white/gray depth pass are preserved.
+
 ## 0.4.1 — 2026-10-24
 
 ### Added

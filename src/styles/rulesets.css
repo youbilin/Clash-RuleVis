@@ -36,7 +36,7 @@
 }
 
 .ruleset-row:hover {
-  background: rgba(29, 32, 28, 0.024);
+  background: rgba(31, 31, 31, 0.024);
 }
 
 .ruleset-main {
@@ -65,7 +65,7 @@
   flex: 0 0 auto;
   border: 1px solid var(--line);
   border-radius: 4px;
-  background: rgba(76, 108, 142, 0.06);
+  background: rgba(21, 21, 21, 0.06);
   color: var(--blue);
 }
 
@@ -337,7 +337,7 @@
   width: 30px;
   height: 30px;
   flex: 0 0 auto;
-  border: 1px solid rgba(53, 96, 73, 0.22);
+  border: 1px solid rgba(21, 21, 21, 0.22);
   border-radius: 50%;
   color: var(--accent);
 }

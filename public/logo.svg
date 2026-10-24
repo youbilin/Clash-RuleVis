@@ -5,17 +5,17 @@
     </clipPath>
   </defs>
   <g clip-path="url(#tile)">
-    <rect x="48" y="48" width="928" height="928" rx="220" fill="#F6F4EF" />
-    <circle cx="792" cy="512" r="132" fill="#ECE8DF" />
-    <path d="M338 512 H438 C520 512 520 356 612 356 H694" fill="none" stroke="#262624" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M338 512 H438 C520 512 520 668 612 668 H694" fill="none" stroke="#262624" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M742 356 C786 356 786 512 806 512" fill="none" stroke="#6E8B74" stroke-width="40" stroke-linecap="round" />
-    <path d="M742 668 C786 668 786 512 806 512" fill="none" stroke="#6E8B74" stroke-width="40" stroke-linecap="round" />
-    <circle cx="304" cy="512" r="58" fill="#262624" />
-    <circle cx="700" cy="356" r="46" fill="#262624" />
-    <circle cx="700" cy="668" r="46" fill="#262624" />
-    <circle cx="816" cy="512" r="54" fill="#6E8B74" />
-    <circle cx="816" cy="512" r="22" fill="#F6F4EF" />
+    <rect x="48" y="48" width="928" height="928" rx="220" fill="#f4f4f4" />
+    <circle cx="792" cy="512" r="132" fill="#e8e8e8" />
+    <path d="M338 512 H438 C520 512 520 356 612 356 H694" fill="none" stroke="#262626" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M338 512 H438 C520 512 520 668 612 668 H694" fill="none" stroke="#262626" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M742 356 C786 356 786 512 806 512" fill="none" stroke="#707070" stroke-width="40" stroke-linecap="round" />
+    <path d="M742 668 C786 668 786 512 806 512" fill="none" stroke="#707070" stroke-width="40" stroke-linecap="round" />
+    <circle cx="304" cy="512" r="58" fill="#262626" />
+    <circle cx="700" cy="356" r="46" fill="#262626" />
+    <circle cx="700" cy="668" r="46" fill="#262626" />
+    <circle cx="816" cy="512" r="54" fill="#707070" />
+    <circle cx="816" cy="512" r="22" fill="#f4f4f4" />
   </g>
-  <rect x="48.5" y="48.5" width="927" height="927" rx="219.5" fill="none" stroke="#E3DED4" />
+  <rect x="48.5" y="48.5" width="927" height="927" rx="219.5" fill="none" stroke="#dedede" />
 </svg>

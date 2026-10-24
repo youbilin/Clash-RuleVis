@@ -71,7 +71,7 @@
   flex-wrap: wrap;
   padding: 9px 11px;
   border-bottom: 1px solid var(--line-soft);
-  background: rgba(11, 17, 23, 0.6);
+  background: rgba(18, 18, 18, 0.6);
 }
 
 .live-search {
@@ -116,12 +116,12 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 4px;
-  background: rgba(149, 97, 32, 0.16);
+  background: rgba(21, 21, 21, 0.16);
   font-size: 12px;
 }
 
 .selection-bar .muted {
-  color: rgba(149, 97, 32, 0.65);
+  color: rgba(21, 21, 21, 0.65);
 }
 
 .selection-bar .btn {
@@ -130,7 +130,7 @@
 
 .selection-bar .btn-outline {
   border-color: var(--amber-line);
-  background: rgba(149, 97, 32, 0.06);
+  background: rgba(21, 21, 21, 0.06);
 }
 
 /* ---------- table ---------- */
@@ -176,11 +176,11 @@
 }
 
 .conn-row:hover {
-  background: rgba(29, 32, 28, 0.024);
+  background: rgba(31, 31, 31, 0.024);
 }
 
 .conn-row.selected {
-  background: rgba(53, 96, 73, 0.035);
+  background: rgba(21, 21, 21, 0.035);
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
@@ -254,7 +254,7 @@
 
 .live-dot.active {
   background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(53, 96, 73, 0.07);
+  box-shadow: 0 0 0 3px rgba(21, 21, 21, 0.07);
   animation: dot-pulse 2.4s ease-in-out infinite;
 }
 
@@ -323,7 +323,7 @@
 }
 
 .status-mark.exported {
-  color: rgba(53, 96, 73, 0.45);
+  color: rgba(21, 21, 21, 0.45);
 }
 
 .rule-cell {
@@ -357,12 +357,12 @@
   padding: 1px 5px;
   border: 1px solid var(--line-soft);
   border-radius: 3px;
-  background: rgba(29, 32, 28, 0.027);
+  background: rgba(31, 31, 31, 0.027);
   color: var(--text-2);
 }
 
 .path-node.exit {
-  border-color: rgba(53, 96, 73, 0.14);
+  border-color: rgba(21, 21, 21, 0.14);
   background: var(--accent-dim);
   color: var(--accent);
 }
@@ -497,7 +497,7 @@
 }
 
 .path-chip.exit {
-  border-color: rgba(53, 96, 73, 0.18);
+  border-color: rgba(21, 21, 21, 0.18);
   background: var(--accent-dim);
   color: var(--accent);
 }
@@ -524,7 +524,7 @@
   padding: 11px 12px;
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: rgba(29, 32, 28, 0.016);
+  background: rgba(31, 31, 31, 0.016);
 }
 
 .fact {
@@ -672,12 +672,12 @@
 }
 
 .exit-drop.empty {
-  border-color: rgba(168, 71, 65, 0.26);
+  border-color: rgba(21, 21, 21, 0.26);
 }
 
 .exit-drop.over {
   border-color: var(--accent);
-  background: rgba(53, 96, 73, 0.075);
+  background: rgba(21, 21, 21, 0.075);
   box-shadow: 0 0 0 1px var(--accent-line), 0 8px 22px rgba(0, 0, 0, 0.28);
   transform: translateY(-1px);
 }
@@ -833,7 +833,7 @@
   padding: 8px 11px;
   border: 1px solid var(--accent-line);
   border-radius: 7px;
-  background: #101b21;
+  background: #151515;
   color: var(--text);
   font-size: 12px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
@@ -846,7 +846,7 @@
   position: fixed;
   inset: 0;
   z-index: 120;
-  background: rgba(4, 7, 10, 0.36);
+  background: rgba(7, 7, 7, 0.36);
   animation: fade-in 100ms ease;
 }
 
@@ -914,7 +914,7 @@
   padding: 7px 9px;
   border: 1px solid var(--line);
   border-radius: 5px;
-  background: #0a1117;
+  background: #151515;
   font-size: 12px;
 }
 
@@ -957,7 +957,7 @@
   padding: 2px 6px;
   border: 1px solid var(--line-soft);
   border-radius: 4px;
-  background: rgba(29, 32, 28, 0.016);
+  background: rgba(31, 31, 31, 0.016);
   font-size: 11.5px;
 }
 
@@ -1009,7 +1009,7 @@
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
-  background: rgba(14, 21, 28, 0.97);
+  background: rgba(18, 18, 18, 0.97);
   backdrop-filter: blur(14px);
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5);
   animation: tray-in 200ms cubic-bezier(0.2, 0.7, 0.3, 1);
@@ -1034,7 +1034,7 @@
   flex-wrap: wrap;
   padding: 7px 11px;
   border-bottom: 1px solid var(--line-soft);
-  background: rgba(29, 32, 28, 0.016);
+  background: rgba(31, 31, 31, 0.016);
 }
 
 .tray-title {
@@ -1295,7 +1295,7 @@
 .target-tab.active {
   background: #ffffff;
   color: var(--text);
-  box-shadow: 0 1px 2px rgba(40, 42, 35, 0.06), inset 0 0 0 1px var(--line-soft);
+  box-shadow: 0 1px 2px rgba(41, 41, 41, 0.06), inset 0 0 0 1px var(--line-soft);
 }
 
 .target-tab.active span {
@@ -1356,7 +1356,7 @@
 
 .favorite-btn:hover {
   color: var(--text-2);
-  background: rgba(29, 32, 28, 0.054);
+  background: rgba(31, 31, 31, 0.054);
   opacity: 1;
 }
 

@@ -96,7 +96,7 @@
 }
 
 .exit-card[data-type="load-balance"] {
-  --exit-accent: #4f7c7a;
+  --exit-accent: #414141;
 }
 
 .exit-card:hover {
@@ -106,7 +106,7 @@
 }
 
 .exit-card.empty {
-  border-color: rgba(168, 71, 65, 0.27);
+  border-color: rgba(21, 21, 21, 0.27);
 }
 
 .exit-card.dragging {
@@ -124,7 +124,7 @@
   height: 16px;
   padding: 0 5px;
   border-color: var(--line);
-  background: rgba(29, 32, 28, 0.027);
+  background: rgba(31, 31, 31, 0.027);
   color: var(--faint);
   font-size: 11.5px;
 }
@@ -165,7 +165,7 @@
   height: 14px;
   margin-left: auto;
   padding: 0 4px;
-  border: 1px solid rgba(53, 96, 73, 0.2);
+  border: 1px solid rgba(21, 21, 21, 0.2);
   border-radius: 3px;
   color: var(--accent);
   font-family: var(--font-mono);
@@ -229,7 +229,7 @@
   padding: 1px 5px;
   border: 1px solid var(--line-soft);
   border-radius: 3px;
-  background: rgba(29, 32, 28, 0.024);
+  background: rgba(31, 31, 31, 0.024);
   color: var(--muted);
   font-size: 11.5px;
   text-overflow: ellipsis;
@@ -387,7 +387,7 @@
 }
 
 .exit-type-card.active span {
-  color: rgba(53, 96, 73, 0.62);
+  color: rgba(21, 21, 21, 0.62);
 }
 
 .member-editor-list {
@@ -495,7 +495,7 @@
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fdfdfb;
+  background: #fdfdfd;
   box-shadow: var(--shadow-card), inset 0 1px 0 #ffffff;
 }
 
@@ -531,7 +531,7 @@
 }
 
 .exit-row:hover {
-  background: #f6f6f1;
+  background: #f6f6f6;
 }
 
 .exit-row.dragging {
@@ -540,7 +540,7 @@
 
 .exit-row.builtin {
   cursor: default;
-  background: #fbfbf8;
+  background: #fbfbfb;
 }
 
 .exit-row-grip {
@@ -577,7 +577,7 @@
   height: 18px;
   padding: 0 5px;
   border-color: var(--line);
-  background: #f4f4ef;
+  background: #f4f4f4;
   color: var(--muted);
   font-size: 11.5px;
   letter-spacing: 0;

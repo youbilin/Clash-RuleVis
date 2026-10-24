@@ -7,8 +7,8 @@
   min-height: 100vh;
   background-color: var(--bg);
   background-image:
-    radial-gradient(800px 420px at 50% 0%, rgba(53, 96, 73, 0.05), transparent 65%),
-    radial-gradient(circle at 1px 1px, rgba(29, 32, 28, 0.034) 1px, transparent 0);
+    radial-gradient(800px 420px at 50% 0%, rgba(21, 21, 21, 0.05), transparent 65%),
+    radial-gradient(circle at 1px 1px, rgba(31, 31, 31, 0.034) 1px, transparent 0);
   background-size: auto, 24px 24px;
 }
 
@@ -20,7 +20,7 @@
   padding: 34px 38px 30px;
   border: 1px solid var(--line);
   border-radius: 11px;
-  background: rgba(12, 18, 25, 0.82);
+  background: rgba(18, 18, 18, 0.82);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
 }
 
@@ -31,7 +31,7 @@
   height: 46px;
   border: 1px solid var(--line-strong);
   border-radius: 11px;
-  background: linear-gradient(150deg, #f2f2ec, #ffffff);
+  background: linear-gradient(150deg, #f2f2f2, #ffffff);
   color: var(--accent);
 }
 
@@ -43,7 +43,7 @@
   border: 0;
   border-radius: 13px;
   background: transparent;
-  box-shadow: 0 6px 16px rgba(40, 42, 35, 0.12);
+  box-shadow: 0 6px 16px rgba(41, 41, 41, 0.12);
 }
 
 .boot-mark.logo img {
@@ -184,7 +184,7 @@
   gap: 3px;
   padding: 16px 12px;
   border-right: 1px solid var(--line-soft);
-  background: rgba(7, 11, 15, 0.35);
+  background: rgba(18, 18, 18, 0.35);
 }
 
 .onboarding-step {
@@ -201,7 +201,7 @@
 }
 
 .onboarding-step:hover {
-  background: rgba(29, 32, 28, 0.027);
+  background: rgba(31, 31, 31, 0.027);
 }
 
 .onboarding-step.active {
@@ -287,7 +287,7 @@
 }
 
 .onboard-kernel.online {
-  border-color: rgba(53, 96, 73, 0.2);
+  border-color: rgba(21, 21, 21, 0.2);
 }
 
 .onboard-kernel.offline {
@@ -374,12 +374,12 @@
   flex: 0 0 auto;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: rgba(29, 32, 28, 0.027);
+  background: rgba(31, 31, 31, 0.027);
   color: var(--muted);
 }
 
 .onboard-option.primary .onboard-option-icon {
-  border-color: rgba(53, 96, 73, 0.25);
+  border-color: rgba(21, 21, 21, 0.25);
   color: var(--accent);
 }
 

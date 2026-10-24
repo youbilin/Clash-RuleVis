@@ -15,7 +15,7 @@ See every request as **domain → rule → policy group → node**, then edit, r
 </div>
 
 <p align="center">
-  <img src="docs/assets/chain-demo-0.3.2.gif" width="900" alt="Selecting a relay and landing node in the chain builder" />
+  <img src="docs/assets/chain-demo-0.5.0.gif" width="900" alt="Selecting a relay and landing node in the chain builder" />
 </p>
 
 <p align="center">
@@ -55,7 +55,7 @@ If you want edits to take effect directly, the desktop app offers an optional **
 - **Large directories**: live connections and rules are virtualized, so 1000+ entries stay responsive without hiding data behind pagination.
 - **Offline editing**: start the workbench before Verge; kernel status refreshes in the background and the app offers re-detect plus subscription import.
 - **Desktop-first layout**: dense lists, internally scrolling tables and no page-level scroll on long lists.
-- **Layered surfaces**: pages rise and fade in on navigation, while panels, toolbars, fields and buttons use subtle gradients, borders and soft elevation without leaving the warm white/gray theme.
+- **Layered surfaces**: pages rise and fade in on navigation, while panels, toolbars, fields and buttons use subtle gradients, borders and soft elevation in a strict monochrome palette. Active navigation and primary actions use solid black; warnings use dashed borders and hollow rings; destructive actions use inverted or outlined treatments.
 
 ## Screenshots
 
@@ -204,7 +204,7 @@ See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 ## Roadmap
 
 - **v0.3**: Tauri 2 + Rust desktop app with subscription/YAML import, TCP/named-pipe controller, live connections, latency tests, rulesets, mihomo validation and an NSIS installer.
-- **v0.4.1 (current)**: optional live mode plus tray quit choice, explicit node batch selection, paste-to-import, exit node batch picking and template match hints.
+- **v0.5.0 (current)**: full monochrome pass. Green, amber and red accents are removed; active navigation and primary actions use solid black, while online, warning and danger states rely on filled dots, hollow rings, dashed lines and inverted fills. Page motion and layered elevation remain.
 - **Rust foundation**: `rulevis-core` + `rulevis-app` ship 33 automated tests covering fixture parity, desktop API, live-profile merge/restore and the reload request, plus an optional real-controller smoke test.
 - **Next**: code signing, auto-update, tray, multi-hop chains and Proxy Provider support.
 - **Platform**: Windows x64 installer today; the web build runs on any Node.js 22+ host. The installer is unsigned, and live features require Clash Verge Rev / mihomo.

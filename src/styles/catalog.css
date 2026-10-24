@@ -39,7 +39,7 @@
   padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfbf8;
+  background: #fbfbfb;
   color: var(--text-2);
   text-align: left;
   transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
@@ -48,12 +48,12 @@
 .combo-card:hover {
   border-color: var(--line-strong);
   background: #ffffff;
-  box-shadow: 0 2px 8px rgba(40, 42, 35, 0.05);
+  box-shadow: 0 2px 8px rgba(41, 41, 41, 0.05);
 }
 
 .combo-card.active {
   border-color: var(--accent-line);
-  background: #f0f5f1;
+  background: #f4f4f4;
 }
 
 .combo-card-top {
@@ -116,7 +116,7 @@
   overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fbfbf8;
+  background: #fbfbfb;
 }
 
 .catalog-row {
@@ -135,11 +135,11 @@
 }
 
 .catalog-row:hover {
-  background: #f4f4ef;
+  background: #f4f4f4;
 }
 
 .catalog-row.selected {
-  background: #edf4ef;
+  background: #f0f0f0;
 }
 
 .catalog-row input[type="checkbox"] {
